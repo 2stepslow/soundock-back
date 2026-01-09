@@ -3,6 +3,7 @@ package dopamine.soundock.controller;
 import dopamine.soundock.dto.ApiResponse;
 import dopamine.soundock.dto.UserSignupRequest;
 import dopamine.soundock.dto.ValidateEmailRequest;
+import dopamine.soundock.dto.ValidateNicknameRequest;
 import dopamine.soundock.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,15 @@ public class AuthController {
 
         // 이메일 중복 체크 통과시 로직 실행
         return ResponseEntity.ok(ApiResponse.success("사용 가능한 이메일 입니다."));
+    }
+
+    // 닉네임 중복 체크
+    @GetMapping("/nickname")
+    public ResponseEntity<ApiResponse<Void>> checkNickname(@Valid @ModelAttribute ValidateNicknameRequest validateNicknameRequest) {
+        authService.validateNickname(validateNicknameRequest);
+
+        // 닉네임 중복 체크 통과시 로직 실행
+        return ResponseEntity.ok(ApiResponse.success("사용 가능한 닉네임 입니다."));
     }
 
     // 회원 가입
