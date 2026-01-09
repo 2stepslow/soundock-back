@@ -1,4 +1,4 @@
-package dopamine.soundock.sevice;
+package dopamine.soundock.service;
 
 import dopamine.soundock.dto.UserSignupRequest;
 import dopamine.soundock.dto.ValidateEmailRequest;

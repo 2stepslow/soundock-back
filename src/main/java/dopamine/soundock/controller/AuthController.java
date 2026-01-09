@@ -3,7 +3,7 @@ package dopamine.soundock.controller;
 import dopamine.soundock.dto.ApiResponse;
 import dopamine.soundock.dto.UserSignupRequest;
 import dopamine.soundock.dto.ValidateEmailRequest;
-import dopamine.soundock.sevice.AuthService;
+import dopamine.soundock.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
