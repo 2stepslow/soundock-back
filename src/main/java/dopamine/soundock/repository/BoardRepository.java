@@ -10,4 +10,9 @@ import java.util.List;
 @Repository
 @EnableJpaRepositories
 public interface BoardRepository extends JpaRepository<Board, Integer> {
+    // 삭제되지 않고 부모,하위 카테고리를 포함한 게시글 조회
+    List<Board> findByDeletedDateTimeIsNullAndCategoryIdIn(Integer categoryId);
+
+    List<Board> findByDeletedDateTimeIsNull(int id);
+    List<Board> findByDeletedDateTimeIsNullAndParentIdAndCategoryTypeIn(Integer parentId, String categoryType);
 }
