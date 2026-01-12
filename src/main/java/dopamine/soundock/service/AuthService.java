@@ -102,13 +102,13 @@ public class AuthService {
     @Transactional
     public void sendVerificationEmail(VerificationEmailRequest verificationEmailRequest, String siteURL) {
         try {
-            User user = userRepository.findByEmail(verificationEmailRequest.getUser().getEmail())
+            User user = userRepository.findByEmail(verificationEmailRequest.getEmail())
                     .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND));
 
             String token = UUID.randomUUID().toString();
             createVerificationToken(user, token);
 
-            String recipientAddress = verificationEmailRequest.getUser().getEmail();
+            String recipientAddress = verificationEmailRequest.getEmail();
             String subject = "이메일 인증 요청";
             String verificationUrl = siteURL + "/api/verify?token=" + token;
 
@@ -126,7 +126,7 @@ public class AuthService {
             mailSender.send(message);
         } catch (MessagingException e) {
             log.error("이메일 발송 실패 - 수신자: {}, 원인: {}"
-                    , verificationEmailRequest.getUser().getEmail(), e.getMessage(), e);
+                    , verificationEmailRequest.getEmail(), e.getMessage(), e);
             throw new MailSendingException();
         }
     }
