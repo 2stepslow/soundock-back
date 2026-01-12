@@ -88,7 +88,11 @@ public class AuthService {
         userRepository.save(user);
     }
     // 이메일 인증 토큰 생성
+    @Transactional
     private void createVerificationToken(User user, String token) {
+        // 기존 토큰이 있으면 삭제
+        verificationTokenRepository.deleteByUser(user);
+
         VerificationToken verificationToken = VerificationToken
                 .builder()
                 .user(user)
