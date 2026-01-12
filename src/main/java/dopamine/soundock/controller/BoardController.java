@@ -63,4 +63,10 @@ public class BoardController {
         boardService.deleteBoard(id);
         return ResponseEntity.ok(ApiResponse.success());
     }
+    // 게시글 수정
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApiResponse<?>> updateBoard(Integer boardId, BoardCreateRequest updaterequest){
+        boardService.updateBoard(boardId, updaterequest);
+        return ResponseEntity.ok(ApiResponse.success("게시글 수정이 완료되었습니다."));
+    }
 }

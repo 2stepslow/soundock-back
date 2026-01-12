@@ -1,5 +1,6 @@
 package dopamine.soundock.service;
 
+import dopamine.soundock.dto.ApiResponse;
 import dopamine.soundock.dto.BoardCreateRequest;
 import dopamine.soundock.dto.BoardResponse;
 import dopamine.soundock.entity.Board;
@@ -9,8 +10,10 @@ import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.repository.BoardRepository;
 import dopamine.soundock.repository.CategoryRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -134,7 +137,7 @@ public class BoardService {
         // 작성자와 현재 로그인한 유저가 같은지 검사
         // 삭제하려는 글의 id가 존재하는지 검사
         Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글입니다.."));
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글입니다."));
 
         // 삭제된 게시글인지 조회
         List<Board> existBoard = boardRepository.findByDeletedDateTimeIsNull(boardId);
@@ -143,5 +146,24 @@ public class BoardService {
         }
         boardRepository.deleteById(boardId);
     }
-
+    // 게시글 수정
+    public void updateBoard(Integer boardId, BoardCreateRequest updaterequest){
+        // 게시글 유저와 현재 로그인한 유저 일치하는지 확인
+        // 수정하려는 게시글이 존재하는지 확인
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글입니다."));
+        // 수정하려는 사항
+        if (updaterequest.getTitle() != null){
+            board.setContent(updaterequest.getTitle());
+        }
+        if (updaterequest.getContent() != null){
+            board.setContent(updaterequest.getContent());
+        }
+        if (updaterequest.getFileUrl() != null){
+            board.setFileUrl(updaterequest.getFileUrl());
+        }
+        // 게시글 수정일 업데이트
+        board.setUpdatedDateTime(LocalDateTime.now());
+        boardRepository.save(board);
+    }
 }
