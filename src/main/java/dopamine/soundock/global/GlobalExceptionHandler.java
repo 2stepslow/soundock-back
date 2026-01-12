@@ -18,6 +18,8 @@ import org.springframework.web.client.ResourceAccessException;
 public class GlobalExceptionHandler {
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ApiResponse<Void>> handleCustomException(CustomException e) {
+        log.warn("[CustomException] class: {}, message: {}", e.getClass().getSimpleName(), e.getMessage());
+
         return ResponseEntity
                 .status(e.getStatus())
                 .body(ApiResponse.fail(e.getMessage()));
@@ -27,6 +29,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         String errorMessage = e.getBindingResult().getAllErrors().getFirst().getDefaultMessage();
+
+        log.warn("[Validation Error] message: {}", errorMessage);
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)

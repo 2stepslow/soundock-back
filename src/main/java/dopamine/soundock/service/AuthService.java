@@ -11,21 +11,34 @@ import dopamine.soundock.enums.UserStatus;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.DuplicateEmailException;
 import dopamine.soundock.exceptions.DuplicateNicknameException;
+import dopamine.soundock.exceptions.MailSendingException;
 import dopamine.soundock.repository.UserRepository;
+import dopamine.soundock.repository.VerificationTokenRepository;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-
+    private final JavaMailSender mailSender;
+    private final TemplateEngine templateEngine;
+    private final VerificationTokenRepository  verificationTokenRepository;
     // 이메일 중복 확인
     @Transactional(readOnly = true)
     public void validateEmail(ValidateEmailRequest validateEmailRequest) {
@@ -75,12 +88,67 @@ public class AuthService {
         userRepository.save(user);
     }
     // 이메일 인증 토큰 생성
-    private void createVerificationToken(VerificationEmailRequest  verificationEmailRequest) {
+    private void createVerificationToken(User user, String token) {
         VerificationToken verificationToken = VerificationToken
                 .builder()
-                .user(verificationEmailRequest.getUser())
-                .token(verificationEmailRequest.getToken())
+                .user(user)
+                .token(token)
                 .expiryDate(LocalDateTime.now().plusMinutes(5))
                 .build();
+        verificationTokenRepository.save(verificationToken);
+    }
+
+    // 이메일 전송
+    @Transactional
+    public void sendVerificationEmail(VerificationEmailRequest verificationEmailRequest, String siteURL) {
+        try {
+            User user = userRepository.findByEmail(verificationEmailRequest.getUser().getEmail())
+                    .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND));
+
+            String token = UUID.randomUUID().toString();
+            createVerificationToken(user, token);
+
+            String recipientAddress = verificationEmailRequest.getUser().getEmail();
+            String subject = "이메일 인증 요청";
+            String verificationUrl = siteURL + "/api/verify?token=" + token;
+
+            Context context = new Context();
+            context.setVariable("verificationUrl", verificationUrl);
+            String htmlContent = templateEngine.process("verification-email", context);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+            helper.setTo(recipientAddress);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            log.error("이메일 발송 실패 - 수신자: {}, 원인: {}"
+                    , verificationEmailRequest.getUser().getEmail(), e.getMessage(), e);
+            throw new MailSendingException();
+        }
+    }
+
+    // 이메일 원클릭 인증
+    @Transactional
+    public void verifyUser(String token) {
+        VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new CustomException("유효하지 않은 토큰입니다.", HttpStatus.BAD_REQUEST));
+
+        if (verificationToken.isVerified()) {
+            throw new CustomException("이미 인증이 완료된 링크입니다.", HttpStatus.CONFLICT);
+        }
+
+        if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new CustomException("인증 시간이 만료되었습니다. 다시 시도해주세요.", HttpStatus.GONE);
+        }
+
+        User user = verificationToken.getUser();
+        user.setStatus(UserStatus.ACTIVE);
+        verificationToken.setVerified(true);
+        userRepository.save(user);
+        verificationTokenRepository.save(verificationToken);
     }
 }
