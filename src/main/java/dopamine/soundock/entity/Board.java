@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
@@ -12,10 +14,15 @@ import java.time.LocalDateTime;
 @Setter
 @Table(name = "boards")
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 public class Board {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int Id;
+    private Integer id;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User author;
 
     @Column(name = "title", nullable = false)
     private String title;
@@ -30,15 +37,15 @@ public class Board {
     private int likes;
 
     @CreatedDate
-    @Column(name = "created_at", nullable = true)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdDateTime;
 
-    @CreatedDate
-    @Column(name = "updated_at", nullable = true)
+    @LastModifiedDate
+    @Column(name = "updated_at")
     private LocalDateTime updatedDateTime;
 
     @CreatedDate
-    @Column(name = "deleted_at", nullable = true)
+    @Column(name = "deleted_at")
     private LocalDateTime deletedDateTime;
 
     @Column(name = "file_url", nullable = true)
@@ -49,4 +56,9 @@ public class Board {
 
     @Column(name = "expired_featured_at", nullable = true)
     private LocalDateTime expiredFeaturedDateTime;
+
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = false)
+    // Board 테이블의 category_id 필드를 연결하는거임
+    private Category category;
 }

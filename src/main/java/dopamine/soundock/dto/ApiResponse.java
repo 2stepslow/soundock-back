@@ -2,6 +2,8 @@ package dopamine.soundock.dto;
 
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
