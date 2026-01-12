@@ -57,5 +57,10 @@ public class BoardController {
         List<BoardResponse> boardResponses = boardService.getAllBoardsByCategory(categoryId);
         return ResponseEntity.ok(ApiResponse.success(boardResponses));
     }
-
+    // 게시글 삭제
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<?>> deleteBoard(int id){
+        boardService.deleteBoard(id);
+        return ResponseEntity.ok(ApiResponse.success());
+    }
 }

@@ -129,5 +129,19 @@ public class BoardService {
         }
         return boardResponses;
     }
+    // 게시글 삭제
+    public void deleteBoard(Integer boardId){
+        // 작성자와 현재 로그인한 유저가 같은지 검사
+        // 삭제하려는 글의 id가 존재하는지 검사
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글입니다.."));
+
+        // 삭제된 게시글인지 조회
+        List<Board> existBoard = boardRepository.findByDeletedDateTimeIsNull(boardId);
+        if (existBoard!=null){
+            throw new IllegalArgumentException("이미 삭제된 게시글입니다.");
+        }
+        boardRepository.deleteById(boardId);
+    }
 
 }

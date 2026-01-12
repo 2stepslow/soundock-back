@@ -14,6 +14,6 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
     // 삭제되지 않고 부모,하위 카테고리를 포함한 게시글 조회
     List<Board> findByDeletedDateTimeIsNullAndCategoryIdIn(Collection<Integer> categoryIds);
 
-    List<Board> findByDeletedDateTimeIsNull();
+    List<Board> findByDeletedDateTimeIsNull(Integer boardId);
     List<Board> findByDeletedDateTimeIsNullAndCategoryParentIdAndCategoryCategoryType(Integer parentId, String categoryType);
 }
