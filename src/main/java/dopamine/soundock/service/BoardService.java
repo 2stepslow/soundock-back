@@ -28,7 +28,7 @@ public class BoardService {
     public int createNewBoard(BoardCreateRequest createRequest) {
         // 사용자 로그인 확인
         // 작성하려는 카테고리가 존재하는지 확인
-        Category category = categoryRepository.findById(Integer.valueOf(createRequest.getCategory()))
+        Category category = categoryRepository.findById(createRequest.getCategory())
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 카테고리 입니다."));
         // 카테고리 활성화 여부 확인
         if (!category.isActive()){
@@ -44,7 +44,7 @@ public class BoardService {
 
         // save는 새로운 행을 만들면서 데이터 저장
         Board newBoard = boardRepository.save(board);
-        return newBoard.getId();
+        return newBoard.getBoardId();
     }
 
     // 게시글 상세 조회
