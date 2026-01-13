@@ -29,7 +29,8 @@ public class BoardController {
         return ResponseEntity.created(location).body(ApiResponse.success("게시글 등록이 완료되었습니다."));
     }
     // 게시글 상세 조회
-    @GetMapping("/{id}")
+    // 이렇게 api 받으면 카테고리별 목록 조회 충돌 날 수 있슴
+    @GetMapping("/post/{id}")
     public ResponseEntity<ApiResponse<BoardResponse>> getDetailBoard(Integer boardId){
         BoardResponse boardResponse = boardService.getDetailBoard(boardId);
         return ResponseEntity.ok(ApiResponse.success(boardResponse));
@@ -59,8 +60,8 @@ public class BoardController {
     }
     // 게시글 삭제
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> deleteBoard(int id){
-        boardService.deleteBoard(id);
+    public ResponseEntity<ApiResponse<?>> deleteBoard(@PathVariable Integer boardId){
+        boardService.deleteBoard(boardId);
         return ResponseEntity.ok(ApiResponse.success());
     }
     // 게시글 수정

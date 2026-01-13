@@ -31,7 +31,7 @@ public class BoardService {
         Category category = categoryRepository.findById(Integer.valueOf(createRequest.getCategory()))
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 카테고리 입니다."));
         // 카테고리 활성화 여부 확인
-        if (!categoryRepository.findByIdAndIsActive(Integer.valueOf(createRequest.getCategory()), category.isActive())){
+        if (!category.isActive()){
             throw new IllegalArgumentException("숨겨진 카테고리입니다.");
         }
         // 프론트에서 받은 입력값 보여줌
@@ -59,7 +59,7 @@ public class BoardService {
         Board board = optionalBoard.get();
 
         // 게시글 삭제 여부 확인
-        if (board.getDeletedDateTime() == null) {
+        if (board.getDeletedDateTime() != null) {
             throw new ResourceNotFoundException("삭제된 게시글입니다.");
         }
         BoardResponse boardResponse = BoardResponse.builder()
@@ -78,6 +78,11 @@ public class BoardService {
     public List<BoardResponse> getAllBoardsByCategory(Integer categoryId) {
         // 부모 id가 존재하는 카테고리 찾기(서브 카테고리)
         List<Category> subCategories = categoryRepository.findByParentId(categoryId);
+
+        if (categoryId == null || categoryId <0){
+            throw new IllegalArgumentException("유효하지 않은 카테고리 ID입니다.");
+        }
+
         // 하위 카테고리를 포함한 카테고리 배열 생성
         List<Integer> categoryIds = new ArrayList<>();
         for (Category category : subCategories){
@@ -108,6 +113,13 @@ public class BoardService {
 
     // 한 게시판의 특정 하위 카테고리 모든 게시글 조회
     public List<BoardResponse> findAllBoardsBySubCategory(Integer parentId, String categoryType){
+        // 부모 카테고리 존재하는지 검증
+        List<Category> parentCategory = categoryRepository.findByParentId(parentId);
+
+        if (parentCategory.isEmpty()){
+            throw new ResourceNotFoundException("존재하지 않는 상위 카테고리입니다.");
+        }
+
         // 부모 카테고리 밑의 하위 카테고리 조회
         List<Category> parentIdAndCategoryType = categoryRepository.findByParentIdAndCategoryType(parentId, categoryType);
         if (parentIdAndCategoryType.isEmpty()){
@@ -140,8 +152,7 @@ public class BoardService {
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글입니다."));
 
         // 삭제된 게시글인지 조회
-        List<Board> existBoard = boardRepository.findByDeletedDateTimeIsNull();
-        if (existBoard!=null){
+        if (board.getDeletedDateTime()!=null){
             throw new IllegalArgumentException("이미 삭제된 게시글입니다.");
         }
         boardRepository.deleteById(boardId);
@@ -154,7 +165,7 @@ public class BoardService {
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글입니다."));
         // 수정하려는 사항
         if (updaterequest.getTitle() != null){
-            board.setContent(updaterequest.getTitle());
+            board.setTitle(updaterequest.getTitle());
         }
         if (updaterequest.getContent() != null){
             board.setContent(updaterequest.getContent());
