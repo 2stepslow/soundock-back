@@ -31,7 +31,7 @@ public class BoardController {
     // 게시글 상세 조회
     // 이렇게 api 받으면 카테고리별 목록 조회 충돌 날 수 있슴
     @GetMapping("/post/{id}")
-    public ResponseEntity<ApiResponse<BoardResponse>> getDetailBoard(Integer boardId){
+    public ResponseEntity<ApiResponse<BoardResponse>> getDetailBoard(@PathVariable("id") Integer boardId){
         BoardResponse boardResponse = boardService.getDetailBoard(boardId);
         return ResponseEntity.ok(ApiResponse.success(boardResponse));
     }
@@ -66,7 +66,10 @@ public class BoardController {
     }
     // 게시글 수정
     @PatchMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> updateBoard(Integer boardId, BoardCreateRequest updaterequest){
+    public ResponseEntity<ApiResponse<?>> updateBoard(
+            @PathVariable("id") Integer boardId,
+            @RequestBody BoardCreateRequest updaterequest
+    ){
         boardService.updateBoard(boardId, updaterequest);
         return ResponseEntity.ok(ApiResponse.success("게시글 수정이 완료되었습니다."));
     }
