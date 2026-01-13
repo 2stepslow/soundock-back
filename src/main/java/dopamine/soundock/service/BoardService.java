@@ -140,7 +140,7 @@ public class BoardService {
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글입니다."));
 
         // 삭제된 게시글인지 조회
-        List<Board> existBoard = boardRepository.findByDeletedDateTimeIsNull(boardId);
+        List<Board> existBoard = boardRepository.findByDeletedDateTimeIsNull();
         if (existBoard!=null){
             throw new IllegalArgumentException("이미 삭제된 게시글입니다.");
         }
