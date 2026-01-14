@@ -1,17 +1,14 @@
 package dopamine.soundock.service;
 
-import dopamine.soundock.dto.UserSignupRequest;
-import dopamine.soundock.dto.ValidateEmailRequest;
-import dopamine.soundock.dto.ValidateNicknameRequest;
-import dopamine.soundock.dto.VerificationEmailRequest;
+import dopamine.soundock.dto.*;
+import dopamine.soundock.entity.RefreshToken;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.entity.VerificationToken;
 import dopamine.soundock.enums.UserRole;
 import dopamine.soundock.enums.UserStatus;
-import dopamine.soundock.exceptions.CustomException;
-import dopamine.soundock.exceptions.DuplicateEmailException;
-import dopamine.soundock.exceptions.DuplicateNicknameException;
-import dopamine.soundock.exceptions.MailSendingException;
+import dopamine.soundock.exceptions.*;
+import dopamine.soundock.global.TokenProvider;
+import dopamine.soundock.repository.RefreshTokenRepository;
 import dopamine.soundock.repository.UserRepository;
 import dopamine.soundock.repository.VerificationTokenRepository;
 import jakarta.mail.MessagingException;
@@ -39,6 +36,12 @@ public class AuthService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
     private final VerificationTokenRepository  verificationTokenRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final TokenProvider tokenProvider;
+
+    private static final long REFRESH_TOKEN_VALIDITY = 1000 * 60 * 60 * 24;
+
+
     // 이메일 중복 확인
     @Transactional(readOnly = true)
     public void validateEmail(ValidateEmailRequest validateEmailRequest) {
@@ -154,5 +157,39 @@ public class AuthService {
         verificationToken.setVerified(true);
         userRepository.save(user);
         verificationTokenRepository.save(verificationToken);
+    }
+
+    public LoginResponse login(
+            LoginRequest loginRequest
+    ) {
+        // 1. JPA를 이용해 DB에 ID를 조회해서 있는 애인지 확인한다.
+        User user = userRepository.findByEmail(loginRequest.getEmail())
+            .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+
+        if(!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+            // 실패하면 401 에러 보냄
+            throw new LoginFailedException("비밀번호가 맞지 않습니다.");
+        }
+
+        if(!user.getStatus().equals(UserStatus.ACTIVE)) {
+            throw new LoginFailedException("인증이 완료되지 않은 유저입니다.");
+        }
+
+        // 로그인 성공
+        String accessToken = tokenProvider.generateAccessToken(user.getEmail());
+        String refreshToken = tokenProvider.generateRefreshToken(user.getEmail());
+
+
+        // Refresh Token을 DB에 추가
+        RefreshToken refresh = RefreshToken
+                .builder()
+                .token(refreshToken)
+                .user(user)
+                .expirationAt(LocalDateTime.now().plusMinutes(REFRESH_TOKEN_VALIDITY/1000))
+                .build();
+
+        refreshTokenRepository.save(refresh);
+
+        return new LoginResponse(accessToken, refreshToken);
     }
 }

@@ -16,6 +16,7 @@ import org.springframework.web.client.ResourceAccessException;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    // 직접 만든 커스텀 예외 에러 처리
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ApiResponse<Void>> handleCustomException(CustomException e) {
         log.warn("[CustomException] class: {}, message: {}", e.getClass().getSimpleName(), e.getMessage());

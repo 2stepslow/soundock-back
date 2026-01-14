@@ -82,4 +82,13 @@ public class AuthController {
                     .build();
         }
     }
+
+    // 유저 로그인
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<LoginResponse>> login(
+            @Valid @RequestBody LoginRequest LoginRequest
+    ) {
+        LoginResponse response = authService.login(LoginRequest);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 }
