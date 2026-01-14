@@ -2,6 +2,7 @@ package dopamine.soundock.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,7 +19,8 @@ public class BoardCreateRequest {
     @NotEmpty(message = "최소 1글자 이상 입력해주세요.")
     private String content;
 
-    @NotBlank(message = "카테고리를 선택해주세요.")
-    private String category;
+    @NotNull(message = "카테고리를 선택해주세요.")
+    private Integer category;
+
     private String fileUrl;
 }

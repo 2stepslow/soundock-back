@@ -28,4 +28,49 @@ public class BoardController {
         URI location = URI.create("/getDetailBoard/" + newBoardId);
         return ResponseEntity.created(location).body(ApiResponse.success("게시글 등록이 완료되었습니다."));
     }
+    // 게시글 상세 조회
+    // 이렇게 api 받으면 카테고리별 목록 조회 충돌 날 수 있슴
+    @GetMapping("/post/{id}")
+    public ResponseEntity<ApiResponse<BoardResponse>> getDetailBoard(@PathVariable("id") Integer boardId){
+        BoardResponse boardResponse = boardService.getDetailBoard(boardId);
+        return ResponseEntity.ok(ApiResponse.success(boardResponse));
+    }
+
+    // 게시판 카테고리별 목록 조회
+    @GetMapping({
+            "/{categoryId}",
+            "/{categoryId}/{subCategoryId}",
+            "/{categoryId}/{subCategoryId}/{boardId}"})// 카테고리 id
+    public ResponseEntity<ApiResponse<?>> getBoards(
+            @PathVariable Integer categoryId,
+            @PathVariable (required = false) String categoryType,
+            @PathVariable (required = false) Integer boardId
+    ){
+        if (boardId!=null){
+            BoardResponse boardResponse = boardService.getDetailBoard(boardId);
+            return ResponseEntity.ok(ApiResponse.success(boardResponse));
+        }
+        if (categoryType!=null){
+            List<BoardResponse> boardResponses = boardService.findAllBoardsBySubCategory(categoryId,categoryType);
+            return ResponseEntity.ok(ApiResponse.success(boardResponses));
+        }
+
+        List<BoardResponse> boardResponses = boardService.getAllBoardsByCategory(categoryId);
+        return ResponseEntity.ok(ApiResponse.success(boardResponses));
+    }
+    // 게시글 삭제
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<?>> deleteBoard(@PathVariable Integer boardId){
+        boardService.deleteBoard(boardId);
+        return ResponseEntity.ok(ApiResponse.success());
+    }
+    // 게시글 수정
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApiResponse<?>> updateBoard(
+            @PathVariable("id") Integer boardId,
+            @RequestBody BoardCreateRequest updaterequest
+    ){
+        boardService.updateBoard(boardId, updaterequest);
+        return ResponseEntity.ok(ApiResponse.success("게시글 수정이 완료되었습니다."));
+    }
 }

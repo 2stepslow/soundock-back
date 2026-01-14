@@ -1,7 +1,6 @@
 package dopamine.soundock.entity;
 
 import jakarta.persistence.*;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
@@ -18,7 +17,8 @@ import java.time.LocalDateTime;
 public class Board {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    @Column(name = "board_id")
+    private Integer boardId;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
