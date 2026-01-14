@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
-public interface VerificationTokenRepository extends JpaRepository<VerificationToken, Long> {
+public interface VerificationTokenRepository extends JpaRepository<VerificationToken, Integer> {
     Optional<VerificationToken> findByToken(String token);
 
     @Transactional
