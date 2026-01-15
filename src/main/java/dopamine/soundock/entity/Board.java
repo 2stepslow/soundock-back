@@ -3,10 +3,12 @@ package dopamine.soundock.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.sql.Types;
 import java.time.LocalDateTime;
 
 @Getter
@@ -51,11 +53,11 @@ public class Board {
     @Column(name = "file_url", nullable = true)
     private String fileUrl;
 
-    @Column(name = "is_Featured", nullable = false)
+    @Column(name = "is_featured", nullable = false)
     private boolean isFeatured;
 
-    @Column(name = "expired_featured_at", nullable = true)
-    private LocalDateTime expiredFeaturedDateTime;
+    @Column(name = "featured_expired_at", nullable = true)
+    private LocalDateTime featuredExpiredDateTime;
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)

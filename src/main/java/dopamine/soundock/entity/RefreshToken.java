@@ -14,11 +14,12 @@ import java.time.LocalDateTime;
 @Builder
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "refresh_token")
+@Table(name = "refresh_tokens")
 public class RefreshToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    @Column(name = "refresh_token_id")
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)

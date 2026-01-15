@@ -1,4 +1,4 @@
-package dopamine.soundock.global;
+package dopamine.soundock.config;
 
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
