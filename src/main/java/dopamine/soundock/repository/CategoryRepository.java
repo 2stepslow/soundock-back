@@ -11,7 +11,8 @@ import java.util.Optional;
 @Repository
 @EnableJpaRepositories
 public interface CategoryRepository extends JpaRepository<Category, Integer> {
-
+    // 카테고리 id가 부모 카테고리인지 확인
+    List<Category> findByIdAndParentIdIsNull(Integer categoryId);
     // 특정 카테고리 밑 모든 자식 카테고리 찾기
     List<Category> findByParentId(Integer categoryId);
     // 부모 카테고리 밑 자식 카테고리 조회

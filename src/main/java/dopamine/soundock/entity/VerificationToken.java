@@ -20,7 +20,7 @@ public class VerificationToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "verification_token_id")
-    private Long id;
+    private Integer id;
 
     // 인증번호
     @NotBlank

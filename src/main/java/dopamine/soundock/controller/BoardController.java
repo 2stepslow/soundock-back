@@ -39,19 +39,19 @@ public class BoardController {
     // 게시판 카테고리별 목록 조회
     @GetMapping({
             "/{categoryId}",
-            "/{categoryId}/{subCategoryId}",
-            "/{categoryId}/{subCategoryId}/{boardId}"})// 카테고리 id
+            "/{categoryId}/{subCategory}",
+            "/{categoryId}/{subCategory}/{boardId}"})// 카테고리 id
     public ResponseEntity<ApiResponse<?>> getBoards(
             @PathVariable Integer categoryId,
-            @PathVariable (required = false) String categoryType,
+            @PathVariable (required = false) String subCategory,
             @PathVariable (required = false) Integer boardId
     ){
         if (boardId!=null){
             BoardResponse boardResponse = boardService.getDetailBoard(boardId);
             return ResponseEntity.ok(ApiResponse.success(boardResponse));
         }
-        if (categoryType!=null){
-            List<BoardResponse> boardResponses = boardService.findAllBoardsBySubCategory(categoryId,categoryType);
+        if (subCategory!=null){
+            List<BoardResponse> boardResponses = boardService.findAllBoardsBySubCategory(categoryId,subCategory);
             return ResponseEntity.ok(ApiResponse.success(boardResponses));
         }
 
@@ -60,7 +60,7 @@ public class BoardController {
     }
     // 게시글 삭제
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> deleteBoard(@PathVariable Integer boardId){
+    public ResponseEntity<ApiResponse<?>> deleteBoard(@PathVariable("id") Integer boardId){
         boardService.deleteBoard(boardId);
         return ResponseEntity.ok(ApiResponse.success());
     }
