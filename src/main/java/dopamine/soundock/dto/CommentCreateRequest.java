@@ -18,6 +18,5 @@ public class CommentCreateRequest {
 
     private String nickname;
 
-    @CreatedDate
     private LocalDateTime createdDateTime;
 }

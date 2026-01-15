@@ -30,12 +30,8 @@ public class Comment {
     private String content;
 
     @Column(name = "like_count")
-    @ColumnDefault("'0'")
+    @ColumnDefault("0")
     private int likeCount;
-
-    @Column(name = "parent_comment_id", nullable = false)
-    @ColumnDefault("'0'")
-    private Integer parentId;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false)
@@ -46,7 +42,6 @@ public class Comment {
     private LocalDateTime updatedDateTime;
 
     @Column(name = "is_deleted", nullable = false)
-    @ColumnDefault("'0'")
     private boolean isDeleted;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

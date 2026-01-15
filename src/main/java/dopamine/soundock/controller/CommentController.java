@@ -11,8 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@RequiredArgsConstructor
-@RequestMapping("api/boards/{boardId}/comments")
+@AllArgsConstructor
+@RequestMapping("/api/boards/{categoryId}/{subCategoryType}/{boardId}/comments")
 @RestController
 public class CommentController {
     private CommentRepository commentRepository;
@@ -20,7 +20,7 @@ public class CommentController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<?>> createComment(
-            @PathVariable Integer boardId,
+            @PathVariable("boardId") Integer boardId,
             @RequestBody CommentCreateRequest createRequest
     ){
         CommentResponse commentResponse = commentService.createComment(boardId, createRequest);
