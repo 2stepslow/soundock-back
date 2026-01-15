@@ -69,18 +69,11 @@ public class BoardService {
 
     // 한 게시판의 모든 하위 카테고리를 포함한 게시판 목록 조회
     public List<BoardResponse> getAllBoardsByCategory(Integer categoryId) {
-        // 카테고리 id 파라미터 값 검증
-        if (categoryId == null){
-            throw new ResourceNotFoundException("유효하지 않은 카테고리 ID입니다.");
-        }
         // categoryId가 상위 카테고리인지 하위 카테고리인지 판단
         // 상위 카테고리는 DB 상에서 Null 값으로 존재
         // 여기 값이 있으면 상위 카테고리임 없으면 하위 카테고리임
-        List<Category> isParentId = categoryRepository.findByIdAndParentIdIsNull(categoryId);
-
-        if (isParentId.isEmpty()){
-           throw new ResourceNotFoundException("하위 카테고리입니다.");
-        }
+        Category parentCategory = categoryRepository.findByIdAndParentIdIsNull(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("하위 카테고리입니다."));
 
         // 부모 id가 존재하는 카테고리 찾기(서브 카테고리)
         List<Category> subCategories = categoryRepository.findByParentId(categoryId);
@@ -98,7 +91,7 @@ public class BoardService {
 
         // 작성된 게시글이 없을 경우
         if (boards.isEmpty()){
-            throw new ResourceNotFoundException("작성된 게시글이 없습니다.");
+            throw new ResourceNotFoundException("해당 카테고리에 작성된 게시글이 없습니다.");
         }
         List<BoardResponse> boardResponses = new ArrayList<>();
 

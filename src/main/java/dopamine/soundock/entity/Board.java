@@ -44,9 +44,11 @@ public class Board {
     @Column(name = "updated_at")
     private LocalDateTime updatedDateTime;
 
-    @CreatedDate
     @Column(name = "deleted_at")
     private LocalDateTime deletedDateTime;
+
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted;
 
     @Column(name = "file_url", nullable = true)
     private String fileUrl;
