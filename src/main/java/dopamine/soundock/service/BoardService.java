@@ -1,6 +1,5 @@
 package dopamine.soundock.service;
 
-import dopamine.soundock.dto.ApiResponse;
 import dopamine.soundock.dto.BoardCreateRequest;
 import dopamine.soundock.dto.BoardResponse;
 import dopamine.soundock.entity.Board;
@@ -10,14 +9,12 @@ import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.repository.BoardRepository;
 import dopamine.soundock.repository.CategoryRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 @AllArgsConstructor
 @Service
 public class BoardService {
@@ -51,12 +48,9 @@ public class BoardService {
     public BoardResponse getDetailBoard(
             Integer boardId
     ) {
-        Optional<Board> optionalBoard = boardRepository.findById(boardId);
         // 게시글 유무 확인
-        if (optionalBoard.isEmpty()) {
-            throw new ResourceNotFoundException("게시글을 찾을 수 없습니다.");
-        }
-        Board board = optionalBoard.get();
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다."));
 
         // 게시글 삭제 여부 확인
         if (board.getDeletedDateTime() != null) {
@@ -65,7 +59,6 @@ public class BoardService {
         BoardResponse boardResponse = BoardResponse.builder()
                 .title(board.getTitle())
                 .content(board.getContent())
-                .fileUrl(board.getFileUrl())
                 .views(board.getViews())
                 .likes(board.getLikes())
                 .createdDateTime(board.getCreatedDateTime())
