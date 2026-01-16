@@ -12,19 +12,23 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
-@RequestMapping("api/boards/{boardId}/comments")
+@RequestMapping("/api/comments")
 @RestController
 public class CommentController {
-    private CommentRepository commentRepository;
-    private CommentService commentService;
+    private final CommentRepository commentRepository;
+    private final CommentService commentService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<?>> createComment(
-            @PathVariable Integer boardId,
             @RequestBody CommentCreateRequest createRequest
     ){
-        CommentResponse commentResponse = commentService.createComment(boardId, createRequest);
+        CommentResponse commentResponse = commentService.createComment(createRequest);
         return ResponseEntity.ok(ApiResponse.success("댓글이 등록되었습니다.", commentResponse));
+    }
+
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<ApiResponse<?>> deleteComment(@PathVariable("commentId") Integer commentId){
+        return ResponseEntity.ok(ApiResponse.success("댓글이 삭제되었습니다."));
     }
 
 }

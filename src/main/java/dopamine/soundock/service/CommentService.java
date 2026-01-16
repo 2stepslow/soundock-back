@@ -43,4 +43,21 @@ public class CommentService {
         // comment를 CommentResponse dto에 실어서 보내주기
         return CommentResponse.from(comment);
     }
+    // 댓글 삭제
+    public void deleteComment(Integer commentId){
+        // 댓글 작성자와 현재 삭제 시도 이용자가 일치하는지
+        // 삭제하려는 commentId에 해당하는 댓글이 있는지
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 댓글입니다."));
+        // 이미 삭제된 댓글인지 확인
+        if (comment.isDeleted()){
+            throw new ResourceNotFoundException("이미 삭제된 댓글입니다.");
+        }
+        // 부모 댓글인지 확인 -> commentId랑 parent_comment_id랑 같으면 삭제하도록?
+
+        // soft delete 실시
+        comment.setDeleted(true);
+        commentRepository.save(comment);
+
+    }
 }
