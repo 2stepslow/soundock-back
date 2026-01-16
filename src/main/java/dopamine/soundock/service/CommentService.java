@@ -84,13 +84,7 @@ public class CommentService {
 
         // 댓글을 commentResponse로 전환해서 보내줌
         for (Comment comment : results){
-            String nickName = comment.getUser().getNickname();
-
-            CommentResponse commentResponse = new CommentResponse(
-                    nickName,
-                    comment.getContent(),
-                    comment.getCreatedDateTime()
-            );
+            CommentResponse commentResponse = CommentResponse.from(comment);
             responses.add(commentResponse);
         }
         return responses;
