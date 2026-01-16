@@ -11,12 +11,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@AllArgsConstructor
-@RequestMapping("/api/boards/{categoryId}/{subCategoryType}/{boardId}/comments")
+import java.util.List;
+
+@RequiredArgsConstructor
+@RequestMapping("/api/boards/post/{boardId}/comments")
 @RestController
 public class CommentController {
-    private CommentRepository commentRepository;
-    private CommentService commentService;
+    private final CommentRepository commentRepository;
+    private final CommentService commentService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<?>> createComment(
@@ -27,4 +29,13 @@ public class CommentController {
         return ResponseEntity.ok(ApiResponse.success("댓글이 등록되었습니다.", commentResponse));
     }
 
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<ApiResponse<?>> deleteComment(@PathVariable("commentId") Integer commentId){
+        return ResponseEntity.ok(ApiResponse.success("댓글이 삭제되었습니다."));
+    }
+    @GetMapping
+    public ResponseEntity<ApiResponse<?>> getComment(@PathVariable Integer boardId){
+        List<CommentResponse> responses = commentService.getComment(boardId);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
 }

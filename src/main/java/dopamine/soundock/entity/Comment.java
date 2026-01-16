@@ -33,6 +33,10 @@ public class Comment {
     @ColumnDefault("0")
     private int likeCount;
 
+//    @Column(name = "parent_comment_id", nullable = false)
+//    @ColumnDefault("'0'")
+//    private Integer parentId;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdDateTime;
