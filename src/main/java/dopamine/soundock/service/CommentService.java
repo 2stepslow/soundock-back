@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-@RequiredArgsConstructor
+@AllArgsConstructor
 @Service
 public class CommentService {
     private final CommentRepository commentRepository;
@@ -37,7 +37,7 @@ public class CommentService {
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글입니다."));
         // 삭제된 게시글인지 확인
         if(board.getDeletedDateTime() != null){
-            throw new IllegalArgumentException("삭제된 게시글입니다.");
+            throw new ResourceNotFoundException("삭제된 게시글입니다.");
         }
         // 댓글 작성 시도자가 로그인 상태인지 확인
         // 댓글 작성

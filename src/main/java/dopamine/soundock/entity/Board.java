@@ -3,10 +3,12 @@ package dopamine.soundock.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.sql.Types;
 import java.time.LocalDateTime;
 
 @Getter
@@ -44,9 +46,11 @@ public class Board {
     @Column(name = "updated_at")
     private LocalDateTime updatedDateTime;
 
-    @CreatedDate
     @Column(name = "deleted_at")
     private LocalDateTime deletedDateTime;
+
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted;
 
     @Column(name = "file_url", nullable = true)
     private String fileUrl;

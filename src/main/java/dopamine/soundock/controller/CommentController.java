@@ -22,7 +22,7 @@ public class CommentController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<?>> createComment(
-            @PathVariable Integer boardId,
+            @PathVariable("boardId") Integer boardId,
             @RequestBody CommentCreateRequest createRequest
     ){
         CommentResponse commentResponse = commentService.createComment(boardId, createRequest);
