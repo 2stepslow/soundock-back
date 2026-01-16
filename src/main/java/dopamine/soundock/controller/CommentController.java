@@ -28,6 +28,7 @@ public class CommentController {
 
     @DeleteMapping("/{commentId}")
     public ResponseEntity<ApiResponse<?>> deleteComment(@PathVariable("commentId") Integer commentId){
+        commentService.deleteComment(commentId);
         return ResponseEntity.ok(ApiResponse.success("댓글이 삭제되었습니다."));
     }
 
