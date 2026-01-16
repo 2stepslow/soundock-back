@@ -8,6 +8,7 @@ import dopamine.soundock.entity.User;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.repository.BoardRepository;
 import dopamine.soundock.repository.CommentRepository;
+import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,13 +18,16 @@ import org.springframework.stereotype.Service;
 public class CommentService {
     private final CommentRepository commentRepository;
     private final BoardRepository boardRepository;
+    private final UserRepository userRepository;
 
     // 댓글 작성
     public CommentResponse createComment(
             Integer boardId,
             CommentCreateRequest createRequest
     ){
-        // 로그인한 유저인지 검증
+        // 로그인한 유저인지 검증(유저 이렇게 넣은건 테스트용)
+        User user = userRepository.findById(1)
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
         // boardId에 해당하는 게시글 있는지 확인
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글입니다."));
@@ -35,7 +39,7 @@ public class CommentService {
         // 댓글 작성
         Comment comment = Comment.builder()
                 .board(board)
-                // .user(user)
+                .user(user)
                 .content(createRequest.getContent())
                 .build();
         // 댓글 저장
