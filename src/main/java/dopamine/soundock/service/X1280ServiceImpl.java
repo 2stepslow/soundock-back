@@ -2,6 +2,7 @@ package dopamine.soundock.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dopamine.soundock.config.JwtProperties;
 import dopamine.soundock.config.X1280Properties;
 import dopamine.soundock.dto.PWLTokenResponse;
 import dopamine.soundock.entity.RefreshToken;
@@ -13,6 +14,7 @@ import dopamine.soundock.global.AESUtil;
 import dopamine.soundock.global.TokenProvider;
 import dopamine.soundock.repository.RefreshTokenRepository;
 import dopamine.soundock.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,8 @@ import java.util.UUID;
 
 @Slf4j
 @Service
+// @RequiredArgsConstructor를 쓰고 싶은데  restClient.builder 때문에 못 쓰겠음 ㅠ
+
 // application.properties 파일에서 'x1280.user-mock' 이 false 일 때만 이 클래스를 빈으로 등록
 @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "x1280.use-mock", havingValue = "false", matchIfMissing = true)
 public class X1280ServiceImpl implements X1280Service {
@@ -36,10 +40,9 @@ public class X1280ServiceImpl implements X1280Service {
     private final TokenProvider tokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
+    private final JwtProperties jwtProperties;
 
-    private static final long REFRESH_TOKEN_VALIDITY = 1000 * 60 * 60 * 24;
-
-    public X1280ServiceImpl(X1280Properties properties, TokenProvider tokenProvider, RefreshTokenRepository refreshTokenRepository, UserRepository userRepository) {
+    public X1280ServiceImpl(X1280Properties properties, TokenProvider tokenProvider, RefreshTokenRepository refreshTokenRepository, UserRepository userRepository, JwtProperties  jwtProperties) {
         this.properties = properties;
         // API 기본 설정 (기본 URL 및 공통 헤더 추가)
         this.restClient = RestClient.builder()
@@ -49,6 +52,7 @@ public class X1280ServiceImpl implements X1280Service {
         this.tokenProvider = tokenProvider;
         this.refreshTokenRepository = refreshTokenRepository;
         this.userRepository = userRepository;
+        this.jwtProperties = jwtProperties;
 
     }
 
@@ -168,6 +172,11 @@ public class X1280ServiceImpl implements X1280Service {
         long timeout = 60000; // 최대 대기 시간: 60초
 
         while (System.currentTimeMillis() - startTime < timeout) {
+            // 현재 스레드가 인터럽트 되었는지 체크하여 루프 진입 전 차단
+            if (Thread.currentThread().isInterrupted()) {
+                break;
+            }
+
             try {
                 String response = checkResult(email, sessionId); // 외부 API 호출
                 log.info("폴링 응답 확인: {}", response);
@@ -191,7 +200,7 @@ public class X1280ServiceImpl implements X1280Service {
                                 .builder()
                                 .token(refreshToken)
                                 .user(user)
-                                .expirationAt(LocalDateTime.now().plusSeconds(REFRESH_TOKEN_VALIDITY / 1000))
+                                .expirationAt(LocalDateTime.now().plusSeconds(jwtProperties.getRefreshTokenValidity() / 1000))
                                 .build();
 
                         refreshTokenRepository.save(refresh);
@@ -203,22 +212,26 @@ public class X1280ServiceImpl implements X1280Service {
                     } else if ("N".equals(authStatus)) { // 거절됨
                         throw new AuthRejectedException("사용자에 의해 인증이 거절되었습니다.");
                     }
-                    log.info("사용자 승인 대기 중... (authStatus: W)");
                 }
                 // "W"(대기중)인 경우 루프 지속
-
                 // 2초 대기 후 재시도 (외부 API 부하 방지)
                 Thread.sleep(2000);
-
-            } catch (ResourceNotFoundException e) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("인증 폴링 중 인터럽트 발생. 작업을 중단합니다. email: {}", email);
+                break;
+            } catch (ResourceNotFoundException | AuthRejectedException e) {
                 log.error("최종 확인 중 오류: {}", e.getMessage());
                 throw e;
-            } catch (AuthRejectedException e) {
-                throw e;
             } catch (Exception e) {
-                log.error("인증 확인 중 오류 발생: {}", e.getMessage());
+                log.error("인증 확인 중 오류 발생(재시도 예정): {}", e.getMessage());
                 // 예외 발생 시 잠시 대기 후 계속 시도
-                try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
             }
         }
 

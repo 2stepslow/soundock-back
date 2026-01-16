@@ -61,8 +61,6 @@ public class TokenProvider {
         }
     }
 
-    // Jwt에서 username을 다시 추출
-    // Jwt에서 공식적으로 주는
     public String getUsernameFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)

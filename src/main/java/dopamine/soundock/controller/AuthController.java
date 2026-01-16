@@ -93,9 +93,9 @@ public class AuthController {
     // 유저 로그인
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(
-            @Valid @RequestBody LoginRequest LoginRequest
+            @Valid @RequestBody LoginRequest loginRequest
     ) {
-        LoginResponse response = authService.login(LoginRequest);
+        LoginResponse response = authService.login(loginRequest);
         return ResponseEntity.ok(ApiResponse.success("로그인에 성공 했습니다.", response));
     }
 }

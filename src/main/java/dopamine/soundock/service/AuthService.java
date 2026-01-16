@@ -1,5 +1,6 @@
 package dopamine.soundock.service;
 
+import dopamine.soundock.config.JwtProperties;
 import dopamine.soundock.dto.*;
 import dopamine.soundock.entity.RefreshToken;
 import dopamine.soundock.entity.User;
@@ -38,8 +39,8 @@ public class AuthService {
     private final VerificationTokenRepository  verificationTokenRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenProvider tokenProvider;
+    private final JwtProperties jwtProperties;
 
-    private static final long REFRESH_TOKEN_VALIDITY = 1000 * 60 * 60 * 24;
 
 
     // 이메일 중복 확인
@@ -193,7 +194,7 @@ public class AuthService {
                 .builder()
                 .token(refreshToken)
                 .user(user)
-                .expirationAt(LocalDateTime.now().plusSeconds(REFRESH_TOKEN_VALIDITY/1000))
+                .expirationAt(LocalDateTime.now().plusSeconds(jwtProperties.getRefreshTokenValidity()/1000))
                 .build();
 
         refreshTokenRepository.save(refresh);
