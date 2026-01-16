@@ -4,14 +4,11 @@ import dopamine.soundock.dto.ApiResponse;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.ResourceClosedException;
-import org.springframework.boot.context.config.ConfigDataResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.client.ResourceAccessException;
 
 @Slf4j
 @RestControllerAdvice

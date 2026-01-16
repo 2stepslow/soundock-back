@@ -3,13 +3,23 @@ package dopamine.soundock.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dopamine.soundock.config.X1280Properties;
-import dopamine.soundock.dto.PWLJoinRequest;
+import dopamine.soundock.dto.PWLRequest;
+import dopamine.soundock.dto.PWLTokenResponse;
+import dopamine.soundock.entity.RefreshToken;
+import dopamine.soundock.entity.User;
+import dopamine.soundock.exceptions.AuthPendingException;
+import dopamine.soundock.exceptions.AuthRejectedException;
+import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.global.AESUtil;
+import dopamine.soundock.global.TokenProvider;
+import dopamine.soundock.repository.RefreshTokenRepository;
+import dopamine.soundock.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Slf4j
@@ -21,14 +31,23 @@ public class X1280ServiceImpl implements X1280Service {
     private final RestClient restClient; // 외부 API 호출을 위한 스프링 도구
     private final X1280Properties properties;
     private final ObjectMapper objectMapper = new ObjectMapper(); // JSON 파싱용
+    private final TokenProvider tokenProvider;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final UserRepository userRepository;
 
-    public X1280ServiceImpl(X1280Properties properties) {
+    private static final long REFRESH_TOKEN_VALIDITY = 1000 * 60 * 60 * 24;
+
+    public X1280ServiceImpl(X1280Properties properties, TokenProvider tokenProvider, RefreshTokenRepository refreshTokenRepository, UserRepository userRepository) {
         this.properties = properties;
         // API 기본 설정 (기본 URL 및 공통 헤더 추가)
         this.restClient = RestClient.builder()
                 .baseUrl(properties.getBaseUrl())
                 .defaultHeader("X-Server-Key", properties.getServerKey())
                 .build();
+        this.tokenProvider = tokenProvider;
+        this.refreshTokenRepository = refreshTokenRepository;
+        this.userRepository = userRepository;
+
     }
 
     // 가입 여부 확인
@@ -47,7 +66,7 @@ public class X1280ServiceImpl implements X1280Service {
     public String joinAp(String email) {
         return restClient.post()
                 .uri("/ap/rest/auth/joinAp")
-                .body(new PWLJoinRequest(email))
+                .body(new PWLRequest(email))
                 .retrieve()
                 .body(String.class);
     }
@@ -135,5 +154,60 @@ public class X1280ServiceImpl implements X1280Service {
                 .body("userId=" + email)
                 .retrieve()
                 .body(String.class);
+    }
+
+    // 인증 결과가 성공했을 때 (auth = Y) 최종 로그인
+    @Override
+    public PWLTokenResponse verifyAndGenerateTokens(String email) {
+        try {
+            String response = checkResult(email);
+            JsonNode root = objectMapper.readTree(response);
+
+            // 1. result가 false인 경우 (시스템 대기 상태 포함)
+            if (!root.path("result").asBoolean()) {
+                String code = root.path("code").asText();
+                // 711.6 코드는 모바일 응답 대기 중을 의미함
+                if ("711.6".equals(code)) {
+                    throw new AuthPendingException("모바일 인증 대기 중입니다.");
+                }
+                // 그 외의 false는 실제 에러 상황
+                throw new RuntimeException(root.path("msg").asText());
+            }
+
+            // 2. result가 true인 경우 내부 데이터(auth) 상세 체크
+            JsonNode dataNode = root.path("data");
+            String authStatus = dataNode.path("auth").asText();
+
+            if ("W".equals(authStatus)) {
+                // result는 true이지만 사용자가 아직 버튼을 안 누른 상태
+                throw new AuthPendingException("모바일 앱에서 승인 버튼을 눌러주세요.");
+            } else if ("N".equals(authStatus)) {
+                // 사용자가 명확하게 거절을 누른 상태
+                throw new AuthRejectedException("사용자에 의해 인증이 거절되었습니다.");
+            } else if (!"Y".equals(authStatus)) {
+                // Y가 아닌 알 수 없는 상태
+                throw new RuntimeException("비정상적인 인증 상태입니다.");
+            }
+
+            // 3. 최종 승인(Y)인 경우에만 토큰 발행 진행
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+
+            // AccessToken 및 RefreshToken 생성 및 저장 로직 (생략)
+            String accessToken = tokenProvider.generateAccessToken(user.getEmail());
+            String refreshToken = tokenProvider.generateRefreshToken(user.getEmail());
+
+            return PWLTokenResponse.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .build();
+
+        } catch (AuthPendingException | AuthRejectedException e) {
+            // 정의한 커스텀 예외들을 상위(컨트롤러)로 그대로 던짐
+            throw e;
+        } catch (Exception e) {
+            log.error("최종 토큰 발급 중 예외 발생: {}", e.getMessage());
+            throw new RuntimeException("인증 처리 중 오류가 발생했습니다.");
+        }
     }
 }

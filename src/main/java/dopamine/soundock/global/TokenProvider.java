@@ -25,12 +25,12 @@ public class TokenProvider {
     }
 
     // 액세스 토큰 생성
-    public String generateAccessToken(String username) {
+    public String generateAccessToken(String email) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + ACCESS_TOKEN_VALIDITY);
 
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(expiry)
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -39,12 +39,12 @@ public class TokenProvider {
 
 
     // 리프레시 토큰 생성
-    public String generateRefreshToken(String username) {
+    public String generateRefreshToken(String email) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + REFRESH_TOKEN_VALIDITY);
 
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(expiry)
                 .signWith(key, SignatureAlgorithm.HS256)

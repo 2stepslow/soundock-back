@@ -1,52 +1,86 @@
 package dopamine.soundock.controller;
 
-import dopamine.soundock.dto.PWLRegisterRequest;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dopamine.soundock.dto.ApiResponse;
+import dopamine.soundock.dto.PWLRequest;
+import dopamine.soundock.dto.PWLTokenResponse;
 import dopamine.soundock.service.X1280Service;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequiredArgsConstructor
+@RequestMapping("/api/auth")
 public class X1280Controller {
     private final X1280Service service;
+    private final ObjectMapper objectMapper; // JSON 문자열 파싱용
 
-    public X1280Controller(X1280Service service) {
-        this.service = service;
-    }
 
     // React calls: GET /api/v1/auth/status?user=...
     @GetMapping("/status")
-    public String checkUserStatus(@RequestParam("userId") String email) {
-        return service.isAp(email);
+    public ResponseEntity<ApiResponse<JsonNode>> checkUserStatus(@RequestParam("userId") String email) throws JsonProcessingException {
+        String resultString = service.isAp(email);
+        return processResponse(resultString, "패스워드리스 가입 여부 확인이 성공했습니다.");
     }
 
     // React calls: POST /api/v1/auth/register
     @PostMapping("/register")
-    public String registerUser(@RequestBody PWLRegisterRequest pwlRegisterRequest) {
-        return service.joinAp(pwlRegisterRequest.getEmail());
+    public ResponseEntity<ApiResponse<JsonNode>> registerUser(@RequestBody PWLRequest pwlRequest) throws JsonProcessingException {
+        String resultString = service.joinAp(pwlRequest.getEmail());
+        return processResponse(resultString, "QR 생성이 완료되었습니다.");
     }
 
     // React calls: POST /api/v1/auth/login-trigger
     @PostMapping("/login-trigger")
-    public String triggerLogin(@RequestParam("userId") String email, @RequestParam String ip) {
+    public ResponseEntity<ApiResponse<JsonNode>> triggerLogin(@RequestParam("userId") String email, HttpServletRequest request) throws JsonProcessingException {
         // This handles the internal getToken -> AES -> getSp sequence privately
-        return service.getSp(email, ip);
+        String clientIp = request.getRemoteAddr();
+        String resultString = service.getSp(email, clientIp);
+        return processResponse(resultString, "인증 푸시 전송이 성공했습니다.");
     }
 
     // New: Check auth result
     @GetMapping("/result")
-    public String checkResult(@RequestParam("userId") String email) {
-        return service.checkResult(email);
+    public ResponseEntity<ApiResponse<JsonNode>> checkResult(@RequestParam("userId") String email) throws JsonProcessingException {
+        String resultString = service.checkResult(email);
+        return processResponse(resultString, "인증 결과 조회 성공");
     }
 
     // New: Cancel auth
     @PostMapping("/cancel")
-    public String cancel(@RequestParam("userId") String email, @RequestParam String sessionId) {
-        return service.cancel(email, sessionId);
+    public ResponseEntity<ApiResponse<JsonNode>> cancel(@RequestParam("userId") String email, @RequestParam String sessionId) throws JsonProcessingException {
+        String resultString = service.cancel(email, sessionId);
+        return processResponse(resultString, "인증 요청이 성공적으로 취소되었습니다.");
     }
 
     // New: Withdrawal
     @PostMapping("/withdrawal")
-    public String withdrawal(@RequestParam("userId") String email) {
-        return service.withdrawalAp(email);
+    public ResponseEntity<ApiResponse<JsonNode>> withdrawal(@RequestParam("userId") String email) throws JsonProcessingException {
+        String resultString = service.withdrawalAp(email);
+        return processResponse(resultString, "서비스 탈퇴가 정상적으로 처리되었습니다.");
+    }
+
+    // 패스워드리스 로그인
+    @PostMapping("/login-pwl")
+    public ResponseEntity<ApiResponse<PWLTokenResponse>> confirmLogin(@RequestParam("userId") String email) {
+        PWLTokenResponse response = service.verifyAndGenerateTokens(email);
+        return ResponseEntity.ok(ApiResponse.success("로그인이 성공했습니다.", response));
+    }
+
+    private ResponseEntity<ApiResponse<JsonNode>> processResponse(String resultString, String successMsg) throws JsonProcessingException {
+        JsonNode root = objectMapper.readTree(resultString);
+
+        if (root.path("result").asBoolean()) {
+            JsonNode dataNode = root.path("data");
+            return ResponseEntity.ok(ApiResponse.success(successMsg, dataNode));
+        } else {
+            String errorMsg = root.path("msg").asText();
+            return ResponseEntity.ok(ApiResponse.fail(errorMsg));
+        }
     }
 }

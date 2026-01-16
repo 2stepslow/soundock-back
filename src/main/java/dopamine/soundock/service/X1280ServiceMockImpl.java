@@ -1,5 +1,6 @@
 package dopamine.soundock.service;
 
+import dopamine.soundock.dto.PWLTokenResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
@@ -96,5 +97,13 @@ public class X1280ServiceMockImpl implements X1280Service {
                 "    \"msg\": \"OK.\",\n" +
                 "    \"code\": \"000.0\"\n" +
                 "}";
+    }
+
+    @Override
+    public PWLTokenResponse verifyAndGenerateTokens(String email) {
+        return PWLTokenResponse.builder()
+                .accessToken("mock-access-token-for-" + email)
+                .refreshToken("mock-refresh-token-for-" + email)
+                .build();
     }
 }
