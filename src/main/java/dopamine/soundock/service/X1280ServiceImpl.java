@@ -3,7 +3,6 @@ package dopamine.soundock.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dopamine.soundock.config.X1280Properties;
-import dopamine.soundock.dto.PWLRequest;
 import dopamine.soundock.dto.PWLTokenResponse;
 import dopamine.soundock.entity.RefreshToken;
 import dopamine.soundock.entity.User;
@@ -20,7 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
+
 
 @Slf4j
 @Service
@@ -64,9 +66,13 @@ public class X1280ServiceImpl implements X1280Service {
 
     @Override
     public String joinAp(String email) {
+        // 외부 API가 요구하는 정확한 키인 'userId '를 맵에 담아 보내기(바꾸지 않으면 email: ~ 형식으로 보내지기 때문에
+        Map<String, String> rebody = new HashMap<>();
+        rebody.put("userId", email); //
+
         return restClient.post()
                 .uri("/ap/rest/auth/joinAp")
-                .body(new PWLRequest(email))
+                .body(rebody)
                 .retrieve()
                 .body(String.class);
     }
@@ -83,7 +89,7 @@ public class X1280ServiceImpl implements X1280Service {
 
     // 토큰을 가져와 복호화한 후 SP를 요청
     @Override
-    public String getSp(String email, String clientIp) {
+    public String getSp(String email, String clientIp, String sessionId) {
         try {
             log.info("getSp 요청 시작: {}", email);
             // 1. 1회용 토큰 요청(getToken)
@@ -103,8 +109,6 @@ public class X1280ServiceImpl implements X1280Service {
             // 3. AESUtil 클래스를 사용하여 암호화된 토큰을 현재 가진 'serverKey' 로 풀어냄(복호화)
             String decryptedToken = AESUtil.decrypt(encryptedToken, properties.getServerKey());
 
-            // 4. 중복되지 않는 고유한 ID(UUID)를 생성하여 이번 인증 시도의 '세션 ID'로 사용
-            String sessionId = UUID.randomUUID().toString();
             // 4-1. 8자리 랜덤 문자열을 추가적으로 사용
             String randomValue = UUID.randomUUID().toString().substring(0, 8);
 
@@ -127,11 +131,12 @@ public class X1280ServiceImpl implements X1280Service {
     }
 
     @Override
-    public String checkResult(String email) {
+    public String checkResult(String email, String sessionId) {
         return restClient.post()
                 .uri("/ap/rest/auth/result")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body("userId=" + email)
+                .body("userId=" + email +
+                        "&sessionId=" + sessionId)
                 .retrieve()
                 .body(String.class);
     }
@@ -158,56 +163,66 @@ public class X1280ServiceImpl implements X1280Service {
 
     // 인증 결과가 성공했을 때 (auth = Y) 최종 로그인
     @Override
-    public PWLTokenResponse verifyAndGenerateTokens(String email) {
-        try {
-            String response = checkResult(email);
-            JsonNode root = objectMapper.readTree(response);
+    public PWLTokenResponse verifyAndGenerateTokens(String email, String sessionId) {
+        long startTime = System.currentTimeMillis();
+        long timeout = 60000; // 최대 대기 시간: 60초
 
-            // 1. result가 false인 경우 (시스템 대기 상태 포함)
-            if (!root.path("result").asBoolean()) {
-                String code = root.path("code").asText();
-                // 711.6 코드는 모바일 응답 대기 중을 의미함
-                if ("711.6".equals(code)) {
-                    throw new AuthPendingException("모바일 인증 대기 중입니다.");
+        while (System.currentTimeMillis() - startTime < timeout) {
+            try {
+                String response = checkResult(email, sessionId); // 외부 API 호출
+                log.info("폴링 응답 확인: {}", response);
+                JsonNode root = objectMapper.readTree(response);
+
+                // 1. 결과가 true인 경우 내부 데이터 상세 체크
+                if (root.path("result").asBoolean()) {
+                    JsonNode dataNode = root.path("data");
+                    String authStatus = dataNode.path("auth").asText();
+
+                    if ("Y".equals(authStatus)) { // 최종 승인 완료
+                        User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+
+                        String accessToken = tokenProvider.generateAccessToken(user.getEmail());
+                        String refreshToken = tokenProvider.generateRefreshToken(user.getEmail());
+
+
+                        // Refresh Token을 DB에 추가
+                        RefreshToken refresh = RefreshToken
+                                .builder()
+                                .token(refreshToken)
+                                .user(user)
+                                .expirationAt(LocalDateTime.now().plusSeconds(REFRESH_TOKEN_VALIDITY / 1000))
+                                .build();
+
+                        refreshTokenRepository.save(refresh);
+
+                        return PWLTokenResponse.builder()
+                                .accessToken(accessToken)
+                                .refreshToken(refreshToken)
+                                .build();
+                    } else if ("N".equals(authStatus)) { // 거절됨
+                        throw new AuthRejectedException("사용자에 의해 인증이 거절되었습니다.");
+                    }
+                    log.info("사용자 승인 대기 중... (authStatus: W)");
                 }
-                // 그 외의 false는 실제 에러 상황
-                throw new RuntimeException(root.path("msg").asText());
+                // "W"(대기중)인 경우 루프 지속
+
+                // 2초 대기 후 재시도 (외부 API 부하 방지)
+                Thread.sleep(2000);
+
+            } catch (ResourceNotFoundException e) {
+                log.error("최종 확인 중 오류: {}", e.getMessage());
+                throw e;
+            } catch (AuthRejectedException e) {
+                throw e;
+            } catch (Exception e) {
+                log.error("인증 확인 중 오류 발생: {}", e.getMessage());
+                // 예외 발생 시 잠시 대기 후 계속 시도
+                try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
             }
-
-            // 2. result가 true인 경우 내부 데이터(auth) 상세 체크
-            JsonNode dataNode = root.path("data");
-            String authStatus = dataNode.path("auth").asText();
-
-            if ("W".equals(authStatus)) {
-                // result는 true이지만 사용자가 아직 버튼을 안 누른 상태
-                throw new AuthPendingException("모바일 앱에서 승인 버튼을 눌러주세요.");
-            } else if ("N".equals(authStatus)) {
-                // 사용자가 명확하게 거절을 누른 상태
-                throw new AuthRejectedException("사용자에 의해 인증이 거절되었습니다.");
-            } else if (!"Y".equals(authStatus)) {
-                // Y가 아닌 알 수 없는 상태
-                throw new RuntimeException("비정상적인 인증 상태입니다.");
-            }
-
-            // 3. 최종 승인(Y)인 경우에만 토큰 발행 진행
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
-
-            // AccessToken 및 RefreshToken 생성 및 저장 로직 (생략)
-            String accessToken = tokenProvider.generateAccessToken(user.getEmail());
-            String refreshToken = tokenProvider.generateRefreshToken(user.getEmail());
-
-            return PWLTokenResponse.builder()
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
-                    .build();
-
-        } catch (AuthPendingException | AuthRejectedException e) {
-            // 정의한 커스텀 예외들을 상위(컨트롤러)로 그대로 던짐
-            throw e;
-        } catch (Exception e) {
-            log.error("최종 토큰 발급 중 예외 발생: {}", e.getMessage());
-            throw new RuntimeException("인증 처리 중 오류가 발생했습니다.");
         }
+
+        // 60초 초과 시 타임아웃 예외 발생
+        throw new AuthPendingException("인증 시간이 초과되었습니다. 다시 시도해주세요.");
     }
 }

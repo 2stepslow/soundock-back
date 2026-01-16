@@ -11,13 +11,13 @@ public interface X1280Service {
 
     String getToken(String userId);
 
-    String getSp(String userId, String clientIp);
+    String getSp(String userId, String clientIp, String sessionId);
 
-    String checkResult(String userId);
+    String checkResult(String userId, String sessionId);
 
     String cancel(String userId, String sessionId);
 
     String withdrawalAp(String userId);
 
-    PWLTokenResponse verifyAndGenerateTokens(String email);
+    PWLTokenResponse verifyAndGenerateTokens(String email, String sessionId);
 }

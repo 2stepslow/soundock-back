@@ -3,6 +3,7 @@ package dopamine.soundock.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import dopamine.soundock.dto.ApiResponse;
 import dopamine.soundock.dto.PWLRequest;
 import dopamine.soundock.dto.PWLTokenResponse;
@@ -11,6 +12,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 
 @RestController
@@ -40,15 +43,9 @@ public class X1280Controller {
     public ResponseEntity<ApiResponse<JsonNode>> triggerLogin(@RequestParam("userId") String email, HttpServletRequest request) throws JsonProcessingException {
         // This handles the internal getToken -> AES -> getSp sequence privately
         String clientIp = request.getRemoteAddr();
-        String resultString = service.getSp(email, clientIp);
-        return processResponse(resultString, "인증 푸시 전송이 성공했습니다.");
-    }
-
-    // New: Check auth result
-    @GetMapping("/result")
-    public ResponseEntity<ApiResponse<JsonNode>> checkResult(@RequestParam("userId") String email) throws JsonProcessingException {
-        String resultString = service.checkResult(email);
-        return processResponse(resultString, "인증 결과 조회 성공");
+        String sessionId = UUID.randomUUID().toString();
+        String resultString = service.getSp(email, clientIp, sessionId);
+        return processGetApResponse(resultString, "인증 푸시 전송이 성공했습니다.", sessionId);
     }
 
     // New: Cancel auth
@@ -67,16 +64,35 @@ public class X1280Controller {
 
     // 패스워드리스 로그인
     @PostMapping("/login-pwl")
-    public ResponseEntity<ApiResponse<PWLTokenResponse>> confirmLogin(@RequestParam("userId") String email) {
-        PWLTokenResponse response = service.verifyAndGenerateTokens(email);
+    public ResponseEntity<ApiResponse<PWLTokenResponse>> confirmLogin(@RequestBody PWLRequest pwlRequest) {
+        PWLTokenResponse response = service.verifyAndGenerateTokens(pwlRequest.getEmail(), pwlRequest.getSessionId());
         return ResponseEntity.ok(ApiResponse.success("로그인이 성공했습니다.", response));
     }
 
+    // 공용 로직
     private ResponseEntity<ApiResponse<JsonNode>> processResponse(String resultString, String successMsg) throws JsonProcessingException {
         JsonNode root = objectMapper.readTree(resultString);
 
         if (root.path("result").asBoolean()) {
             JsonNode dataNode = root.path("data");
+            return ResponseEntity.ok(ApiResponse.success(successMsg, dataNode));
+        } else {
+            String errorMsg = root.path("msg").asText();
+            return ResponseEntity.ok(ApiResponse.fail(errorMsg));
+        }
+    }
+
+    private ResponseEntity<ApiResponse<JsonNode>> processGetApResponse(String resultString, String successMsg, String sessionId) throws JsonProcessingException {
+        JsonNode root = objectMapper.readTree(resultString);
+
+        if (root.path("result").asBoolean()) {
+            JsonNode dataNode = root.path("data");
+
+            // sessionId가 있을 때 추가로 넣음
+            if (dataNode.isObject() && sessionId != null) {
+                ((ObjectNode) dataNode).put("sessionId", sessionId);
+            }
+
             return ResponseEntity.ok(ApiResponse.success(successMsg, dataNode));
         } else {
             String errorMsg = root.path("msg").asText();

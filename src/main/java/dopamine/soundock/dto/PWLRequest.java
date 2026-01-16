@@ -9,4 +9,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PWLRequest {
     private String email;
+    private String sessionId;
 }

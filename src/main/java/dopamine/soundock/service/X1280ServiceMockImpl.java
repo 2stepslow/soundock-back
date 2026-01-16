@@ -52,7 +52,7 @@ public class X1280ServiceMockImpl implements X1280Service {
     }
 
     @Override
-    public String getSp(String userId, String clientIp) {
+    public String getSp(String userId, String clientIp, String sessionId) {
         return "{\n" +
                 "    \"result\": true,\n" +
                 "    \"msg\": \"OK.\",\n" +
@@ -68,7 +68,7 @@ public class X1280ServiceMockImpl implements X1280Service {
     }
 
     @Override
-    public String checkResult(String userId) {
+    public String checkResult(String userId, String sessionId) {
         return "{\n" +
                 "    \"result\": true,\n" +
                 "    \"msg\": \"OK.\",\n" +
@@ -100,7 +100,7 @@ public class X1280ServiceMockImpl implements X1280Service {
     }
 
     @Override
-    public PWLTokenResponse verifyAndGenerateTokens(String email) {
+    public PWLTokenResponse verifyAndGenerateTokens(String email, String sessionId) {
         return PWLTokenResponse.builder()
                 .accessToken("mock-access-token-for-" + email)
                 .refreshToken("mock-refresh-token-for-" + email)
