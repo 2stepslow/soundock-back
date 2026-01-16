@@ -22,7 +22,7 @@ public class Board {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private User author;
+    private User user;
 
     @Column(name = "title", nullable = false)
     private String title;
@@ -44,18 +44,20 @@ public class Board {
     @Column(name = "updated_at")
     private LocalDateTime updatedDateTime;
 
-    @CreatedDate
     @Column(name = "deleted_at")
     private LocalDateTime deletedDateTime;
+
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted;
 
     @Column(name = "file_url", nullable = true)
     private String fileUrl;
 
-    @Column(name = "is_Featured", nullable = false)
+    @Column(name = "is_featured", nullable = false)
     private boolean isFeatured;
 
-    @Column(name = "expired_featured_at", nullable = true)
-    private LocalDateTime expiredFeaturedDateTime;
+    @Column(name = "featured_expired_at", nullable = true)
+    private LocalDateTime featuredExpiredDateTime;
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)

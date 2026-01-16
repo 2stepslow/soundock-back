@@ -1,6 +1,5 @@
 package dopamine.soundock.service;
 
-import dopamine.soundock.dto.ApiResponse;
 import dopamine.soundock.dto.BoardCreateRequest;
 import dopamine.soundock.dto.BoardResponse;
 import dopamine.soundock.entity.Board;
@@ -10,14 +9,12 @@ import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.repository.BoardRepository;
 import dopamine.soundock.repository.CategoryRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 @AllArgsConstructor
 @Service
 public class BoardService {
@@ -51,12 +48,9 @@ public class BoardService {
     public BoardResponse getDetailBoard(
             Integer boardId
     ) {
-        Optional<Board> optionalBoard = boardRepository.findById(boardId);
         // 게시글 유무 확인
-        if (optionalBoard.isEmpty()) {
-            throw new ResourceNotFoundException("게시글을 찾을 수 없습니다.");
-        }
-        Board board = optionalBoard.get();
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다."));
 
         // 게시글 삭제 여부 확인
         if (board.getDeletedDateTime() != null) {
@@ -65,7 +59,6 @@ public class BoardService {
         BoardResponse boardResponse = BoardResponse.builder()
                 .title(board.getTitle())
                 .content(board.getContent())
-                .fileUrl(board.getFileUrl())
                 .views(board.getViews())
                 .likes(board.getLikes())
                 .createdDateTime(board.getCreatedDateTime())
@@ -76,12 +69,14 @@ public class BoardService {
 
     // 한 게시판의 모든 하위 카테고리를 포함한 게시판 목록 조회
     public List<BoardResponse> getAllBoardsByCategory(Integer categoryId) {
+        // categoryId가 상위 카테고리인지 하위 카테고리인지 판단
+        // 상위 카테고리는 DB 상에서 Null 값으로 존재
+        // 여기 값이 있으면 상위 카테고리임 없으면 하위 카테고리임
+        Category parentCategory = categoryRepository.findByIdAndParentIdIsNull(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("하위 카테고리입니다."));
+
         // 부모 id가 존재하는 카테고리 찾기(서브 카테고리)
         List<Category> subCategories = categoryRepository.findByParentId(categoryId);
-
-        if (categoryId == null || categoryId <0){
-            throw new IllegalArgumentException("유효하지 않은 카테고리 ID입니다.");
-        }
 
         // 하위 카테고리를 포함한 카테고리 배열 생성
         List<Integer> categoryIds = new ArrayList<>();
@@ -94,6 +89,10 @@ public class BoardService {
         // 삭제되지 않은 게시글만을 조회
         List<Board> boards = boardRepository.findByDeletedDateTimeIsNullAndCategoryIdIn(categoryIds);
 
+        // 작성된 게시글이 없을 경우
+        if (boards.isEmpty()){
+            throw new ResourceNotFoundException("해당 카테고리에 작성된 게시글이 없습니다.");
+        }
         List<BoardResponse> boardResponses = new ArrayList<>();
 
         for (Board board : boards) {
@@ -125,6 +124,7 @@ public class BoardService {
         if (parentIdAndCategoryType.isEmpty()){
             throw new ResourceNotFoundException("올바른 경로가 아닙니다.");
         }
+
         // 부모 카테고리 밑의 하위 카테고리가 가지는 게시글 조회
         List<Board> boards = boardRepository.findByDeletedDateTimeIsNullAndCategoryParentIdAndCategoryCategoryType(parentId, categoryType);
         if (boards.isEmpty()){
@@ -153,7 +153,7 @@ public class BoardService {
 
         // 삭제된 게시글인지 조회
         if (board.getDeletedDateTime()!=null){
-            throw new IllegalArgumentException("이미 삭제된 게시글입니다.");
+            throw new ResourceNotFoundException("이미 삭제된 게시글입니다.");
         }
         boardRepository.deleteById(boardId);
     }
