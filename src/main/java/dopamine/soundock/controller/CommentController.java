@@ -11,8 +11,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RequiredArgsConstructor
-@RequestMapping("/api/boards/{boardId}/comments")
+@RequestMapping("/api/boards/post/{boardId}/comments")
 @RestController
 public class CommentController {
     private final CommentRepository commentRepository;
@@ -31,5 +33,9 @@ public class CommentController {
     public ResponseEntity<ApiResponse<?>> deleteComment(@PathVariable("commentId") Integer commentId){
         return ResponseEntity.ok(ApiResponse.success("댓글이 삭제되었습니다."));
     }
-
+    @GetMapping
+    public ResponseEntity<ApiResponse<?>> getComment(@PathVariable Integer boardId){
+        List<CommentResponse> responses = commentService.getComment(boardId);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
 }

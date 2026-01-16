@@ -10,7 +10,11 @@ import dopamine.soundock.repository.BoardRepository;
 import dopamine.soundock.repository.CommentRepository;
 import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.Value;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 @RequiredArgsConstructor
@@ -63,5 +67,32 @@ public class CommentService {
         comment.setDeleted(true);
         commentRepository.save(comment);
 
+    }
+    // 댓글 조회???
+    public List<CommentResponse> getComment(Integer boardId){
+        // 조회하려는 boardId에 해당하는 게시글이 존재하는지 확인
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글입니다."));
+
+        // commentRepo에서 해당 boardId에 작성된 댓글이 있는지 확인
+        List<Comment> results = commentRepository.findByBoardBoardId(boardId);
+        if (results.isEmpty()){
+            throw new ResourceNotFoundException("작성된 댓글이 없습니다.");
+        }
+
+        List<CommentResponse> responses = new ArrayList<>();
+
+        // 댓글을 commentResponse로 전환해서 보내줌
+        for (Comment comment : results){
+            String nickName = comment.getUser().getNickname();
+
+            CommentResponse commentResponse = new CommentResponse(
+                    nickName,
+                    comment.getContent(),
+                    comment.getCreatedDateTime()
+            );
+            responses.add(commentResponse);
+        }
+        return responses;
     }
 }
