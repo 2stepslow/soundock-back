@@ -98,4 +98,11 @@ public class AuthController {
         LoginResponse response = authService.login(loginRequest);
         return ResponseEntity.ok(ApiResponse.success("로그인에 성공 했습니다.", response));
     }
+
+    // 유저 로그아웃
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody LogoutRequest logoutRequest) {
+        authService.logout(logoutRequest);
+        return ResponseEntity.ok(ApiResponse.success("로그아웃을 완료 했습니다."));
+    }
 }

@@ -2,6 +2,7 @@ package dopamine.soundock.service;
 
 import dopamine.soundock.config.JwtProperties;
 import dopamine.soundock.dto.*;
+import dopamine.soundock.entity.AccessTokenBlacklist;
 import dopamine.soundock.entity.RefreshToken;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.entity.VerificationToken;
@@ -9,6 +10,7 @@ import dopamine.soundock.enums.UserRole;
 import dopamine.soundock.enums.UserStatus;
 import dopamine.soundock.exceptions.*;
 import dopamine.soundock.global.TokenProvider;
+import dopamine.soundock.repository.AccessTokenBlacklistRepository;
 import dopamine.soundock.repository.RefreshTokenRepository;
 import dopamine.soundock.repository.UserRepository;
 import dopamine.soundock.repository.VerificationTokenRepository;
@@ -19,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +29,8 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.UUID;
 
 @Service
@@ -40,6 +45,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenProvider tokenProvider;
     private final JwtProperties jwtProperties;
+    private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
 
 
 
@@ -168,6 +174,7 @@ public class AuthService {
         verificationTokenRepository.save(verificationToken);
     }
 
+    @Transactional
     public LoginResponse login(
             LoginRequest loginRequest
     ) {
@@ -200,5 +207,29 @@ public class AuthService {
         refreshTokenRepository.save(refresh);
 
         return new LoginResponse(accessToken, refreshToken);
+    }
+
+    @Transactional
+    public void logout(LogoutRequest logoutRequest) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND));
+
+        int userId = user.getId();
+
+        refreshTokenRepository.deleteByUserId(userId);
+
+        String accessToken = logoutRequest.getAccessToken();
+        AccessTokenBlacklist accessTokenBlacklist = new AccessTokenBlacklist();
+        accessTokenBlacklist.setAccessToken(accessToken);
+
+        Date expDate = tokenProvider.getExpiration(accessToken);
+
+        LocalDateTime convertedDate = expDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+
+        accessTokenBlacklist.setExpirationAt(convertedDate);
+
+        accessTokenBlacklistRepository.save(accessTokenBlacklist);
+
     }
 }
