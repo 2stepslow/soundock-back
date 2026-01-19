@@ -18,8 +18,6 @@ import java.util.List;
 @RestController
 public class BoardController {
     private BoardService boardService;
-    private BoardRepository boardRepository;
-
 
     // 게시글 작성
     @PostMapping
@@ -29,48 +27,46 @@ public class BoardController {
         return ResponseEntity.created(location).body(ApiResponse.success("게시글 등록이 완료되었습니다."));
     }
     // 게시글 상세 조회
-    // 이렇게 api 받으면 카테고리별 목록 조회 충돌 날 수 있슴
-    @GetMapping("/post/{boardId}")
-    public ResponseEntity<ApiResponse<BoardResponse>> getDetailBoard(@PathVariable Integer boardId){
-        BoardResponse boardResponse = boardService.getDetailBoard(boardId);
+    @GetMapping("/{categoryId}/{subCategory}/{boardId}")
+    public ResponseEntity<ApiResponse<BoardResponse>> getDetailBoard(
+            @PathVariable(required = true) Integer categoryId,
+            @PathVariable(required = true) String subCategory,
+            @PathVariable(required = true) Integer boardId
+    ){
+        BoardResponse boardResponse = boardService.getDetailBoard(categoryId, subCategory, boardId);
         return ResponseEntity.ok(ApiResponse.success(boardResponse));
     }
 
     // 게시판 카테고리별 목록 조회
-    @GetMapping({
-            "/{categoryId}",
-            "/{categoryId}/{subCategory}",
-            "/{categoryId}/{subCategory}/{boardId}"})// 카테고리 id
+    @GetMapping("/{categoryId}/{subCategory}")
     public ResponseEntity<ApiResponse<?>> getBoards(
-            @PathVariable Integer categoryId,
-            @PathVariable (required = false) String subCategory,
-            @PathVariable (required = false) Integer boardId
+            @PathVariable(required = true) Integer categoryId,
+            @PathVariable(required = true) String subCategory
     ){
-        if (boardId!=null){
-            BoardResponse boardResponse = boardService.getDetailBoard(boardId);
-            return ResponseEntity.ok(ApiResponse.success(boardResponse));
-        }
-        if (subCategory!=null){
-            List<BoardResponse> boardResponses = boardService.findAllBoardsBySubCategory(categoryId,subCategory);
-            return ResponseEntity.ok(ApiResponse.success(boardResponses));
+        // subCategory와 일치하는 게시글 목록 조회
+        List<BoardResponse> boardResponses = boardService.findAllBoardsBySubCategory(categoryId,subCategory);
+        return ResponseEntity.ok(ApiResponse.success(boardResponses));
         }
 
-        List<BoardResponse> boardResponses = boardService.getAllBoardsByCategory(categoryId);
-        return ResponseEntity.ok(ApiResponse.success(boardResponses));
-    }
     // 게시글 삭제
-    @DeleteMapping("/{boardId}")
-    public ResponseEntity<ApiResponse<?>> deleteBoard(@PathVariable Integer boardId){
-        boardService.deleteBoard(boardId);
+    @DeleteMapping("/{categoryId}/{subCategory}/{boardId}")
+    public ResponseEntity<ApiResponse<?>> deleteBoard(
+            @PathVariable(required = true) Integer categoryId,
+            @PathVariable(required = true) String subCategory,
+            @PathVariable(required = true) Integer boardId
+    ){
+        boardService.deleteBoard(categoryId, subCategory, boardId);
         return ResponseEntity.ok(ApiResponse.success());
     }
     // 게시글 수정
-    @PatchMapping("/{boardId}")
+    @PatchMapping("/{categoryId}/{subCategory}/{boardId}")
     public ResponseEntity<ApiResponse<?>> updateBoard(
-            @PathVariable Integer boardId,
+            @PathVariable(required = true) Integer categoryId,
+            @PathVariable(required = true) String subCategory,
+            @PathVariable(required = true) Integer boardId,
             @RequestBody BoardCreateRequest updaterequest
     ){
-        boardService.updateBoard(boardId, updaterequest);
+        boardService.updateBoard(boardId,subCategory, categoryId, updaterequest);
         return ResponseEntity.ok(ApiResponse.success("게시글 수정이 완료되었습니다."));
     }
 }

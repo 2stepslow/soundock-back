@@ -1,5 +1,6 @@
 package dopamine.soundock.dto;
 
+import dopamine.soundock.entity.User;
 import lombok.*;
 
 import java.time.LocalDateTime;
