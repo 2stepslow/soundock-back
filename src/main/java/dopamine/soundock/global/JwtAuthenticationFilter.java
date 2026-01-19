@@ -43,8 +43,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // 블랙리스트 여부 확인
                 boolean isBlacklisted = accessTokenBlacklistRepository.existsByAccessToken(token);
                 if(!isBlacklisted) {
-                    String username = tokenProvider.getUsernameFromToken(token);
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                    String email = tokenProvider.getEmailFromToken(token);
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
                     // Spring Security 인증 설정
                     UsernamePasswordAuthenticationToken authenticationToken =

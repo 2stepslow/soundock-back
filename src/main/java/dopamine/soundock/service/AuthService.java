@@ -180,15 +180,15 @@ public class AuthService {
     ) {
         // 1. JPA를 이용해 DB에 ID를 조회해서 있는 애인지 확인한다.
         User user = userRepository.findByEmail(loginRequest.getEmail())
-            .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+            .orElseThrow(() -> new LoginFailedException("이메일 또는 비밀번호가 일치하지 않습니다."));
 
         if(!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             // 실패하면 401 에러 보냄
-            throw new LoginFailedException("비밀번호가 맞지 않습니다.");
+            throw new LoginFailedException("이메일 또는 비밀번호가 일치하지 않습니다.");
         }
 
         if(!user.getStatus().equals(UserStatus.ACTIVE)) {
-            throw new LoginFailedException("인증이 완료되지 않은 유저입니다.");
+            throw new CustomException("이메일 인증이 완료되지 않았습니다. 메일을 확인해주세요.", HttpStatus.FORBIDDEN);
         }
 
         // 로그인 성공
@@ -230,6 +230,5 @@ public class AuthService {
                 .build();
 
         accessTokenBlacklistRepository.save(accessTokenBlacklist);
-
     }
 }
