@@ -30,11 +30,15 @@ public class BoardService {
     // 게시글 작성
     public int createNewBoard(BoardCreateRequest createRequest) {
         // 사용자 로그인 확인
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AuthenticationFailException("로그인 정보가 일치하지 않습니다."));
+
         // 프론트에서 받은 입력값 보여줌
         Board board = new Board();
         board.setTitle(createRequest.getTitle());
         board.setContent(createRequest.getContent());
-        //board.setUser(user);
+        board.setUser(user);
 
         // save는 새로운 행을 만들면서 데이터 저장
         Board newBoard = boardRepository.save(board);
@@ -87,6 +91,25 @@ public class BoardService {
         Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNullAndCategoryCategoryTypeAndCategoryParentId(boardId, categoryType, parentId)
                         .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글이거나 카테고리 정보가 일치하지 않습니다."));
 
+        // 작성자와 현재 로그인한 유저가 같은지 검사
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AuthenticationFailException("로그인 정보가 일치하지 않습니다."));
+
+        // 로그인한 유저의 id를 requestId로 대입
+        Integer requestId = user.getId();
+
+        // 로그인한 유저가 작성한 게시글이 있는지 확인
+        Optional<Board> boardOptional = boardRepository.findById(requestId);
+        if (boardOptional.isEmpty()){
+            throw new ResourceNotFoundException("작성자의 게시글을 찾을 수 없습니다.");
+        }
+        Board targetBoard = boardOptional.get();
+
+        // 작성자가 현재 로그인한 유저의 id와 게시글 작성한 유저 id가 같은지 확인
+        if (!targetBoard.getUser().getId().equals(requestId)) {
+            throw new AuthRejectedException("작성자의 id와 일치하지 않습니다.");
+        }
         boardRepository.deleteById(boardId);
     }
     // 게시글 수정
@@ -94,6 +117,27 @@ public class BoardService {
         // 삭제되지 않고 해당 api 경로에 해당하는 게시글이 존재하는지 확인
         Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNullAndCategoryCategoryTypeAndCategoryParentId(boardId, categoryType, parentId)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글이거나 카테고리 정보가 일치하지 않습니다."));
+
+        // 작성자와 현재 로그인한 유저가 같은지 검사
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AuthenticationFailException("로그인 정보가 일치하지 않습니다."));
+
+        // 로그인한 유저의 id를 requestId로 대입
+        Integer requestId = user.getId();
+
+        // 로그인한 유저가 작성한 게시글이 있는지 확인
+        Optional<Board> boardOptional = boardRepository.findById(requestId);
+        if (boardOptional.isEmpty()){
+            throw new ResourceNotFoundException("작성자의 게시글을 찾을 수 없습니다.");
+        }
+        Board targetBoard = boardOptional.get();
+
+        // 작성자가 현재 로그인한 유저의 id와 게시글 작성한 유저 id가 같은지 확인
+        if (!targetBoard.getUser().getId().equals(requestId)) {
+            throw new AuthRejectedException("작성자의 id와 일치하지 않습니다.");
+        }
+
         // 수정하려는 사항
         if (updaterequest.getTitle() != null){
             board.setTitle(updaterequest.getTitle());
