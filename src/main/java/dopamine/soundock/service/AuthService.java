@@ -209,25 +209,25 @@ public class AuthService {
         return new LoginResponse(accessToken, refreshToken);
     }
 
+    // 로그아웃
     @Transactional
     public void logout(LogoutRequest logoutRequest) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("추출된 인증 정보 : {}", email);
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
-        int userId = user.getId();
-
-        refreshTokenRepository.deleteByUserId(userId);
+        refreshTokenRepository.deleteByUserId(user.getId());
 
         String accessToken = logoutRequest.getAccessToken();
-        AccessTokenBlacklist accessTokenBlacklist = new AccessTokenBlacklist();
-        accessTokenBlacklist.setAccessToken(accessToken);
-
         Date expDate = tokenProvider.getExpiration(accessToken);
-
         LocalDateTime convertedDate = expDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
 
-        accessTokenBlacklist.setExpirationAt(convertedDate);
+        AccessTokenBlacklist accessTokenBlacklist = AccessTokenBlacklist
+                .builder()
+                .accessToken(accessToken)
+                .expirationAt(convertedDate)
+                .build();
 
         accessTokenBlacklistRepository.save(accessTokenBlacklist);
 

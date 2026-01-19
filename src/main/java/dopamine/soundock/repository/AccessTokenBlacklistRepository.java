@@ -8,5 +8,6 @@ import java.util.Optional;
 
 public interface AccessTokenBlacklistRepository extends JpaRepository<AccessTokenBlacklist,Integer> {
     Optional<AccessTokenBlacklist> findByAccessToken(String token);
+    boolean existsByAccessToken(String token);
     void deleteAllByExpirationAtBefore(LocalDateTime dateTime);
 }
