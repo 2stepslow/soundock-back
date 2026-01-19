@@ -1,12 +1,10 @@
 package dopamine.soundock.global;
 
-import dopamine.soundock.entity.AccessTokenBlacklist;
 import dopamine.soundock.repository.AccessTokenBlacklistRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,7 +15,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -46,8 +43,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // 블랙리스트 여부 확인
                 boolean isBlacklisted = accessTokenBlacklistRepository.existsByAccessToken(token);
                 if(!isBlacklisted) {
-                    String username = tokenProvider.getUsernameFromToken(token);
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                    String email = tokenProvider.getEmailFromToken(token);
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
                     // Spring Security 인증 설정
                     UsernamePasswordAuthenticationToken authenticationToken =

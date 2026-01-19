@@ -22,7 +22,7 @@ public class CustomUserDetailService implements UserDetailsService {
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
                 .password(user.getPassword()) // DB에 저장된 인코딩된 비번
-                .authorities("Role_" + user.getRole().name())
+                .authorities("ROLE_" + user.getRole().name())
                 .build();
     }
 }
