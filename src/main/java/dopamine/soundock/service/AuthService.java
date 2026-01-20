@@ -31,6 +31,7 @@ import org.thymeleaf.context.Context;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -230,5 +231,33 @@ public class AuthService {
                 .build();
 
         accessTokenBlacklistRepository.save(accessTokenBlacklist);
+    }
+
+    // Access Token 재발급
+    @Transactional
+    public RefreshResponse refresh(RefreshRequest refreshRequest) {
+        String userRefreshToken = refreshRequest.getRefreshToken();
+        // 1. 위/변조 여부 검증
+        if (!tokenProvider.validateToken(userRefreshToken)) {
+            // 검증 실패 예외
+            throw new InvalidTokenException("위조된 토큰 입니다.");
+        }
+
+        // 2. 우리 서버에 존재하는 refresh token 인지 검증
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(userRefreshToken)
+                .orElseThrow(() -> new InvalidTokenException("로그아웃으로 인해 삭제된 토큰입니다."));
+
+        // 3. 만료시간 확인
+        Date expiration = tokenProvider.getExpiration(userRefreshToken);
+        if(expiration.before(new Date())) {
+            // 만료기간 지난 예외
+            throw new InvalidTokenException("더 이상 사용할 수 없는 토큰입니다.");
+        }
+
+        // 4. 만료 안됐으면 새로운 access token을 만들어서 반환
+        String username = tokenProvider.getEmailFromToken(userRefreshToken);
+        String accessToken = tokenProvider.generateAccessToken(username);
+
+        return new RefreshResponse(accessToken);
     }
 }
