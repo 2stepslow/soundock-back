@@ -7,39 +7,39 @@ import dopamine.soundock.entity.Category;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.CategoryType;
 import dopamine.soundock.exceptions.AuthRejectedException;
-import dopamine.soundock.exceptions.AuthenticationFailException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.repository.BoardRepository;
 import dopamine.soundock.repository.CategoryRepository;
 import dopamine.soundock.repository.UserRepository;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
-import org.apache.tomcat.websocket.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 @RequiredArgsConstructor
 @Service
 public class BoardService {
     private final BoardRepository boardRepository;
     private final UserRepository userRepository;
-    private CategoryRepository categoryRepository;
+    private final CategoryRepository categoryRepository;
 
     // 게시글 작성
-    public int createNewBoard(BoardCreateRequest createRequest) {
+    public int createNewBoard(CategoryType categoryType, BoardCreateRequest createRequest) {
         // 사용자 로그인 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new AuthenticationFailException("로그인 정보가 일치하지 않습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+        // 카테고리 입력값 검증
+       Category category = categoryRepository.findByCategoryType(categoryType)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 카테고리입니다."));
 
         // 프론트에서 받은 입력값 보여줌
         Board board = new Board();
         board.setTitle(createRequest.getTitle());
         board.setContent(createRequest.getContent());
+        board.setCategory(category);
         board.setUser(user);
 
         // save는 새로운 행을 만들면서 데이터 저장
@@ -67,11 +67,12 @@ public class BoardService {
     }
 
     // 한 카테고리 내의 모든 게시글 조회
-    public List<BoardResponse> findAllBoardsBySubCategory(CategoryType categoryType){
+    public List<BoardResponse> findAllBoardsByCategoryType(CategoryType categoryType){
         List<Board> boards = boardRepository.findByDeletedDateTimeIsNullAndCategoryCategoryType(categoryType);
         if (boards.isEmpty()){
-            throw new ResourceNotFoundException("해당 카테고리에 표시할 게시글이 없습니다.");
+            throw new ResourceNotFoundException("현재 카테고리에 작성된 게시글이 없습니다.");
         }
+
         // 게시글 목록 표시
         List<BoardResponse> boardResponses = new ArrayList<>();
         for (Board board : boards){
@@ -96,23 +97,17 @@ public class BoardService {
         // 작성자와 현재 로그인한 유저가 같은지 검사
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new AuthenticationFailException("로그인 정보가 일치하지 않습니다."));
-
-        // 로그인한 유저의 id를 requestId로 대입
-        Integer requestId = user.getId();
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
         // 로그인한 유저가 작성한 게시글이 있는지 확인
-        Optional<Board> boardOptional = boardRepository.findById(requestId);
-        if (boardOptional.isEmpty()){
-            throw new ResourceNotFoundException("작성자의 게시글을 찾을 수 없습니다.");
+        if (!board.getUser().getId().equals(user.getId())){
+            throw new AuthRejectedException("게시글 작성자와 로그인 정보가 일치하지 않습니다.");
         }
-        Board targetBoard = boardOptional.get();
+        // 게시글 soft Delete
+        board.setDeletedDateTime(LocalDateTime.now());
+        board.setDeleted(true);
+        boardRepository.save(board);
 
-        // 작성자가 현재 로그인한 유저의 id와 게시글 작성한 유저 id가 같은지 확인
-        if (!targetBoard.getUser().getId().equals(requestId)) {
-            throw new AuthRejectedException("작성자의 id와 일치하지 않습니다.");
-        }
-        boardRepository.deleteById(boardId);
     }
     // 게시글 수정
     public void updateBoard(Integer boardId, CategoryType categoryType, BoardCreateRequest updaterequest){
@@ -121,25 +116,15 @@ public class BoardService {
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글이거나 카테고리 정보가 일치하지 않습니다."));
 
         // 작성자와 현재 로그인한 유저가 같은지 검사
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+//        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        String email = "linlin@gmail.com";
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new AuthenticationFailException("로그인 정보가 일치하지 않습니다."));
-
-        // 로그인한 유저의 id를 requestId로 대입
-        Integer requestId = user.getId();
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
         // 로그인한 유저가 작성한 게시글이 있는지 확인
-        Optional<Board> boardOptional = boardRepository.findById(requestId);
-        if (boardOptional.isEmpty()){
-            throw new ResourceNotFoundException("작성자의 게시글을 찾을 수 없습니다.");
+        if (!board.getUser().getId().equals(user.getId())){
+            throw new AuthRejectedException("게시글 작성자와 로그인 정보가 일치하지 않습니다.");
         }
-        Board targetBoard = boardOptional.get();
-
-        // 작성자가 현재 로그인한 유저의 id와 게시글 작성한 유저 id가 같은지 확인
-        if (!targetBoard.getUser().getId().equals(requestId)) {
-            throw new AuthRejectedException("작성자의 id와 일치하지 않습니다.");
-        }
-
         // 수정하려는 사항
         if (updaterequest.getTitle() != null){
             board.setTitle(updaterequest.getTitle());
