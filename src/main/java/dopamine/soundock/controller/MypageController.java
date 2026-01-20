@@ -1,9 +1,6 @@
 package dopamine.soundock.controller;
 
-import dopamine.soundock.dto.CurrentPasswdRequest;
-import dopamine.soundock.dto.RestResponse;
-import dopamine.soundock.dto.UpdateInfoRequest;
-import dopamine.soundock.dto.UpdatePasswdRequest;
+import dopamine.soundock.dto.*;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.service.MypageService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -74,5 +71,12 @@ public class MypageController {
     public ResponseEntity<RestResponse<Void>> checkCurrentPassword(@Valid @RequestBody CurrentPasswdRequest request) {
         mypageService.checkCurrentPassword(request);
         return ResponseEntity.ok(RestResponse.success("비밀번호 확인에 성공했습니다."));
+    }
+
+    // 회원 탈퇴
+    @DeleteMapping("/me")
+    public ResponseEntity<RestResponse<Void>> deleteUser(@Valid @RequestBody DeleteUserRequest request) {
+        mypageService.deleteUser(request);
+        return ResponseEntity.ok(RestResponse.success("회원 탈퇴가 완료되었습니다."));
     }
 }

@@ -11,11 +11,11 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Schema(description = "로그아웃 요청 정보")
-public class LogoutRequest {
+@Schema(description = "회원 탈퇴 요청 정보")
+public class DeleteUserRequest {
     @Schema(
             description = "무효화할 Access Token"
     )
-    @NotBlank
+    @NotBlank(message = "액세스 토큰은 필수 입니다.")
     private String accessToken;
 }
