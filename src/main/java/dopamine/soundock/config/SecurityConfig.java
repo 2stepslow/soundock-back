@@ -70,12 +70,20 @@ public class SecurityConfig {
                 // 예외 처리 (인증 실패 시 401 에러를 더 명확하게 반환)
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.setContentType("application/json");
-                            response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"" + authException.getMessage() + "\"}");
+                            // 1. 응답 타입을 JSON, 한글(UTF-8)로 설정
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+
+                            // 2. RestResponse 규격에 맞는 JSON 문자열 직접 생성
+                            String jsonResponse = "{" +
+                                    "\"success\": false," +
+                                    "\"message\": \"로그인이 필요한 서비스입니다.\"," +
+                                    "\"data\": null" +
+                                    "}";
+
+                            response.getWriter().write(jsonResponse);
                         })
                 );
-
         return http.build();
     }
 }
