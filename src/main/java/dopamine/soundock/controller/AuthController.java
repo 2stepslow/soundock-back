@@ -177,4 +177,21 @@ public class AuthController {
         authService.logout(logoutRequest);
         return ResponseEntity.ok(RestResponse.success("로그아웃을 완료 했습니다."));
     }
+
+    // 리프레시 토큰
+    @Operation(
+            summary = "토큰 만료시 재발급",
+            description = "만료 기간이 짧은 Access Token 만료 시 Refresh Token을 확인하고 Access Token 재발급"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "재발급 성공", content = @Content(schema = @Schema(implementation = RefreshResponse.class))),
+            @ApiResponse(responseCode = "401", description = "재발급 실패: 리프레시 토큰이 유효하지 않거나 만료됨 (로그인 페이지로 이동 필요)", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청: 토큰 값이 누락", content = @Content(schema = @Schema(implementation = RestResponse.class))
+            )
+    })
+    @PostMapping("/refresh")
+    public ResponseEntity<RestResponse<RefreshResponse>> refresh(@Valid @RequestBody RefreshRequest refreshRequest) {
+        RefreshResponse response = authService.refresh(refreshRequest);
+        return ResponseEntity.ok(RestResponse.success(response));
+    }
 }
