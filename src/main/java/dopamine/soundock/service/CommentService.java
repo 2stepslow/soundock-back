@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Service
 public class CommentService {
     private final CommentRepository commentRepository;

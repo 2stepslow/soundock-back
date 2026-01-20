@@ -1,23 +1,15 @@
 package dopamine.soundock.repository;
 
 import dopamine.soundock.entity.Category;
+import dopamine.soundock.enums.CategoryType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 
 @Repository
 @EnableJpaRepositories
 public interface CategoryRepository extends JpaRepository<Category, Integer> {
-    // 카테고리 id가 부모 카테고리인지 확인
-    Optional<Category> findByIdAndParentIdIsNull(Integer categoryId);
-    // 특정 카테고리 밑 모든 자식 카테고리 찾기
-    List<Category> findByParentId(Integer categoryId);
-    // 부모 카테고리 밑 자식 카테고리 조회
-    List<Category> findByParentIdAndCategoryType(Integer parentId, String categoryType);
-
-    // 부모 Id와 이름으로 카테고리 찾기
-    Optional<Category> findByParentIdAndSection(Integer parentId, String section);
+    Optional<Category> findByCategoryType(CategoryType categoryType);
 }

@@ -1,20 +1,21 @@
 package dopamine.soundock.entity;
 
+import dopamine.soundock.enums.CategoryType;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.sql.Types;
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @Table(name = "boards")
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 @EntityListeners(AuditingEntityListener.class)
 public class Board {
     @Id
@@ -61,8 +62,10 @@ public class Board {
     @Column(name = "featured_expired_at", nullable = true)
     private LocalDateTime featuredExpiredDateTime;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "category_id", nullable = false)
     // Board 테이블의 category_id 필드를 연결하는거임
     private Category category;
+
+
 }
