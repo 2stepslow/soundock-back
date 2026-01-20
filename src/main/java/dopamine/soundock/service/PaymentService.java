@@ -5,19 +5,8 @@ import dopamine.soundock.entity.PopHistory;
 import dopamine.soundock.repository.PopHistoryRepository;
 import dopamine.soundock.repository.TossPaymentRepository;
 import lombok.RequiredArgsConstructor;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.springframework.stereotype.Service;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.UUID;
 
 @RequiredArgsConstructor
