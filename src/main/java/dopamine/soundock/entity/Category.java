@@ -1,6 +1,6 @@
 package dopamine.soundock.entity;
 
-import dopamine.soundock.enums.Section;
+import dopamine.soundock.enums.CategoryType;
 import dopamine.soundock.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -20,17 +20,11 @@ public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_id")
-    private Integer id;
-
-    @Column(name = "parent_id")
-    private Integer parentId;
-
-    @Column(name = "section", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private Section section;
+    private Integer categoryId;
 
     @Column(name = "category_type", nullable = false)
-    private String categoryType;
+    @Enumerated(EnumType.STRING)
+    private CategoryType categoryType;
 
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;

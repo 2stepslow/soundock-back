@@ -5,12 +5,14 @@ import dopamine.soundock.dto.BoardResponse;
 import dopamine.soundock.entity.Board;
 import dopamine.soundock.entity.Category;
 import dopamine.soundock.entity.User;
+import dopamine.soundock.enums.CategoryType;
 import dopamine.soundock.exceptions.AuthRejectedException;
 import dopamine.soundock.exceptions.AuthenticationFailException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.repository.BoardRepository;
 import dopamine.soundock.repository.CategoryRepository;
 import dopamine.soundock.repository.UserRepository;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.websocket.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -47,9 +49,9 @@ public class BoardService {
 
     // 게시글 상세 조회
     public BoardResponse getDetailBoard(
-            Integer parentId, String categoryType, Integer boardId
+            Integer boardId, CategoryType categoryType
     ) {
-        Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNullAndCategoryCategoryTypeAndCategoryParentId(boardId, categoryType, parentId)
+        Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNullAndCategoryCategoryType(boardId, categoryType)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글이거나 카테고리 정보가 일치하지 않습니다."));
 
         BoardResponse boardResponse = BoardResponse.builder()
@@ -64,9 +66,9 @@ public class BoardService {
         return boardResponse;
     }
 
-    // 한 상위 카테고리의 특정 하위 카테고리 모든 게시글 조회
-    public List<BoardResponse> findAllBoardsBySubCategory(Integer parentId, String categoryType){
-        List<Board> boards = boardRepository.findByDeletedDateTimeIsNullAndCategoryParentIdAndCategoryCategoryType(parentId, categoryType);
+    // 한 카테고리 내의 모든 게시글 조회
+    public List<BoardResponse> findAllBoardsBySubCategory(CategoryType categoryType){
+        List<Board> boards = boardRepository.findByDeletedDateTimeIsNullAndCategoryCategoryType(categoryType);
         if (boards.isEmpty()){
             throw new ResourceNotFoundException("해당 카테고리에 표시할 게시글이 없습니다.");
         }
@@ -86,9 +88,9 @@ public class BoardService {
         return boardResponses;
     }
     // 게시글 삭제
-    public void deleteBoard(Integer boardId, String categoryType, Integer parentId){
+    public void deleteBoard(Integer boardId, CategoryType categoryType){
         // 삭제되지 않고 해당 api 경로에 해당하는 게시글이 존재하는지 확인
-        Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNullAndCategoryCategoryTypeAndCategoryParentId(boardId, categoryType, parentId)
+        Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNullAndCategoryCategoryType(boardId, categoryType)
                         .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글이거나 카테고리 정보가 일치하지 않습니다."));
 
         // 작성자와 현재 로그인한 유저가 같은지 검사
@@ -113,9 +115,9 @@ public class BoardService {
         boardRepository.deleteById(boardId);
     }
     // 게시글 수정
-    public void updateBoard(Integer boardId, String categoryType, Integer parentId, BoardCreateRequest updaterequest){
+    public void updateBoard(Integer boardId, CategoryType categoryType, BoardCreateRequest updaterequest){
         // 삭제되지 않고 해당 api 경로에 해당하는 게시글이 존재하는지 확인
-        Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNullAndCategoryCategoryTypeAndCategoryParentId(boardId, categoryType, parentId)
+        Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNullAndCategoryCategoryType(boardId, categoryType)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글이거나 카테고리 정보가 일치하지 않습니다."));
 
         // 작성자와 현재 로그인한 유저가 같은지 검사
