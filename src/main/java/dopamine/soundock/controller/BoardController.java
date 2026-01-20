@@ -5,6 +5,11 @@ import dopamine.soundock.dto.request.BoardCreateRequest;
 import dopamine.soundock.dto.response.BoardResponse;
 import dopamine.soundock.enums.CategoryType;
 import dopamine.soundock.service.BoardService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +23,16 @@ import java.util.List;
 public class BoardController {
     private BoardService boardService;
 
+    @Operation(
+            summary = "특정 카테고리 내 게시글 작성",
+            description = "categoryType에 해당하는 카테고리 이동 후 게시글을 작성합니다." +
+                    "작성이 완료되었다면 완료 메시지를 반환합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "게시글 등록 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "403", description = "로그인 필요", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "404", description = "미등록 카테고리", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+    })
     // 게시글 작성
     @PostMapping("/{categoryType}")
     public ResponseEntity<RestResponse<?>> createNewBoard(
@@ -28,6 +43,15 @@ public class BoardController {
         URI location = URI.create("/getDetailBoard/" + newBoardId);
         return ResponseEntity.created(location).body(RestResponse.success("게시글 등록이 완료되었습니다."));
     }
+    @Operation(
+            summary = "특정 카테고리 내 게시글 상세 조회",
+            description = "categoryType 내 boarI와 일치하는 게시글의 상세한 내용을 조회."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "게시글 상세 조회", content = @Content(schema = @Schema(implementation = BoardResponse.class))),
+            @ApiResponse(responseCode = "404", description = "미등록 카테고리", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "404", description = "미등록 게시글", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+    })
     // 게시글 상세 조회
     @GetMapping("/{categoryType}/{boardId}")
     public ResponseEntity<RestResponse<BoardResponse>> getDetailBoard(
@@ -37,6 +61,15 @@ public class BoardController {
         BoardResponse boardResponse = boardService.getDetailBoard(boardId, categoryType);
         return ResponseEntity.ok(RestResponse.success(boardResponse));
     }
+
+    @Operation(
+            summary = "특정 카테고리 게시글 목록 조회",
+            description = "categoryType 작성되어있는 게시글들을 목록을 형태로 조회."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "게시판 목록 조회", content = @Content(schema = @Schema(implementation = BoardResponse.class))),
+            @ApiResponse(responseCode = "404", description = "미등록 카테고리", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+    })
 
     // 게시판 카테고리별 목록 조회
     @GetMapping("/{categoryType}")
@@ -48,6 +81,15 @@ public class BoardController {
         return ResponseEntity.ok(RestResponse.success(boardResponses));
         }
 
+    @Operation(
+            summary = "로그인한 유저가 작성한 게시글 삭제",
+            description = "로그인한 유저가 categoryType 내 작성한 게시글에 대하여 삭제 가능."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "게시판 삭제", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "403", description = "작성자 불일치", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "404", description = "미등록 카테고리, 게시글", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+    })
     // 게시글 삭제
     @DeleteMapping("/{categoryType}/{boardId}")
     public ResponseEntity<RestResponse<?>> deleteBoard(
@@ -57,6 +99,16 @@ public class BoardController {
         boardService.deleteBoard(boardId, categoryType);
         return ResponseEntity.ok(RestResponse.success());
     }
+
+    @Operation(
+            summary = "로그인한 유저가 작성한 게시글 수정",
+            description = "로그인한 유저가 categoryType 내 작성한 게시글에 대하여 수정 가능."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "게시판 수정", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "403", description = "작성자 불일치", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "404", description = "미등록 카테고리, 게시글", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+    })
     // 게시글 수정
     @PatchMapping("/{categoryType}/{boardId}")
     public ResponseEntity<RestResponse<?>> updateBoard(
