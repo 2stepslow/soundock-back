@@ -41,7 +41,7 @@ public class UserSignupRequest {
     @NotBlank(message = "연락처는 필수 입력 항목입니다.")
     @Pattern(
             regexp = "^010[0-9]{8}$",
-            message = "연락처는 숫자만 8자리 입력하세요."
+            message = "연락처는 010을 포함하여 숫자만 11자리 입력하세요."
     )
     private String phoneNumber;
 }

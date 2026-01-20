@@ -20,7 +20,7 @@ public class MypageService {
     private final UserRepository userRepository;
 
     @Transactional
-    public void updateUser (UpdateInfoRequest request) {
+    public void updateUser(UpdateInfoRequest request) {
         // 모든 필드가 null이거나 비어있는지 확인
         if ((request.getNickname() == null || request.getNickname().isBlank()) &&
                 (request.getPhoneNumber() == null || request.getPhoneNumber().isBlank())) {
@@ -34,7 +34,9 @@ public class MypageService {
         boolean isUpdated = false;
 
         // 닉네임 수정 할 시
-        if (request.getNickname() != null && !request.getNickname().equals(user.getNickname()) && !request.getNickname().isBlank()) {
+        if (request.getNickname() != null
+                && !request.getNickname().equals(user.getNickname())
+                && !request.getNickname().isBlank()) {
             // 닉네임 중복 체크
             if (userRepository.existsByNickname(request.getNickname())) {
                 throw new DuplicateNicknameException();
@@ -44,7 +46,9 @@ public class MypageService {
         }
 
         // 휴대폰 번호 수정 할 시
-        if (request.getPhoneNumber() != null && !request.getPhoneNumber().isBlank()) {
+        if (request.getPhoneNumber() != null
+                && !request.getPhoneNumber().isBlank()
+                && !request.getPhoneNumber().equals(user.getPhoneNumber())) {
             user.setPhoneNumber(request.getPhoneNumber());
             isUpdated = true;
         }

@@ -82,11 +82,8 @@ public class AuthService {
             throw new DuplicateNicknameException();
         }
 
-        // 숫자 이외의 모든 문자 제거
-        String fixPhone = userSignupRequest.getPhoneNumber().replaceAll("[^0-9]", "");
-
         // DB 컬럼 길이와 일치하는지 최종 확인
-        if (fixPhone.length() != 11) {
+        if (userSignupRequest.getPhoneNumber().length() != 11) {
             throw new CustomException("연락처 형식이 올바르지 않습니다.", HttpStatus.BAD_REQUEST);
         }
 
@@ -96,7 +93,7 @@ public class AuthService {
                 .email(userSignupRequest.getEmail())
                 .password(encodedPassword)
                 .nickname(userSignupRequest.getNickname())
-                .phoneNumber(fixPhone)
+                .phoneNumber(userSignupRequest.getPhoneNumber())
                 .role(UserRole.USER)
                 .status(UserStatus.PENDING)
                 .build();
