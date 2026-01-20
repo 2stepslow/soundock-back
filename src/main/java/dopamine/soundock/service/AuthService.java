@@ -53,10 +53,36 @@ public class AuthService {
     // 이메일 중복 확인
     @Transactional(readOnly = true)
     public ValidateEmailResponse validateEmail(ValidateEmailRequest validateEmailRequest) {
-        boolean isAvailable = !userRepository.existsByEmail(validateEmailRequest.getEmail());
-        String message = isAvailable ? "사용 가능한 이메일입니다." : "이미 사용 중인 이메일입니다.";
+        String email = validateEmailRequest.getEmail();
 
-        return new ValidateEmailResponse(isAvailable, message);
+        // 1. 해당 이메일로 가입된 유저가 있는지 확인
+        Optional<User> userOpt = userRepository.findByEmail(email);
+
+        // 가입된 적이 없는 이메일이면 사용 가능
+        if (userOpt.isEmpty()) {
+            return new ValidateEmailResponse(true, "사용 가능한 이메일입니다.");
+        }
+
+        User user = userOpt.get();
+
+        // 2. 현재 사용 중인 계정인지 확인 (삭제되지 않은 상태)
+        if (!user.isDeleted()) { // is_deleted가 false인 경우
+            return new ValidateEmailResponse(false, "이미 사용 중인 이메일입니다.");
+        }
+
+        // 3. 탈퇴한 계정인 경우, 삭제일로부터 30일이 지났는지 확인
+        LocalDateTime deletedAt = user.getDeletedAt();
+        if (deletedAt != null) {
+            LocalDateTime limitDate = LocalDateTime.now().minusDays(30);
+
+            // 삭제일이 30일 전보다 이후라면 (즉, 삭제된 지 30일이 안 지났다면)
+            if (deletedAt.isAfter(limitDate)) {
+                return new ValidateEmailResponse(false, "탈퇴 후 30일 동안은 동일한 이메일로 재가입이 불가능합니다.");
+            }
+        }
+
+        // 30일이 지났다면 사용 가능
+        return new ValidateEmailResponse(true, "사용 가능한 이메일입니다.");
     }
 
     // 닉네임 중복 확인
@@ -71,10 +97,26 @@ public class AuthService {
     // 회원가입
     @Transactional
     public void signupUser(UserSignupRequest userSignupRequest, String siteURL) {
-        String encodedPassword = passwordEncoder.encode(userSignupRequest.getPassword());
-        // 이메일 중복 체크
-        if (userRepository.existsByEmail(userSignupRequest.getEmail())) {
-            throw new DuplicateEmailException();
+        // 일단 해당 이메일로 유저 찾기
+        Optional<User> existingUser = userRepository.findByEmail(userSignupRequest.getEmail());
+
+        if (existingUser.isPresent()) {
+            User user = existingUser.get();
+
+            if (!user.isDeleted()) {
+                throw new CustomException("이미 사용 중인 이메일입니다.", HttpStatus.CONFLICT);
+            }
+
+            // 탈퇴한 유저라면 날짜를 확인
+            LocalDateTime limitDate = LocalDateTime.now().minusDays(30);
+
+            if (user.getDeletedAt().isBefore(limitDate)) {
+                // 30일이 지났다면 기존 데이터를 DB에서 아예 삭제
+                userRepository.delete(user);
+                userRepository.flush(); // 즉시 반영해서 Unique 제약 조건을 비웁니다.
+            } else {
+                throw new CustomException("탈퇴 후 30일 동안은 재가입이 불가능합니다.", HttpStatus.BAD_REQUEST);
+            }
         }
 
         // 닉네임 중복 체크
@@ -86,6 +128,9 @@ public class AuthService {
         if (userSignupRequest.getPhoneNumber().length() != 11) {
             throw new CustomException("연락처 형식이 올바르지 않습니다.", HttpStatus.BAD_REQUEST);
         }
+
+        // 비밀 번호 암호화
+        String encodedPassword = passwordEncoder.encode(userSignupRequest.getPassword());
 
         // builder 패턴을 통해 좀 더 깔끔하게 수정
         User user = User
@@ -172,6 +217,7 @@ public class AuthService {
         verificationTokenRepository.save(verificationToken);
     }
 
+    // 로그인
     @Transactional
     public LoginResponse login(
             LoginRequest loginRequest

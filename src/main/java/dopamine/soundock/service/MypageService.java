@@ -104,12 +104,16 @@ public class MypageService {
 
         // 이미 탈퇴한 사용자인지 확인
         if (user.isDeleted()) {
-            throw new IllegalStateException("이미 탈퇴한 사용자입니다.");
+            throw new CustomException("이미 탈퇴한 사용자입니다.", HttpStatus.BAD_REQUEST);
         }
+
+        // 닉네임 중복 제약 조건을 해제하기 위해 null 처리
+        user.setNickname(null);
 
         // 유저 상태 변경 (Soft Delete)
         user.setDeleted(true);
         user.setStatus(UserStatus.QUITTED);
+        user.setDeletedAt(LocalDateTime.now());
 
         userRepository.save(user);
 

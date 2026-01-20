@@ -74,6 +74,16 @@ public class MypageController {
     }
 
     // 회원 탈퇴
+    @Operation(
+            summary = "회원 탈퇴",
+            description = "현재 로그인한 사용자의 계정을 탈퇴 처리(Soft Delete)하고, 사용 중인 토큰을 무효화."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "회원 탈퇴 성공"),
+            @ApiResponse(responseCode = "400", description = "이미 탈퇴한 사용자이거나 유효하지 않은 토큰 정보"),
+            @ApiResponse(responseCode = "401", description = "토큰 정보가 일치하지 않음 (권한 없음)"),
+            @ApiResponse(responseCode = "404", description = "존재하지 않는 사용자")
+    })
     @DeleteMapping("/me")
     public ResponseEntity<RestResponse<Void>> deleteUser(@Valid @RequestBody DeleteUserRequest request) {
         mypageService.deleteUser(request);
