@@ -1,6 +1,6 @@
 package dopamine.soundock.controller;
 
-import dopamine.soundock.dto.ApiResponse;
+import dopamine.soundock.dto.RestResponse;
 import dopamine.soundock.dto.BoardCreateRequest;
 import dopamine.soundock.dto.BoardResponse;
 import dopamine.soundock.entity.Board;
@@ -28,7 +28,7 @@ public class BoardController {
     ){
         int newBoardId = boardService.createNewBoard(categoryType, createRequest);
         URI location = URI.create("/getDetailBoard/" + newBoardId);
-        return ResponseEntity.created(location).body(ApiResponse.success("게시글 등록이 완료되었습니다."));
+        return ResponseEntity.created(location).body(RestResponse.success("게시글 등록이 완료되었습니다."));
     }
     // 게시글 상세 조회
     @GetMapping("/{categoryType}/{boardId}")

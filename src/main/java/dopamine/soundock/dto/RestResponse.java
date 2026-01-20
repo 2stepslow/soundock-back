@@ -2,48 +2,46 @@ package dopamine.soundock.dto;
 
 import lombok.*;
 
-import java.util.List;
-
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ApiResponse<T> {
+public class RestResponse<T> {
     private boolean success;
     private String message;
     private T data;
 
-    public static <T> ApiResponse<T> success(String message, T data) {
-        return ApiResponse.<T>builder()
+    public static <T> RestResponse<T> success(String message, T data) {
+        return RestResponse.<T>builder()
                 .success(true)
                 .data(data)
                 .message(message)
                 .build();
     }
 
-    public static <T> ApiResponse<T> success(T data) {
-        return ApiResponse.<T>builder()
+    public static <T> RestResponse<T> success(T data) {
+        return RestResponse.<T>builder()
                 .success(true)
                 .data(data)
                 .build();
     }
 
-    public static <T> ApiResponse<T> success(String message) {
-        return ApiResponse.<T>builder()
+    public static <T> RestResponse<T> success(String message) {
+        return RestResponse.<T>builder()
                 .success(true)
                 .message(message)
                 .build();
     }
 
-    public static <T> ApiResponse<T> success() {
-        return ApiResponse.<T>builder()
+    public static <T> RestResponse<T> success() {
+        return RestResponse.<T>builder()
                 .success(true)
                 .build();
     }
 
-    public static <T> ApiResponse<T> fail(String message) {
-        return ApiResponse.<T>builder()
+    public static <T> RestResponse<T> fail(String message) {
+        return RestResponse.<T>builder()
                 .success(false)
                 .message(message)
                 .build();
