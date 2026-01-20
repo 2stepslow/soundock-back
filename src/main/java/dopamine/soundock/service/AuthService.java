@@ -52,11 +52,11 @@ public class AuthService {
 
     // 이메일 중복 확인
     @Transactional(readOnly = true)
-    public void validateEmail(ValidateEmailRequest validateEmailRequest) {
-        // 중복 일 경우 예외 발생
-        if (userRepository.existsByEmail(validateEmailRequest.getEmail())) {
-            throw new DuplicateEmailException();
-        }
+    public ValidateEmailResponse validateEmail(ValidateEmailRequest validateEmailRequest) {
+        boolean isAvailable = !userRepository.existsByEmail(validateEmailRequest.getEmail());
+        String message = isAvailable ? "사용 가능한 이메일입니다." : "이미 사용 중인 이메일입니다.";
+
+        return new ValidateEmailResponse(isAvailable, message);
     }
 
     // 닉네임 중복 확인
