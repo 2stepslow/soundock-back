@@ -8,8 +8,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -26,8 +24,14 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("http://localhost:3000"); // React 포트
-        configuration.addAllowedOrigin("http://localhost:5173"); // React 포트
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000",
+                "http://localhost:5173",
+                "http://192.168.200.84:5173",
+                "http://192.168.56.1:5173",
+                "http://192.168.200.9:5173",
+                "http://192.168.200.45:5173"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // 허용할 HTTP 메서드들
         configuration.addAllowedHeader("*"); // 모든 헤더 허용
         configuration.setAllowCredentials(true);
@@ -67,12 +71,20 @@ public class SecurityConfig {
                 // 예외 처리 (인증 실패 시 401 에러를 더 명확하게 반환)
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.setContentType("application/json");
-                            response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"" + authException.getMessage() + "\"}");
+                            // 1. 응답 타입을 JSON, 한글(UTF-8)로 설정
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+
+                            // 2. RestResponse 규격에 맞는 JSON 문자열 직접 생성
+                            String jsonResponse = "{" +
+                                    "\"success\": false," +
+                                    "\"message\": \"로그인이 필요한 서비스입니다.\"," +
+                                    "\"data\": null" +
+                                    "}";
+
+                            response.getWriter().write(jsonResponse);
                         })
                 );
-
         return http.build();
     }
 }

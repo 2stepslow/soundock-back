@@ -1,6 +1,6 @@
 package dopamine.soundock.controller;
 
-import dopamine.soundock.dto.ApiResponse;
+import dopamine.soundock.dto.RestResponse;
 import dopamine.soundock.dto.CommentCreateRequest;
 import dopamine.soundock.dto.CommentResponse;
 import dopamine.soundock.enums.CategoryType;

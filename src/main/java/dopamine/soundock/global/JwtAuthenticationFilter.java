@@ -1,12 +1,11 @@
 package dopamine.soundock.global;
 
-import dopamine.soundock.entity.AccessTokenBlacklist;
 import dopamine.soundock.repository.AccessTokenBlacklistRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,10 +15,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Optional;
 
 @Component
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final TokenProvider tokenProvider;
@@ -43,10 +41,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 통과해서 true가 반환되면 토큰 안의 사용자 이름을 추출
             if(tokenProvider.validateToken(token)) {
                 // 블랙리스트 여부 확인
-                Optional<AccessTokenBlacklist> optionalATB = accessTokenBlacklistRepository.findByAccessToken(token);
-                if(optionalATB.isEmpty()) {
-                    String username = tokenProvider.getUsernameFromToken(token);
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                boolean isBlacklisted = accessTokenBlacklistRepository.existsByAccessToken(token);
+                if(!isBlacklisted) {
+                    String email = tokenProvider.getEmailFromToken(token);
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
                     // Spring Security 인증 설정
                     UsernamePasswordAuthenticationToken authenticationToken =

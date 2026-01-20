@@ -31,6 +31,7 @@ import org.thymeleaf.context.Context;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -81,11 +82,8 @@ public class AuthService {
             throw new DuplicateNicknameException();
         }
 
-        // 숫자 이외의 모든 문자 제거
-        String fixPhone = userSignupRequest.getPhoneNumber().replaceAll("[^0-9]", "");
-
         // DB 컬럼 길이와 일치하는지 최종 확인
-        if (fixPhone.length() != 11) {
+        if (userSignupRequest.getPhoneNumber().length() != 11) {
             throw new CustomException("연락처 형식이 올바르지 않습니다.", HttpStatus.BAD_REQUEST);
         }
 
@@ -95,7 +93,7 @@ public class AuthService {
                 .email(userSignupRequest.getEmail())
                 .password(encodedPassword)
                 .nickname(userSignupRequest.getNickname())
-                .phoneNumber(fixPhone)
+                .phoneNumber(userSignupRequest.getPhoneNumber())
                 .role(UserRole.USER)
                 .status(UserStatus.PENDING)
                 .build();
@@ -180,15 +178,15 @@ public class AuthService {
     ) {
         // 1. JPA를 이용해 DB에 ID를 조회해서 있는 애인지 확인한다.
         User user = userRepository.findByEmail(loginRequest.getEmail())
-            .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+            .orElseThrow(() -> new LoginFailedException("이메일 또는 비밀번호가 일치하지 않습니다."));
 
         if(!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             // 실패하면 401 에러 보냄
-            throw new LoginFailedException("비밀번호가 맞지 않습니다.");
+            throw new LoginFailedException("이메일 또는 비밀번호가 일치하지 않습니다.");
         }
 
         if(!user.getStatus().equals(UserStatus.ACTIVE)) {
-            throw new LoginFailedException("인증이 완료되지 않은 유저입니다.");
+            throw new CustomException("이메일 인증이 완료되지 않았습니다. 메일을 확인해주세요.", HttpStatus.FORBIDDEN);
         }
 
         // 로그인 성공
@@ -209,27 +207,54 @@ public class AuthService {
         return new LoginResponse(accessToken, refreshToken);
     }
 
+    // 로그아웃
     @Transactional
     public void logout(LogoutRequest logoutRequest) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("추출된 인증 정보 : {}", email);
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
-        int userId = user.getId();
-
-        refreshTokenRepository.deleteByUserId(userId);
+        refreshTokenRepository.deleteByUserId(user.getId());
 
         String accessToken = logoutRequest.getAccessToken();
-        AccessTokenBlacklist accessTokenBlacklist = new AccessTokenBlacklist();
-        accessTokenBlacklist.setAccessToken(accessToken);
-
         Date expDate = tokenProvider.getExpiration(accessToken);
-
         LocalDateTime convertedDate = expDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
 
-        accessTokenBlacklist.setExpirationAt(convertedDate);
+        AccessTokenBlacklist accessTokenBlacklist = AccessTokenBlacklist
+                .builder()
+                .accessToken(accessToken)
+                .expirationAt(convertedDate)
+                .build();
 
         accessTokenBlacklistRepository.save(accessTokenBlacklist);
+    }
 
+    // Access Token 재발급
+    @Transactional
+    public RefreshResponse refresh(RefreshRequest refreshRequest) {
+        String userRefreshToken = refreshRequest.getRefreshToken();
+        // 1. 위/변조 여부 검증
+        if (!tokenProvider.validateToken(userRefreshToken)) {
+            // 검증 실패 예외
+            throw new InvalidTokenException("위조된 토큰 입니다.");
+        }
+
+        // 2. 우리 서버에 존재하는 refresh token 인지 검증
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(userRefreshToken)
+                .orElseThrow(() -> new InvalidTokenException("로그아웃으로 인해 삭제된 토큰입니다."));
+
+        // 3. 만료시간 확인
+        Date expiration = tokenProvider.getExpiration(userRefreshToken);
+        if(expiration.before(new Date())) {
+            // 만료기간 지난 예외
+            throw new InvalidTokenException("더 이상 사용할 수 없는 토큰입니다.");
+        }
+
+        // 4. 만료 안됐으면 새로운 access token을 만들어서 반환
+        String username = tokenProvider.getEmailFromToken(userRefreshToken);
+        String accessToken = tokenProvider.generateAccessToken(username);
+
+        return new RefreshResponse(accessToken);
     }
 }
