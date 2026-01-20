@@ -14,6 +14,7 @@ import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -51,8 +52,8 @@ public class BoardService {
     public BoardResponse getDetailBoard(
             Integer boardId, CategoryType categoryType
     ) {
-        Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNullAndCategoryCategoryType(boardId, categoryType)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글이거나 카테고리 정보가 일치하지 않습니다."));
+        // 카테고리와 boardId에 해당하는 삭제되지 않은 게시글인지 확인
+        Board board = getValidatedBoard(boardId, categoryType);
 
         BoardResponse boardResponse = BoardResponse.builder()
                 .title(board.getTitle())
@@ -90,9 +91,8 @@ public class BoardService {
     }
     // 게시글 삭제
     public void deleteBoard(Integer boardId, CategoryType categoryType){
-        // 삭제되지 않고 해당 api 경로에 해당하는 게시글이 존재하는지 확인
-        Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNullAndCategoryCategoryType(boardId, categoryType)
-                        .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글이거나 카테고리 정보가 일치하지 않습니다."));
+        // 카테고리와 boardId에 해당하는 삭제되지 않은 게시글인지 확인
+        Board board = getValidatedBoard(boardId, categoryType);
 
         // 작성자와 현재 로그인한 유저가 같은지 검사
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -111,13 +111,11 @@ public class BoardService {
     }
     // 게시글 수정
     public void updateBoard(Integer boardId, CategoryType categoryType, BoardCreateRequest updaterequest){
-        // 삭제되지 않고 해당 api 경로에 해당하는 게시글이 존재하는지 확인
-        Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNullAndCategoryCategoryType(boardId, categoryType)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글이거나 카테고리 정보가 일치하지 않습니다."));
+        // 카테고리와 boardId에 해당하는 삭제되지 않은 게시글인지 확인
+        Board board =getValidatedBoard(boardId, categoryType);
 
         // 작성자와 현재 로그인한 유저가 같은지 검사
-//        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        String email = "linlin@gmail.com";
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
@@ -139,4 +137,12 @@ public class BoardService {
         board.setUpdatedDateTime(LocalDateTime.now());
         boardRepository.save(board);
     }
+
+    // 카테고리와 boardId에 해당하는 삭제되지 않은 게시글 확인 메서드
+    @Transactional(readOnly = true)
+    public Board getValidatedBoard(Integer boardId, CategoryType categoryType) {
+        return boardRepository.findByBoardIdAndDeletedDateTimeIsNullAndCategoryCategoryType(boardId, categoryType)
+                .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
+    }
+
 }
