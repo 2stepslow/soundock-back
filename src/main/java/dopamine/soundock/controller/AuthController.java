@@ -1,6 +1,10 @@
 package dopamine.soundock.controller;
 
 import dopamine.soundock.dto.*;
+import dopamine.soundock.dto.request.*;
+import dopamine.soundock.dto.response.LoginResponse;
+import dopamine.soundock.dto.response.RefreshResponse;
+import dopamine.soundock.dto.response.ValidateEmailResponse;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;

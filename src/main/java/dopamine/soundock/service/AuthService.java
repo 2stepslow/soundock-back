@@ -1,7 +1,10 @@
 package dopamine.soundock.service;
 
 import dopamine.soundock.config.JwtProperties;
-import dopamine.soundock.dto.*;
+import dopamine.soundock.dto.request.*;
+import dopamine.soundock.dto.response.LoginResponse;
+import dopamine.soundock.dto.response.RefreshResponse;
+import dopamine.soundock.dto.response.ValidateEmailResponse;
 import dopamine.soundock.entity.AccessTokenBlacklist;
 import dopamine.soundock.entity.RefreshToken;
 import dopamine.soundock.entity.User;
@@ -48,41 +51,41 @@ public class AuthService {
     private final JwtProperties jwtProperties;
     private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
 
+    private Optional<User> checkEmailStatus(String email) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
 
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+
+            // 1. 현재 사용 중인 계정인 경우
+            if (!user.isDeleted()) {
+                throw new CustomException("이미 사용 중인 이메일입니다.", HttpStatus.CONFLICT);
+            }
+
+            // 2. 탈퇴한 계정인 경우 30일 체크
+            LocalDateTime limitDate = LocalDateTime.now().minusDays(30);
+            if (user.getDeletedAt() != null && user.getDeletedAt().isAfter(limitDate)) {
+                throw new CustomException("탈퇴 후 30일 동안은 재가입이 불가능합니다.", HttpStatus.BAD_REQUEST);
+            }
+
+            // 30일이 지난 탈퇴 유저인 경우 (삭제 대상임)
+            return Optional.of(user);
+        }
+
+        // 가입된 적 없는 이메일인 경우
+        return Optional.empty();
+    }
 
     // 이메일 중복 확인
     @Transactional(readOnly = true)
     public ValidateEmailResponse validateEmail(ValidateEmailRequest validateEmailRequest) {
-        String email = validateEmailRequest.getEmail();
-
-        // 1. 해당 이메일로 가입된 유저가 있는지 확인
-        Optional<User> userOpt = userRepository.findByEmail(email);
-
-        // 가입된 적이 없는 이메일이면 사용 가능
-        if (userOpt.isEmpty()) {
+        try {
+            checkEmailStatus(validateEmailRequest.getEmail());
             return new ValidateEmailResponse(true, "사용 가능한 이메일입니다.");
+        } catch (CustomException e) {
+            // 공통 메서드에서 던진 예외 메시지를 그대로 응답에 담아 보냄
+            return new ValidateEmailResponse(false, e.getMessage());
         }
-
-        User user = userOpt.get();
-
-        // 2. 현재 사용 중인 계정인지 확인 (삭제되지 않은 상태)
-        if (!user.isDeleted()) { // is_deleted가 false인 경우
-            return new ValidateEmailResponse(false, "이미 사용 중인 이메일입니다.");
-        }
-
-        // 3. 탈퇴한 계정인 경우, 삭제일로부터 30일이 지났는지 확인
-        LocalDateTime deletedAt = user.getDeletedAt();
-        if (deletedAt != null) {
-            LocalDateTime limitDate = LocalDateTime.now().minusDays(30);
-
-            // 삭제일이 30일 전보다 이후라면 (즉, 삭제된 지 30일이 안 지났다면)
-            if (deletedAt.isAfter(limitDate)) {
-                return new ValidateEmailResponse(false, "탈퇴 후 30일 동안은 동일한 이메일로 재가입이 불가능합니다.");
-            }
-        }
-
-        // 30일이 지났다면 사용 가능
-        return new ValidateEmailResponse(true, "사용 가능한 이메일입니다.");
     }
 
     // 닉네임 중복 확인
@@ -97,27 +100,11 @@ public class AuthService {
     // 회원가입
     @Transactional
     public void signupUser(UserSignupRequest userSignupRequest, String siteURL) {
-        // 일단 해당 이메일로 유저 찾기
-        Optional<User> existingUser = userRepository.findByEmail(userSignupRequest.getEmail());
-
-        if (existingUser.isPresent()) {
-            User user = existingUser.get();
-
-            if (!user.isDeleted()) {
-                throw new CustomException("이미 사용 중인 이메일입니다.", HttpStatus.CONFLICT);
-            }
-
-            // 탈퇴한 유저라면 날짜를 확인
-            LocalDateTime limitDate = LocalDateTime.now().minusDays(30);
-
-            if (user.getDeletedAt().isBefore(limitDate)) {
-                // 30일이 지났다면 기존 데이터를 DB에서 아예 삭제
-                userRepository.delete(user);
-                userRepository.flush(); // 즉시 반영해서 Unique 제약 조건을 비웁니다.
-            } else {
-                throw new CustomException("탈퇴 후 30일 동안은 재가입이 불가능합니다.", HttpStatus.BAD_REQUEST);
-            }
-        }
+        // 이메일 상태 체크 및 기존 데이터 정리
+        checkEmailStatus(userSignupRequest.getEmail()).ifPresent(oldUser -> {
+            userRepository.delete(oldUser);
+            userRepository.flush(); // 즉시 삭제해서 중복 제약 조건 방지
+        });
 
         // 닉네임 중복 체크
         if (userRepository.existsByNickname(userSignupRequest.getNickname())) {
@@ -125,7 +112,8 @@ public class AuthService {
         }
 
         // DB 컬럼 길이와 일치하는지 최종 확인
-        if (userSignupRequest.getPhoneNumber().length() != 11) {
+        String phoneNumber = userSignupRequest.getPhoneNumber();
+        if (phoneNumber == null || phoneNumber.length() != 11) {
             throw new CustomException("연락처 형식이 올바르지 않습니다.", HttpStatus.BAD_REQUEST);
         }
 
@@ -148,6 +136,7 @@ public class AuthService {
         VerificationEmailRequest emailRequest = new VerificationEmailRequest(user.getEmail());
         sendVerificationEmail(emailRequest, siteURL);
     }
+
     // 이메일 인증 토큰 생성
     @Transactional
     private void createVerificationToken(User user, String token) {
@@ -206,14 +195,18 @@ public class AuthService {
             throw new CustomException("이미 인증이 완료된 링크입니다.", HttpStatus.CONFLICT);
         }
 
-        if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+        // 만료 시간 null 체크
+        LocalDateTime expiryDate = verificationToken.getExpiryDate();
+        if (expiryDate == null || expiryDate.isBefore(LocalDateTime.now())) {
             throw new CustomException("인증 시간이 만료되었습니다. 다시 시도해주세요.", HttpStatus.GONE);
         }
 
         User user = verificationToken.getUser();
-        user.setStatus(UserStatus.ACTIVE);
+        if (user != null) {
+            user.setStatus(UserStatus.ACTIVE);
+            userRepository.save(user);
+        }
         verificationToken.setVerified(true);
-        userRepository.save(user);
         verificationTokenRepository.save(verificationToken);
     }
 

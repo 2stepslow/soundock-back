@@ -1,11 +1,8 @@
-package dopamine.soundock.dto;
+package dopamine.soundock.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-
-import java.time.LocalDateTime;
 
 @Builder
 @AllArgsConstructor

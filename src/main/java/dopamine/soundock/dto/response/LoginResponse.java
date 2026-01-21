@@ -1,4 +1,4 @@
-package dopamine.soundock.dto;
+package dopamine.soundock.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

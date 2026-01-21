@@ -1,11 +1,9 @@
 package dopamine.soundock.controller;
 
 import dopamine.soundock.dto.RestResponse;
-import dopamine.soundock.dto.BoardCreateRequest;
-import dopamine.soundock.dto.BoardResponse;
-import dopamine.soundock.entity.Board;
+import dopamine.soundock.dto.request.BoardCreateRequest;
+import dopamine.soundock.dto.response.BoardResponse;
 import dopamine.soundock.enums.CategoryType;
-import dopamine.soundock.repository.BoardRepository;
 import dopamine.soundock.service.BoardService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;

@@ -1,6 +1,6 @@
 package dopamine.soundock.service;
 
-import dopamine.soundock.dto.ConfirmPaymentRequest;
+import dopamine.soundock.dto.request.ConfirmPaymentRequest;
 import dopamine.soundock.entity.PopHistory;
 import dopamine.soundock.repository.PopHistoryRepository;
 import dopamine.soundock.repository.TossPaymentRepository;

@@ -1,7 +1,7 @@
 package dopamine.soundock.controller;
 
 import dopamine.soundock.dto.RestResponse;
-import dopamine.soundock.dto.ConfirmPaymentRequest;
+import dopamine.soundock.dto.request.ConfirmPaymentRequest;
 import dopamine.soundock.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

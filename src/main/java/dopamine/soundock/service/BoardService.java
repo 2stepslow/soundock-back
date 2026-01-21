@@ -1,7 +1,7 @@
 package dopamine.soundock.service;
 
-import dopamine.soundock.dto.BoardCreateRequest;
-import dopamine.soundock.dto.BoardResponse;
+import dopamine.soundock.dto.request.BoardCreateRequest;
+import dopamine.soundock.dto.response.BoardResponse;
 import dopamine.soundock.entity.Board;
 import dopamine.soundock.entity.Category;
 import dopamine.soundock.entity.User;

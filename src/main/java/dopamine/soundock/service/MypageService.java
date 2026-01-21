@@ -1,6 +1,8 @@
 package dopamine.soundock.service;
 
-import dopamine.soundock.dto.*;
+import dopamine.soundock.dto.request.CurrentPasswdRequest;
+import dopamine.soundock.dto.request.UpdateInfoRequest;
+import dopamine.soundock.dto.request.UpdatePasswdRequest;
 import dopamine.soundock.entity.AccessTokenBlacklist;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.UserStatus;
@@ -9,7 +11,6 @@ import dopamine.soundock.global.TokenProvider;
 import dopamine.soundock.repository.AccessTokenBlacklistRepository;
 import dopamine.soundock.repository.RefreshTokenRepository;
 import dopamine.soundock.repository.UserRepository;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -97,8 +98,11 @@ public class MypageService {
 
     // 회원 탈퇴
     @Transactional
-    public void deleteUser(DeleteUserRequest request) {
+    public void deleteUser(String accessToken) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        // Access Token 유효성 검증
+        validateAccessToken(accessToken, email);
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
@@ -107,8 +111,10 @@ public class MypageService {
             throw new CustomException("이미 탈퇴한 사용자입니다.", HttpStatus.BAD_REQUEST);
         }
 
-        // 닉네임 중복 제약 조건을 해제하기 위해 null 처리
-        user.setNickname(null);
+        // 닉네임 중복 제약 조건을 해제하기 위해 고유한 값으로 변경 (원래 닉네임 + _deleted + user.getId + 현재시간)
+        String originalNickname = user.getNickname();
+        String deletedNickname = originalNickname + "_deleted_" + user.getId() + "_" + System.currentTimeMillis();
+        user.setNickname(deletedNickname);
 
         // 유저 상태 변경 (Soft Delete)
         user.setDeleted(true);
@@ -119,10 +125,6 @@ public class MypageService {
 
         // Refresh Token 무효화
         refreshTokenRepository.deleteByUserId(user.getId());
-
-        // Access Token 유효성 검증
-        String accessToken = request.getAccessToken();
-        validateAccessToken(accessToken, email);
 
         // Access Token 블랙리스트 등록
         Date expDate = tokenProvider.getExpiration(accessToken);
@@ -153,7 +155,8 @@ public class MypageService {
         String tokenEmail;
         try {
             tokenEmail = tokenProvider.getEmailFromToken(accessToken);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            log.error("토큰에서 이메일 추출 실패", e);
             throw new InvalidTokenException("토큰에서 사용자 정보를 추출할 수 없습니다.");
         }
 

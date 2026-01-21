@@ -1,4 +1,4 @@
-package dopamine.soundock.dto;
+package dopamine.soundock.dto.request;
 
 public class ConfirmPaymentRequest {
 }

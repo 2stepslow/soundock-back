@@ -1,8 +1,8 @@
 package dopamine.soundock.controller;
 
 import dopamine.soundock.dto.RestResponse;
-import dopamine.soundock.dto.CommentCreateRequest;
-import dopamine.soundock.dto.CommentResponse;
+import dopamine.soundock.dto.request.CommentCreateRequest;
+import dopamine.soundock.dto.response.CommentResponse;
 import dopamine.soundock.enums.CategoryType;
 import dopamine.soundock.service.CommentService;
 import lombok.RequiredArgsConstructor;

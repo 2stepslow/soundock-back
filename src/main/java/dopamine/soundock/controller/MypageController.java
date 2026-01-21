@@ -1,7 +1,9 @@
 package dopamine.soundock.controller;
 
 import dopamine.soundock.dto.*;
-import dopamine.soundock.exceptions.CustomException;
+import dopamine.soundock.dto.request.CurrentPasswdRequest;
+import dopamine.soundock.dto.request.UpdateInfoRequest;
+import dopamine.soundock.dto.request.UpdatePasswdRequest;
 import dopamine.soundock.service.MypageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -9,10 +11,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -85,8 +88,15 @@ public class MypageController {
             @ApiResponse(responseCode = "404", description = "존재하지 않는 사용자")
     })
     @DeleteMapping("/me")
-    public ResponseEntity<RestResponse<Void>> deleteUser(@Valid @RequestBody DeleteUserRequest request) {
-        mypageService.deleteUser(request);
+    public ResponseEntity<RestResponse<Void>> deleteUser(HttpServletRequest request) {
+        // Authorization 헤더에서 토큰 추출
+        String bearerToken = request.getHeader("Authorization");
+        String accessToken = null;
+
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            accessToken = bearerToken.substring(7);
+        }
+        mypageService.deleteUser(accessToken);
         return ResponseEntity.ok(RestResponse.success("회원 탈퇴가 완료되었습니다."));
     }
 }
