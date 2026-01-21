@@ -1,14 +1,20 @@
 package dopamine.soundock.config;
 
 import dopamine.soundock.global.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -16,11 +22,18 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
+@EnableWebSecurity
 @AllArgsConstructor
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
+
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -43,8 +56,21 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, ClientRegistrationRepository clientRegistrationRepository) throws Exception {
         http
+                // Google OAuth2
+                .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(authorization -> authorization
+                                .authorizationRequestResolver(
+                                        new CustomAuthorizationRequestResolver(clientRegistrationRepository))
+                                .authorizationRequestRepository(httpCookieOAuth2AuthorizationRequestRepository)
+                        )
+                        // 로그인 성공 시 실행할 핸들러 등록 (DB 저장 로직)
+                        .successHandler(oAuth2AuthenticationSuccessHandler)
+                        // 로그인 실패 시 핸들러
+                        .failureHandler(oAuth2AuthenticationFailureHandler)
+                )
+
                 // CORS 설정 (프론트엔드 React와 통신을 위해 필수)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
@@ -90,5 +116,48 @@ public class SecurityConfig {
                         })
                 );
         return http.build();
+    }
+
+    // 커스텀 리졸버 클래스
+    public static class CustomAuthorizationRequestResolver implements OAuth2AuthorizationRequestResolver {
+        private final OAuth2AuthorizationRequestResolver defaultResolver;
+
+        public CustomAuthorizationRequestResolver(ClientRegistrationRepository repo) {
+            this.defaultResolver = new DefaultOAuth2AuthorizationRequestResolver(repo, "/oauth2/authorization");
+        }
+
+        @Override
+        public OAuth2AuthorizationRequest resolve(HttpServletRequest request) {
+            OAuth2AuthorizationRequest authRequest = defaultResolver.resolve(request);
+            return customize(authRequest);
+        }
+
+        @Override
+        public OAuth2AuthorizationRequest resolve(HttpServletRequest request, String clientRegistrationId) {
+            OAuth2AuthorizationRequest authRequest = defaultResolver.resolve(request, clientRegistrationId);
+            return customize(authRequest);
+        }
+
+        private OAuth2AuthorizationRequest customize(OAuth2AuthorizationRequest authRequest) {
+            if (authRequest == null) return null;
+
+            // 구글 로그인 시에만 특정 파라미터 추가
+            Map<String, Object> extraParams = new HashMap<>(authRequest.getAdditionalParameters());
+            extraParams.put("access_type", "offline"); // 리프레시 토큰 발급의 핵심
+
+            // 개발 중일 때는 (true) prompt=consent
+            // 배포 환경에서는 (false) prompt=select_account 로 변경
+            boolean isDevelopment = true;
+            if (isDevelopment) {
+                extraParams.put("prompt", "consent");    // 매번 동의 화면을 띄워 리프레시 토큰 재발급 강제
+            } else {
+                extraParams.put("prompt", "select_account"); // 계정 선택 창만 띄우고, 동의 화면은 최초 1회만 표시
+            }
+
+
+            return OAuth2AuthorizationRequest.from(authRequest)
+                    .additionalParameters(extraParams)
+                    .build();
+        }
     }
 }
