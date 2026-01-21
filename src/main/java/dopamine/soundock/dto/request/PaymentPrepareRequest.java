@@ -1,6 +1,4 @@
-package dopamine.soundock.dto;
-
-import dopamine.soundock.entity.User;
+package dopamine.soundock.dto.request;
 
 public class PaymentPrepareRequest {
     private String tossOrderId;

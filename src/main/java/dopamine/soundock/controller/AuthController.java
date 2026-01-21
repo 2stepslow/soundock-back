@@ -1,6 +1,10 @@
 package dopamine.soundock.controller;
 
 import dopamine.soundock.dto.*;
+import dopamine.soundock.dto.request.*;
+import dopamine.soundock.dto.response.LoginResponse;
+import dopamine.soundock.dto.response.RefreshResponse;
+import dopamine.soundock.dto.response.ValidateEmailResponse;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,19 +42,17 @@ public class AuthController {
 
     // 이메일 중복 체크
     @Operation(
-            summary = "이메일 중복 체크",
-            description = "사용자가 입력한 이메일이 이미 가입되어 있는지 확인"
+            summary = "이메일 중복 및 재가입 가능 여부 체크",
+            description = "사용자가 입력한 이메일의 가입 여부와 탈퇴 후 30일 경과 여부를 확인"
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "사용 가능한 이메일"),
-            @ApiResponse(responseCode = "400", description = "유효하지 않은 이메일"),
-            @ApiResponse(responseCode = "409", description = "이미 존재하는 이메일")
+            @ApiResponse(responseCode = "200", description = "체크 성공 (응답 body의 available 필드로 가용 여부 판단"),
+            @ApiResponse(responseCode = "400", description = "이메일 형식 오류 또는 필수값 누락")
     })
     @GetMapping("/email")
-    public ResponseEntity<RestResponse<Void>> checkEmail(@Valid @ModelAttribute ValidateEmailRequest validateEmailRequest) {
-        authService.validateEmail(validateEmailRequest);
-        // 이메일 중복 체크 통과시 로직 실행
-        return ResponseEntity.ok(RestResponse.success("사용 가능한 이메일 입니다."));
+    public ResponseEntity<RestResponse<ValidateEmailResponse>> checkEmail(@Valid @ModelAttribute ValidateEmailRequest validateEmailRequest) {
+        ValidateEmailResponse response = authService.validateEmail(validateEmailRequest);
+        return ResponseEntity.ok(RestResponse.success(response));
     }
 
     // 닉네임 중복 체크

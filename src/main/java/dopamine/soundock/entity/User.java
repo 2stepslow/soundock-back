@@ -61,11 +61,14 @@ public class User {
     private UserStatus status;
 
     @CreatedDate
-    @Column(name = "create_datetime", nullable = false)
+    @Column(name = "create_at", nullable = false)
     private LocalDateTime createDatetime;
 
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @Min(0)
     @Column(name = "pop_balance", nullable = false)

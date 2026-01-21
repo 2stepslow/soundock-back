@@ -35,7 +35,7 @@ public class VerificationToken {
 
     // 만료 시간
     @NotNull
-    @Column(name = "expiration_datetime", nullable = false)
+    @Column(name = "expiration_at", nullable = false)
     private LocalDateTime expiryDate;
 
     @NotNull

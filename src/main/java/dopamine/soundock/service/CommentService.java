@@ -1,7 +1,7 @@
 package dopamine.soundock.service;
 
-import dopamine.soundock.dto.CommentCreateRequest;
-import dopamine.soundock.dto.CommentResponse;
+import dopamine.soundock.dto.request.CommentCreateRequest;
+import dopamine.soundock.dto.response.CommentResponse;
 import dopamine.soundock.entity.Board;
 import dopamine.soundock.entity.Comment;
 import dopamine.soundock.entity.User;
@@ -11,7 +11,6 @@ import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.repository.BoardRepository;
 import dopamine.soundock.repository.CommentRepository;
 import dopamine.soundock.repository.UserRepository;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;

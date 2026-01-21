@@ -1,6 +1,6 @@
 package dopamine.soundock.service;
 
-import dopamine.soundock.dto.PWLTokenResponse;
+import dopamine.soundock.dto.response.PWLTokenResponse;
 
 // 인터페이스를 이용해 실제 구현체(X1280ServiceImpl)와 테스트용(MockImpl)을 교체하기 쉽게 설계
 public interface X1280Service {

@@ -6,5 +6,5 @@ public enum UserStatus {
     WARN,
     BLOCKED,
     BANNED,
-    QUIETED
+    QUITTED
 }

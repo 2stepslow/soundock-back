@@ -1,4 +1,4 @@
-package dopamine.soundock.dto;
+package dopamine.soundock.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
@@ -12,7 +12,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Schema(description = "에미일 중복 확인 요청 DTO")
+@Schema(description = "이메일 중복 확인 요청 DTO")
 public class ValidateEmailRequest {
 
     @Schema(description = "확인할 이메일 주소")

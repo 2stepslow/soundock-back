@@ -1,6 +1,6 @@
 package dopamine.soundock.service;
 
-import dopamine.soundock.dto.PWLTokenResponse;
+import dopamine.soundock.dto.response.PWLTokenResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 

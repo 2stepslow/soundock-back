@@ -1,10 +1,9 @@
-package dopamine.soundock.dto;
+package dopamine.soundock.dto.response;
 
 import dopamine.soundock.entity.Comment;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 
