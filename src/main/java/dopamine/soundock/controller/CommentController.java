@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RequiredArgsConstructor
-@RequestMapping("/api/boards/{categoryType}/{boardId}/comments")
+@RequestMapping("/api/boards/{boardId}/comments")
 @RestController
 public class CommentController {
     private final CommentService commentService;
@@ -20,32 +20,29 @@ public class CommentController {
     // 댓글 작성
     @PostMapping
     public ResponseEntity<RestResponse<?>> createComment(
-            @PathVariable(required = true) CategoryType categoryType,
             @PathVariable(required = true) Integer boardId,
             @RequestBody CommentCreateRequest createRequest
     ){
-        CommentResponse commentResponse = commentService.createComment(categoryType, boardId, createRequest);
+        CommentResponse commentResponse = commentService.createComment(boardId, createRequest);
         return ResponseEntity.ok(RestResponse.success("댓글이 등록되었습니다.", commentResponse));
     }
 
     // 댓글 삭제
     @DeleteMapping("/{commentId}")
     public ResponseEntity<RestResponse<?>> deleteComment(
-            @PathVariable(required = true) CategoryType categoryType,
             @PathVariable(required = true) Integer boardId,
             @PathVariable(required = true) Integer commentId
     ){
-        commentService.deleteComment(categoryType, boardId, commentId);
+        commentService.deleteComment(boardId, commentId);
         return ResponseEntity.ok(RestResponse.success("댓글이 삭제되었습니다."));
     }
 
     // 댓글 조회
     @GetMapping
     public ResponseEntity<RestResponse<?>> getComment(
-            @PathVariable(required = true) CategoryType categoryType,
             @PathVariable(required = true) Integer boardId
     ){
-        List<CommentResponse> responses = commentService.getComment(categoryType, boardId);
+        List<CommentResponse> responses = commentService.getComment(boardId);
         return ResponseEntity.ok(RestResponse.success(responses));
     }
 }

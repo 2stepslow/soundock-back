@@ -88,15 +88,8 @@ public class MypageController {
             @ApiResponse(responseCode = "404", description = "존재하지 않는 사용자")
     })
     @DeleteMapping("/me")
-    public ResponseEntity<RestResponse<Void>> deleteUser(HttpServletRequest request) {
-        // Authorization 헤더에서 토큰 추출
-        String bearerToken = request.getHeader("Authorization");
-        String accessToken = null;
-
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            accessToken = bearerToken.substring(7);
-        }
-        mypageService.deleteUser(accessToken);
+    public ResponseEntity<RestResponse<Void>> deleteUser() {
+        mypageService.deleteUser();
         return ResponseEntity.ok(RestResponse.success("회원 탈퇴가 완료되었습니다."));
     }
 }

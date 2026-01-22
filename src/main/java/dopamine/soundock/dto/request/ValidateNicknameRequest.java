@@ -1,5 +1,6 @@
 package dopamine.soundock.dto.request;
 
+import dopamine.soundock.global.constants.AppConstants;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -19,8 +20,8 @@ public class ValidateNicknameRequest {
     )
     @NotBlank(message = "닉네임은 필수 입력 항목입니다.")
     @Pattern(
-            regexp = "^[a-zA-Z0-9가-힣ㄱ-ㅎㅏ-ㅣ]{1,10}$",
-            message = "닉네임은 특수문자를 제외하고 10자 이내로 입력해주세요."
+            regexp = AppConstants.ValidationPattern.NICKNAME_PATTERN,
+            message = AppConstants.ErrorMessage.NICKNAME_FORMAT_ERROR
     )
     private String nickname;
 }

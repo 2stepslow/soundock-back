@@ -61,28 +61,24 @@ public class MypageService {
         userRepository.save(user);
     }
 
-    // 비밀번호 검증 and 수정 공통 로직
-    private User validatePasswordMatch(String password) {
+    // 비밀번호 검증
+    @Transactional(readOnly = true)
+    public void checkCurrentPassword(CurrentPasswdRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
-        if (!passwordEncoder.matches(password, user.getPassword())) {
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             throw new CustomException("현재 비밀번호가 일치하지 않습니다.", HttpStatus.BAD_REQUEST);
         }
-        return user;
-    }
-
-    // 비밀번호 검증
-    @Transactional(readOnly = true)
-    public void checkCurrentPassword(CurrentPasswdRequest request) {
-        validatePasswordMatch(request.getCurrentPassword());
     }
 
     // 비밀번호 수정
     @Transactional
     public void updateUserPasswd(UpdatePasswdRequest request) {
-        User user = validatePasswordMatch(request.getCurrentPassword());
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
         // 새 비밀번호가 기존 비밀번호와 같은지 확인
         if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -98,11 +94,8 @@ public class MypageService {
 
     // 회원 탈퇴
     @Transactional
-    public void deleteUser(String accessToken) {
+    public void deleteUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        // Access Token 유효성 검증
-        validateAccessToken(accessToken, email);
-
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
@@ -125,49 +118,5 @@ public class MypageService {
 
         // Refresh Token 무효화
         refreshTokenRepository.deleteByUserId(user.getId());
-
-        // Access Token 블랙리스트 등록
-        Date expDate = tokenProvider.getExpiration(accessToken);
-        LocalDateTime convertedDate = expDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-
-        AccessTokenBlacklist accessTokenBlacklist = AccessTokenBlacklist
-                .builder()
-                .accessToken(accessToken)
-                .expirationAt(convertedDate)
-                .build();
-
-        accessTokenBlacklistRepository.save(accessTokenBlacklist);
-    }
-
-    // 토큰 유효성 검증 메서드
-    private void validateAccessToken(String accessToken, String currentUserEmail) {
-        // 토큰이 비어있는지 확인
-        if (accessToken == null || accessToken.isBlank()) {
-            throw new InvalidTokenException("액세스 토큰이 비어있습니다.");
-        }
-
-        // 토큰 형식 및 만료 여부 검증
-        if (!tokenProvider.validateToken(accessToken)) {
-            throw new InvalidTokenException("유효하지 않은 토큰입니다.");
-        }
-
-        // 토큰에서 이메일 추출
-        String tokenEmail;
-        try {
-            tokenEmail = tokenProvider.getEmailFromToken(accessToken);
-        } catch (RuntimeException e) {
-            log.error("토큰에서 이메일 추출 실패", e);
-            throw new InvalidTokenException("토큰에서 사용자 정보를 추출할 수 없습니다.");
-        }
-
-        // 현재 로그인한 사용자와 토큰의 사용자가 일치하는지 확인
-        if (!currentUserEmail.equals(tokenEmail)) {
-            throw new UnauthorizedException("토큰 정보가 현재 사용자와 일치하지 않습니다.");
-        }
-
-        // 이미 블랙리스트에 등록된 토큰인지 확인
-        if (accessTokenBlacklistRepository.existsByAccessToken(accessToken)) {
-            throw new InvalidTokenException("이미 무효화된 토큰입니다.");
-        }
     }
 }

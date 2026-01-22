@@ -1,5 +1,6 @@
 package dopamine.soundock.global;
 
+import dopamine.soundock.global.constants.AppConstants;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -14,10 +15,10 @@ import java.util.Date;
 public class TokenProvider {
     private final Key key;
     // 액세스 토큰 지속 시간 (기본 단위 = 밀리초)
-    private static final long ACCESS_TOKEN_VALIDITY = 1000 * 60 * 60;
+    private static final long ACCESS_TOKEN_VALIDITY = AppConstants.Time.ACCESS_TOKEN_VALIDITY_MS;
 
     // 리프레시 토큰 지속 시간 (기본 단위 = 밀리초)
-    private static final long REFRESH_TOKEN_VALIDITY = 1000 * 60 * 60 * 24;
+    private static final long REFRESH_TOKEN_VALIDITY = AppConstants.Time.REFRESH_TOKEN_VALIDITY_MS;
 
     // 서버가 가진 비밀 레시피
     public  TokenProvider(@Value("${spring.jwt.secret}") String secretKey) {
