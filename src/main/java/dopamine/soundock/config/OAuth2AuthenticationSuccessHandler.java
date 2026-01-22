@@ -2,6 +2,7 @@ package dopamine.soundock.config;
 
 import dopamine.soundock.global.CookieUtils;
 import dopamine.soundock.global.TokenProvider;
+import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.service.YouTubeAuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,7 +51,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         // 2. 어떤 유저에게 이 토큰을 저장할지 결정
         // 쿠키에서 "연동을 시도했던 우리 서비스 유저 이메일"을 먼저 찾음
-        String targetEmail = CookieUtils.getCookie(request, HttpCookieOAuth2AuthorizationRequestRepository.LINKING_USER_EMAIL_COOKIE_NAME)
+        String targetEmail = CookieUtils.getCookie(request, AppConstants.OAuth2.LINKING_USER_EMAIL_COOKIE_NAME)
                 .map(Cookie::getValue)
                 .orElse(oAuth2User.getAttribute("email")); // 쿠키 없으면 구글 이메일 사용
 
