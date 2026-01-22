@@ -1,24 +1,39 @@
 package dopamine.soundock.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dopamine.soundock.entity.Oauth;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.repository.OauthRepository;
 import dopamine.soundock.repository.UserRepository;
-import io.swagger.v3.oas.annotations.servers.Server;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class YouTubeAuthService {
 
     private final OauthRepository oauthRepository;
     private final UserRepository userRepository;
+    private final RestTemplate restTemplate =  new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
+    private String clientId;
+
+    @Value("${spring.security.oauth2.client.registration.google.client-secret}")
+    private String clientSecret;
 
     @Transactional
     public void saveOrUpdateGoogleTokens(String email, String accessToken, String refreshToken, LocalDateTime expiresAt) {
@@ -38,5 +53,67 @@ public class YouTubeAuthService {
 
         // 저장
         oauthRepository.save(oauth);
+    }
+
+    // Access Token이 만료되었는지 확인하고, 만료되었다면 Refresh Token으로 갱신
+    @Transactional
+    public String getValidAccessToken(User user) {
+        Oauth oauth = oauthRepository.findByUser(user)
+                .orElseThrow(() -> new CustomException("구글 연동 정보가 없습니다.", HttpStatus.NOT_FOUND));
+
+        // 토큰 만료 여부 확인 (여유시간 3분 추가)
+        if (oauth.getExpiresAt().isBefore(LocalDateTime.now())) {
+            return refreshAccessToken(oauth);
+        }
+        return oauth.getAccessToken();
+    }
+
+    @Transactional
+    public String refreshAccessToken(Oauth oauth) {
+        if (oauth.getRefreshToken() == null) {
+            throw new CustomException("Refresh Token이 없습니다. 다시 로그인해주세요.", HttpStatus.UNAUTHORIZED);
+        }
+
+        try {
+            String tokenUrl = "https://oauth2.googleapis.com/token";
+
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            params.add("client_id", clientId);
+            params.add("client_secret", clientSecret);
+            params.add("refresh_token", oauth.getRefreshToken());
+            params.add("grant_type", "refresh_token");
+
+            // 헤더 설정
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+
+            // Google API 호출
+            ResponseEntity<String> response = restTemplate.postForEntity(tokenUrl, request, String.class);
+
+            if (response.getStatusCode() == HttpStatus.OK) {
+                JsonNode jsonNode = objectMapper.readTree(response.getBody());
+
+                String newAccessToken = jsonNode.get("access_token").asText();
+                int expiresIn = jsonNode.get("expires_in").asInt();
+
+                // 새로운 만료 시간 계산
+                LocalDateTime newExpiresAt = LocalDateTime.now().plusSeconds(expiresIn);
+
+                // DB 업데이트 (Refresh Token은 변경되지 않을 수 있음)
+                oauth.updateTokens(newAccessToken, oauth.getRefreshToken(), newExpiresAt);
+                oauthRepository.save(oauth);
+
+                log.info("Access Token 갱신 성공: {}", oauth.getUser().getEmail());
+                return newAccessToken;
+            } else {
+                throw new CustomException("토큰 갱신에 실패했습니다.", HttpStatus.UNAUTHORIZED);
+            }
+
+        } catch (Exception e) {
+            log.error("Access Token 갱신 중 오류 발생", e);
+            throw new CustomException("토큰 갱신 중 오류가 발생했습니다. 다시 로그인해주세요.", HttpStatus.UNAUTHORIZED);
+        }
     }
 }
