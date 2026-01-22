@@ -2,6 +2,7 @@ package dopamine.soundock.service;
 
 import dopamine.soundock.config.JwtProperties;
 import dopamine.soundock.dto.request.*;
+import dopamine.soundock.dto.response.EmailCheckResult;
 import dopamine.soundock.dto.response.LoginResponse;
 import dopamine.soundock.dto.response.RefreshResponse;
 import dopamine.soundock.dto.response.ValidateEmailResponse;
@@ -51,41 +52,41 @@ public class AuthService {
     private final JwtProperties jwtProperties;
     private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
 
-    private Optional<User> checkEmailStatus(String email) {
+    private EmailCheckResult checkEmailAvailability(String email) {
         Optional<User> userOpt = userRepository.findByEmail(email);
 
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-
-            // 1. 현재 사용 중인 계정인 경우
-            if (!user.isDeleted()) {
-                throw new CustomException("이미 사용 중인 이메일입니다.", HttpStatus.CONFLICT);
-            }
-
-            // 2. 탈퇴한 계정인 경우 30일 체크
-            LocalDateTime limitDate = LocalDateTime.now().minusDays(30);
-            if (user.getDeletedAt() != null && user.getDeletedAt().isAfter(limitDate)) {
-                throw new CustomException("탈퇴 후 30일 동안은 재가입이 불가능합니다.", HttpStatus.BAD_REQUEST);
-            }
-
-            // 30일이 지난 탈퇴 유저인 경우 (삭제 대상임)
-            return Optional.of(user);
+        if (userOpt.isEmpty()) {
+            return EmailCheckResult.available();
         }
 
-        // 가입된 적 없는 이메일인 경우
-        return Optional.empty();
+        User user = userOpt.get();
+
+        if (!user.isDeleted()) {
+            return EmailCheckResult.unavailable("이미 사용 중인 이메일입니다.");
+        }
+
+        LocalDateTime limitDate = LocalDateTime.now().minusDays(30);
+        if (user.getDeletedAt() != null && user.getDeletedAt().isAfter(limitDate)) {
+            return EmailCheckResult.unavailable("탈퇴 후 30일 동안은 재가입이 불가능합니다.");
+        }
+
+        return EmailCheckResult.availableWithCleanup();
     }
 
-    // 이메일 중복 확인
-    @Transactional(readOnly = true)
-    public ValidateEmailResponse validateEmail(ValidateEmailRequest validateEmailRequest) {
-        try {
-            checkEmailStatus(validateEmailRequest.getEmail());
-            return new ValidateEmailResponse(true, "사용 가능한 이메일입니다.");
-        } catch (CustomException e) {
-            // 공통 메서드에서 던진 예외 메시지를 그대로 응답에 담아 보냄
-            return new ValidateEmailResponse(false, e.getMessage());
+    private boolean validateEmailForSignup(String email) {
+        EmailCheckResult result = checkEmailAvailability(email);
+
+        if (!result.isAvailable()) {
+            throw new CustomException(result.getMessage(), HttpStatus.CONFLICT);
         }
+
+        return result.isNeedsCleanup();
+    }
+
+    @Transactional(readOnly = true)
+    public ValidateEmailResponse validateEmail(ValidateEmailRequest request) {
+        EmailCheckResult result = checkEmailAvailability(request.getEmail());
+        return new ValidateEmailResponse(result.isAvailable(), result.getMessage());
     }
 
     // 닉네임 중복 확인
@@ -101,23 +102,18 @@ public class AuthService {
     @Transactional
     public void signupUser(UserSignupRequest userSignupRequest, String siteURL) {
         // 이메일 상태 체크 및 기존 데이터 정리
-        checkEmailStatus(userSignupRequest.getEmail()).ifPresent(oldUser -> {
-            userRepository.delete(oldUser);
-            userRepository.flush(); // 즉시 삭제해서 중복 제약 조건 방지
-        });
+        boolean needsCleanup = validateEmailForSignup(userSignupRequest.getEmail());
+        if (needsCleanup) {
+            userRepository.deleteByEmail(userSignupRequest.getEmail());
+            userRepository.flush();
+        }
 
         // 닉네임 중복 체크
         if (userRepository.existsByNickname(userSignupRequest.getNickname())) {
             throw new DuplicateNicknameException();
         }
 
-        // DB 컬럼 길이와 일치하는지 최종 확인
-        String phoneNumber = userSignupRequest.getPhoneNumber();
-        if (phoneNumber == null || phoneNumber.length() != 11) {
-            throw new CustomException("연락처 형식이 올바르지 않습니다.", HttpStatus.BAD_REQUEST);
-        }
-
-        // 비밀 번호 암호화
+        // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(userSignupRequest.getPassword());
 
         // builder 패턴을 통해 좀 더 깔끔하게 수정
@@ -138,7 +134,6 @@ public class AuthService {
     }
 
     // 이메일 인증 토큰 생성
-    @Transactional
     private void createVerificationToken(User user, String token) {
         // 기존 토큰이 있으면 삭제
         verificationTokenRepository.deleteByUser(user);

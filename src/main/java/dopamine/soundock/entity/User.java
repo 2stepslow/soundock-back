@@ -61,7 +61,7 @@ public class User {
     private UserStatus status;
 
     @CreatedDate
-    @Column(name = "create_at", nullable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createDatetime;
 
     @Column(name = "is_deleted", nullable = false)

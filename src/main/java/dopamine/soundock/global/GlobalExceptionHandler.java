@@ -34,10 +34,9 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(RestResponse.fail(errorMessage));
     }
-    //
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<RestResponse<String>> handleResourceNotFound(ResourceNotFoundException e){
-        System.out.println("notFound");
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(RestResponse.fail(e.getMessage()));
     }
 
