@@ -24,7 +24,7 @@ public class BoardController {
             @PathVariable(required = true) CategoryType categoryType,
             @Valid @RequestBody BoardCreateRequest createRequest
     ){
-        int newBoardId = boardService.createNewBoard(categoryType, createRequest);
+        int newBoardId = boardService.createBoard(categoryType, createRequest);
         URI location = URI.create("/getDetailBoard/" + newBoardId);
         return ResponseEntity.created(location).body(RestResponse.success("게시글 등록이 완료되었습니다."));
     }
@@ -44,7 +44,7 @@ public class BoardController {
             @PathVariable(required = true) CategoryType categoryType
     ){
         // subCategory와 일치하는 게시글 목록 조회
-        List<BoardResponse> boardResponses = boardService.findAllBoardsByCategoryType(categoryType);
+        List<BoardResponse> boardResponses = boardService.getBoardsByCategory(categoryType);
         return ResponseEntity.ok(RestResponse.success(boardResponses));
         }
 
@@ -64,7 +64,7 @@ public class BoardController {
             @PathVariable(required = true) Integer boardId,
             @Valid @RequestBody BoardCreateRequest updaterequest
     ){
-        boardService.updateBoard(boardId, categoryType, updaterequest);
+        boardService.updateBoard(boardId, updaterequest);
         return ResponseEntity.ok(RestResponse.success("게시글 수정이 완료되었습니다."));
     }
 }

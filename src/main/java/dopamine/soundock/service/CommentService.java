@@ -14,6 +14,7 @@ import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,8 +29,8 @@ public class CommentService {
     private final BoardService boardService;
 
     // 댓글 작성
+    @Transactional
     public CommentResponse createComment(
-            CategoryType categoryType,
             Integer boardId,
             CommentCreateRequest createRequest
     ){
@@ -58,8 +59,10 @@ public class CommentService {
         // comment를 CommentResponse dto에 실어서 보내주기
         return CommentResponse.from(comment);
     }
+
     // 댓글 삭제
-    public void deleteComment(CategoryType categoryType, Integer boardId, Integer commentId){
+    @Transactional
+    public void deleteComment(Integer boardId, Integer commentId){
         Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
 
@@ -76,9 +79,6 @@ public class CommentService {
         if (comment.isDeleted()){
             throw new ResourceNotFoundException("이미 삭제된 댓글입니다.");
         }
-        if (!comment.getBoard().getBoardId().equals(board.getBoardId())){
-            throw new IllegalArgumentException("해당 게시글의 댓글이 아닙니다.");
-        }
         if (!comment.getUser().getId().equals(user.getId())){
             throw new AuthRejectedException("댓글 작성자의 정보와 일치하지 않습니다.");
         }
@@ -87,8 +87,10 @@ public class CommentService {
         commentRepository.save(comment);
 
     }
+
     // 댓글 조회
-    public List<CommentResponse> getComment(CategoryType categoryType, Integer boardId){
+    @Transactional(readOnly = true)
+    public List<CommentResponse> getComment(Integer boardId){
         // 카테고리와 boardId에 해당하는 삭제되지 않은 게시글인지 확인
         Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));

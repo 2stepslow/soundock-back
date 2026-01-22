@@ -28,7 +28,7 @@ public class BoardService {
 
     // 게시글 작성
     @Transactional
-    public int createNewBoard(CategoryType categoryType, BoardCreateRequest createRequest) {
+    public int createBoard(CategoryType categoryType, BoardCreateRequest createRequest) {
         // 사용자 로그인 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
@@ -70,7 +70,7 @@ public class BoardService {
     }
 
     // 한 카테고리 내의 모든 게시글 조회
-    public List<BoardResponse> findAllBoardsByCategoryType(CategoryType categoryType){
+    public List<BoardResponse> getBoardsByCategory(CategoryType categoryType){
         List<Board> boards = boardRepository.findByDeletedDateTimeIsNullAndCategoryCategoryType(categoryType);
         if (boards.isEmpty()){
             throw new ResourceNotFoundException("현재 카테고리에 작성된 게시글이 없습니다.");
@@ -115,7 +115,7 @@ public class BoardService {
 
     }
     // 게시글 수정
-    public void updateBoard(Integer boardId, CategoryType categoryType, BoardCreateRequest updaterequest){
+    public void updateBoard(Integer boardId, BoardCreateRequest updateRequest){
         // 카테고리와 boardId에 해당하는 삭제되지 않은 게시글인지 확인
         Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
@@ -131,14 +131,14 @@ public class BoardService {
         }
         
         // 수정하려는 사항
-        if (updaterequest.getTitle() != null){
-            board.setTitle(updaterequest.getTitle());
+        if (updateRequest.getTitle() != null){
+            board.setTitle(updateRequest.getTitle());
         }
-        if (updaterequest.getContent() != null){
-            board.setContent(updaterequest.getContent());
+        if (updateRequest.getContent() != null){
+            board.setContent(updateRequest.getContent());
         }
-        if (updaterequest.getFileUrl() != null){
-            board.setFileUrl(updaterequest.getFileUrl());
+        if (updateRequest.getFileUrl() != null){
+            board.setFileUrl(updateRequest.getFileUrl());
         }
         // 게시글 수정일 업데이트
         board.setUpdatedDateTime(LocalDateTime.now());
