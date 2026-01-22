@@ -16,12 +16,12 @@ import java.time.LocalDateTime;
 @DynamicInsert
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "member_playlist")
-public class MemberPlaylist {
+@Table(name = "playlists")
+public class Playlist {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "member_playlist_id")
+    @Column(name = "playlist_id")
     private Integer memberPlaylistId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -36,6 +36,9 @@ public class MemberPlaylist {
 
     @Column(name = "thumbnail_url", columnDefinition = "TEXT")
     private String thumbnailUrl;
+
+    @Column(name = "item_count", nullable = false)
+    private Integer itemCount;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
