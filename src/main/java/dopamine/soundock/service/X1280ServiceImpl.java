@@ -12,6 +12,7 @@ import dopamine.soundock.exceptions.AuthRejectedException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.global.AESUtil;
 import dopamine.soundock.global.TokenProvider;
+import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.repository.RefreshTokenRepository;
 import dopamine.soundock.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -168,7 +169,7 @@ public class X1280ServiceImpl implements X1280Service {
     @Override
     public PWLTokenResponse verifyAndGenerateTokens(String email, String sessionId) {
         long startTime = System.currentTimeMillis();
-        long timeout = 60000; // 최대 대기 시간: 60초
+        long timeout = AppConstants.Time.X1280_API_POLLING_TIMEOUT_MS; // 최대 대기 시간: 60초
 
         while (System.currentTimeMillis() - startTime < timeout) {
             // 현재 스레드가 인터럽트 되었는지 체크하여 루프 진입 전 차단
@@ -214,7 +215,7 @@ public class X1280ServiceImpl implements X1280Service {
                 }
                 // "W"(대기중)인 경우 루프 지속
                 // 2초 대기 후 재시도 (외부 API 부하 방지)
-                Thread.sleep(2000);
+                Thread.sleep(AppConstants.Time.POLLING_RETRY_DELAY_MS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.warn("인증 폴링 중 인터럽트 발생. 작업을 중단합니다. email: {}", email);
@@ -226,7 +227,7 @@ public class X1280ServiceImpl implements X1280Service {
                 log.error("인증 확인 중 오류 발생(재시도 예정): {}", e.getMessage());
                 // 예외 발생 시 잠시 대기 후 계속 시도
                 try {
-                    Thread.sleep(2000);
+                    Thread.sleep(AppConstants.Time.POLLING_RETRY_DELAY_MS);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     break;

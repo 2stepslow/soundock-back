@@ -55,7 +55,7 @@ public class BoardService {
     ) {
         // boardId에 해당하는 삭제되지 않은 게시글인지 확인
         Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
-                .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));;
+                .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
 
         BoardResponse boardResponse = BoardResponse.builder()
                 .title(board.getTitle())

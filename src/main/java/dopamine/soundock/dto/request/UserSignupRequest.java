@@ -1,5 +1,6 @@
 package dopamine.soundock.dto.request;
 
+import dopamine.soundock.global.constants.AppConstants;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -24,24 +25,24 @@ public class UserSignupRequest {
     @Schema(description = "비밀번호 (대문자, 숫자, 특수문자 포함 10자 이상, 공백 불가")
     @NotBlank(message = "비밀번호는 필수 입력 항목입니다.")
     @Pattern(
-            regexp = "^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?])\\S{10,}$",
-            message = "비밀번호는 대문자, 숫자, 특수문자를 포함하여 10자 이상이어야 하며 공백을 포함할 수 없습니다."
+            regexp = AppConstants.ValidationPattern.PASSWORD_PATTERN,
+            message = AppConstants.ErrorMessage.PASSWORD_FORMAT_ERROR
     )
     private String password;
 
     @Schema(description = "커뮤니티 활동 닉네임 (한글/영문/숫자 10자 이내")
     @NotBlank(message = "닉네임은 필수 입력 항목입니다.")
     @Pattern(
-            regexp = "^[a-zA-Z0-9가-힣ㄱ-ㅎㅏ-ㅣ]{1,10}$",
-            message = "닉네임은 특수문자를 제외하고 10자 이내로 입력해주세요."
+            regexp = AppConstants.ValidationPattern.NICKNAME_PATTERN,
+            message = AppConstants.ErrorMessage.NICKNAME_FORMAT_ERROR
     )
     private String nickname;
 
     @Schema(description = "연락처 (숫자만 11자리")
     @NotBlank(message = "연락처는 필수 입력 항목입니다.")
     @Pattern(
-            regexp = "^010[0-9]{8}$",
-            message = "연락처는 010을 포함하여 숫자만 11자리 입력하세요."
+            regexp = AppConstants.ValidationPattern.PHONE_PATTERN,
+            message = AppConstants.ErrorMessage.PHONE_FORMAT_ERROR
     )
     private String phoneNumber;
 }

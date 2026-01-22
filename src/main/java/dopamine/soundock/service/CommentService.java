@@ -60,7 +60,8 @@ public class CommentService {
     }
     // 댓글 삭제
     public void deleteComment(CategoryType categoryType, Integer boardId, Integer commentId){
-        Board board = boardService.getValidatedBoard(boardId, categoryType);
+        Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
+                .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
 
         // 로그인한 유저인지 검증(유저 이렇게 넣은건 테스트용)
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -89,7 +90,8 @@ public class CommentService {
     // 댓글 조회
     public List<CommentResponse> getComment(CategoryType categoryType, Integer boardId){
         // 카테고리와 boardId에 해당하는 삭제되지 않은 게시글인지 확인
-        Board board = boardService.getValidatedBoard(boardId, categoryType);
+        Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
+                .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
 
         // commentRepo에서 해당 boardId에 작성된 댓글이 있는지 확인
         List<Comment> results = commentRepository.findByBoardBoardId(board.getBoardId());

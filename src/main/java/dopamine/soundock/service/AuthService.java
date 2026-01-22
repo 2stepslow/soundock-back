@@ -14,6 +14,7 @@ import dopamine.soundock.enums.UserRole;
 import dopamine.soundock.enums.UserStatus;
 import dopamine.soundock.exceptions.*;
 import dopamine.soundock.global.TokenProvider;
+import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.repository.AccessTokenBlacklistRepository;
 import dopamine.soundock.repository.RefreshTokenRepository;
 import dopamine.soundock.repository.UserRepository;
@@ -65,9 +66,9 @@ public class AuthService {
             return EmailCheckResult.unavailable("이미 사용 중인 이메일입니다.");
         }
 
-        LocalDateTime limitDate = LocalDateTime.now().minusDays(30);
+        LocalDateTime limitDate = LocalDateTime.now().minusDays(AppConstants.Time.EMAIL_REACTIVATION_COOLDOWN_DAYS);
         if (user.getDeletedAt() != null && user.getDeletedAt().isAfter(limitDate)) {
-            return EmailCheckResult.unavailable("탈퇴 후 30일 동안은 재가입이 불가능합니다.");
+            return EmailCheckResult.unavailable(AppConstants.ErrorMessage.EMAIL_REACTIVATION_ERROR);
         }
 
         return EmailCheckResult.availableWithCleanup();
@@ -142,7 +143,7 @@ public class AuthService {
                 .builder()
                 .user(user)
                 .token(token)
-                .expiryDate(LocalDateTime.now().plusMinutes(5))
+                .expiryDate(LocalDateTime.now().plusMinutes(AppConstants.Time.VERIFICATION_TOKEN_EXPIRY_MINUTES))
                 .build();
         verificationTokenRepository.save(verificationToken);
     }

@@ -1,5 +1,6 @@
 package dopamine.soundock.dto.request;
 
+import dopamine.soundock.global.constants.AppConstants;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
@@ -14,15 +15,15 @@ public class UpdateInfoRequest {
 
     @Schema(description = "변경할 커뮤니티 활동 닉네임 (한글/영문/숫자 10자 이내), 값이 없을 경우 아예 빼고 보내줘야함")
     @Pattern(
-            regexp = "^[a-zA-Z0-9가-힣ㄱ-ㅎㅏ-ㅣ]{1,10}$",
-            message = "닉네임은 특수문자를 제외하고 10자 이내로 입력해주세요."
+            regexp = AppConstants.ValidationPattern.NICKNAME_PATTERN,
+            message = AppConstants.ErrorMessage.NICKNAME_FORMAT_ERROR
     )
     private String nickname;
 
     @Schema(description = "변경할 연락처 (숫자만 11자리), 값이 없을 경우 아예 빼고 보내줘야함")
     @Pattern(
-            regexp = "^010[0-9]{8}$",
-            message = "연락처는 010을 포함하여 숫자만 11자리 입력하세요."
+            regexp = AppConstants.ValidationPattern.PHONE_PATTERN,
+            message = AppConstants.ErrorMessage.PHONE_FORMAT_ERROR
     )
     private String phoneNumber;
 }
