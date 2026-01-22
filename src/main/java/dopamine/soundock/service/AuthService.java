@@ -210,25 +210,25 @@ public class AuthService {
     public LoginResponse login(
             LoginRequest loginRequest
     ) {
-        // 1. JPA를 이용해 DB에 ID를 조회해서 있는 애인지 확인한다.
-        User user = userRepository.findByEmail(loginRequest.getEmail())
-            .orElseThrow(() -> new LoginFailedException("이메일 또는 비밀번호가 일치하지 않습니다."));
+        // 1. 존재 여부 확인 (탈퇴 시에도 Exception 발생)
+        User user = userRepository.findByEmailAndIsDeletedFalse(loginRequest.getEmail())
+            .orElseThrow(() -> new LoginFailedException("가입되지 않은 계정입니다."));
 
+        // 2. 비밀번호 검증
         if(!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            // 실패하면 401 에러 보냄
-            throw new LoginFailedException("이메일 또는 비밀번호가 일치하지 않습니다.");
+            throw new LoginFailedException("비밀번호가 일치하지 않습니다.");
         }
 
+        // 3. 상태 검증
         if(!user.getStatus().equals(UserStatus.ACTIVE)) {
             throw new CustomException("이메일 인증이 완료되지 않았습니다. 메일을 확인해주세요.", HttpStatus.FORBIDDEN);
         }
 
-        // 로그인 성공
+        // 로그인 성공 -> 토큰 발급
         String accessToken = tokenProvider.generateAccessToken(user.getEmail());
         String refreshToken = tokenProvider.generateRefreshToken(user.getEmail());
 
-
-        // Refresh Token을 DB에 추가
+        // Refresh Token 을 DB에 추가
         RefreshToken refresh = RefreshToken
                 .builder()
                 .token(refreshToken)
@@ -275,8 +275,9 @@ public class AuthService {
         }
 
         // 2. 우리 서버에 존재하는 refresh token 인지 검증
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(userRefreshToken)
-                .orElseThrow(() -> new InvalidTokenException("로그아웃으로 인해 삭제된 토큰입니다."));
+        if(!refreshTokenRepository.existsByToken(userRefreshToken)){
+            throw new InvalidTokenException("올바르지 않은 토큰입니다.");
+        }
 
         // 3. 만료시간 확인
         Date expiration = tokenProvider.getExpiration(userRefreshToken);
