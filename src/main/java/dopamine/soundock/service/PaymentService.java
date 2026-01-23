@@ -1,9 +1,9 @@
 package dopamine.soundock.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dopamine.soundock.dto.ConfirmPaymentRequest;
-import dopamine.soundock.dto.ConfirmPaymentResponse;
-import dopamine.soundock.dto.PreparePaymentRequest;
+import dopamine.soundock.dto.request.ConfirmPaymentRequest;
+import dopamine.soundock.dto.response.ConfirmPaymentResponse;
+import dopamine.soundock.dto.request.PreparePaymentRequest;
 import dopamine.soundock.entity.PopHistory;
 import dopamine.soundock.entity.TossPayment;
 import dopamine.soundock.entity.User;
@@ -20,7 +20,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -42,9 +41,9 @@ public class PaymentService {
     public PreparePaymentRequest preparePayment(PreparePaymentRequest prepareRequest){
 
          // 결제 시도자가 로그인한 유저인지 검증
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+//        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         // 테스트용
-//            String email = "linlin@gmail.com";
+            String email = "linlin@gmail.com";
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 

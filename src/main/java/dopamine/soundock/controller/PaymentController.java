@@ -1,16 +1,15 @@
 package dopamine.soundock.controller;
 
-import dopamine.soundock.dto.ConfirmPaymentResponse;
-import dopamine.soundock.dto.PreparePaymentRequest;
-import dopamine.soundock.dto.RestResponse;
 import dopamine.soundock.dto.request.ConfirmPaymentRequest;
+import dopamine.soundock.dto.response.ConfirmPaymentResponse;
+import dopamine.soundock.dto.request.PreparePaymentRequest;
+import dopamine.soundock.dto.RestResponse;
 import dopamine.soundock.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.io.*;
 
 @RequiredArgsConstructor
 @RequestMapping("/v1/payments")

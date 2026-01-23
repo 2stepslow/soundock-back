@@ -64,10 +64,6 @@ public class User {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createDatetime;
 
-    @CreatedDate
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedDatetime;
-
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted;
 
