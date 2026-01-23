@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="https://static.toss.im/icons/png/4x/icon-toss-logo.png" />
+    <link rel="stylesheet" type="text/css" href="/style.css" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>토스페이먼츠 샘플 프로젝트</title>
+</head>
+
+<body>
+<div class="box_section" style="width: 600px">
+    <img width="100px" src="https://static.toss.im/illusts/check-blue-spot-ending-frame.png" />
+    <h2>결제를 완료했어요</h2>
+
+    <div class="p-grid typography--p" style="margin-top: 50px">
+        <div class="p-grid-col text--left"><b>결제금액</b></div>
+        <div class="p-grid-col text--right" id="amount"></div>
+    </div>
+    <div class="p-grid typography--p" style="margin-top: 10px">
+        <div class="p-grid-col text--left"><b>주문번호</b></div>
+        <div class="p-grid-col text--right" id="orderId"></div>
+    </div>
+    <div class="p-grid typography--p" style="margin-top: 10px">
+        <div class="p-grid-col text--left"><b>paymentKey</b></div>
+        <div class="p-grid-col text--right" id="paymentKey" style="white-space: initial; width: 250px"></div>
+    </div>
+    <div class="p-grid" style="margin-top: 30px">
+        <button class="button p-grid-col5" onclick="location.href='https://docs.tosspayments.com/guides/v2/payment-widget/integration';">연동 문서</button>
+        <button class="button p-grid-col5" onclick="location.href='https://discord.gg/A4fRFXQhRu';" style="background-color: #e8f3ff; color: #1b64da">실시간 문의</button>
+    </div>
+</div>
+
+<div class="box_section" style="width: 600px; text-align: left">
+    <b>Response Data :</b>
+    <div id="response" style="white-space: initial"></div>
+</div>
+
+<script>
+    // 쿼리 파라미터 값을 서버로 전달해 결제 요청할 때 보낸 데이터와 동일한지 반드시 확인하세요.
+    const urlParams = new URLSearchParams(window.location.search);
+
+    // [수정] 네 백엔드로 결제 승인 요청
+    async function confirm() {
+      var requestData = {
+        paymentKey: urlParams.get("paymentKey"),
+        orderId: urlParams.get("orderId"),
+        amount: parseInt(urlParams.get("amount")), // 숫자로 변환
+      };
+
+      // [수정] 엔드포인트를 네 백엔드 주소로 변경
+      const response = await fetch("http://localhost:8080/v1/payments/confirm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        // [수정] 에러 응답 형식에 맞게 조정
+        throw {
+          message: json.message || json.error || '결제 승인 실패',
+          code: json.code || json.status
+        };
+      }
+
+      return json;
+    }
+
+    confirm()
+      .then(function (data) {
+        // 결제 승인 성공
+        console.log('결제 승인 성공:', data);
+        document.getElementById("response").innerHTML = `<pre>${JSON.stringify(data, null, 4)}</pre>`;
+      })
+      .catch((err) => {
+        // 결제 승인 실패
+        console.error('결제 승인 실패:', err);
+        window.location.href = `/fail.html?message=${encodeURIComponent(err.message)}&code=${err.code}`;
+      });
+
+    const paymentKeyElement = document.getElementById("paymentKey");
+    const orderIdElement = document.getElementById("orderId");
+    const amountElement = document.getElementById("amount");
+
+    orderIdElement.textContent = urlParams.get("orderId");
+    amountElement.textContent = urlParams.get("amount") + "원";
+    paymentKeyElement.textContent = urlParams.get("paymentKey");
+</script>
+</body>
+</html>
+```
+
+<!--**주요 변경사항:**-->
+
+<!--1. **API 엔드포인트 변경**-->
+<!-- - `/v1/payments/confirm` → `http://localhost:8080/api/payments/confirm`-->
+
+<!--2. **amount를 숫자로 변환**-->
+<!-- - `amount: urlParams.get("amount")` → `amount: parseInt(urlParams.get("amount"))`-->
+<!-- - 네 백엔드가 Long 타입을 받으니까-->
+
+<!--3. **에러 처리 개선**-->
+<!-- - 네 백엔드 에러 응답 형식에 맞게 조정-->
+<!-- - `encodeURIComponent` 추가로 에러 메시지 안전하게 전달-->
+
+<!--**이제 전체 흐름:**-->
+<!--```-->
+<!--1. checkout.html: 결제하기 버튼 클릭-->
+<!--↓-->
+<!--2. POST http://localhost:8080/api/payments/prepare-->
+<!-- - 백엔드에서 orderId 생성 & 저장-->
+<!--↓-->
+<!--3. 토스 결제창 띄우기 (받은 orderId 사용)-->
+<!--↓-->
+<!--4. 결제 완료 → success.html로 리다이렉트-->
+<!--↓-->
+<!--5. POST http://localhost:8080/api/payments/confirm-->
+<!-- - 백엔드에서 금액 검증 & 토스 API 승인-->

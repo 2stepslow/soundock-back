@@ -1,7 +1,5 @@
 package dopamine.soundock.entity;
 
-import dopamine.soundock.enums.TossPaymentMethod;
-import dopamine.soundock.enums.TossPaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,33 +25,26 @@ public class TossPayment {
     private PopHistory popHistory;
 
     @Column(name = "toss_order_id", nullable = false)
-    private String tossOrderId; // toss에게 넘겨줄 주문 uuid
+    private String orderId; // toss에게 넘겨줄 주문 uuid
 
     @Column(name = "toss_payment_key", nullable = false, unique = true)
     private String paymentKey;
 
-    @Column(name = "order_name", nullable = false)
+    @Column(name = "order_name", nullable = true)
     private String orderName;
 
-    @Column(name = "total_amount", nullable = false)
-    private int totalAmount;
+    @Column(name = "amount", nullable = false)
+    private int amount;
 
-    @Enumerated(value = EnumType.STRING)
     @Column(name = "toss_payment_method", nullable = false)
-    TossPaymentMethod tossPaymentMethod;
+    private String tossPaymentMethod;
 
-    @Enumerated(value = EnumType.STRING)
     @Column(name = "toss_payment_status", nullable = false)
-    TossPaymentStatus tossPaymentStatus;
+    private String tossPaymentStatus;
 
     @Column(name = "requested_at", nullable = false)
-    private LocalDateTime requestedAt;
+    private LocalDateTime requestedDatetime;
 
     @Column(name = "approved_at")
-    private LocalDateTime approvedAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
-
+    private LocalDateTime approvedDatetime;
 }

@@ -21,22 +21,31 @@ public class PopHistory {
     @Column(name = "pop_history_id")
     private Integer popHistoryId;
 
+    @Column(name = "toss_order_id")
+    private String orderId;
+
     @Column(name = "change_amount", nullable = false)
     private Integer changeAmount;
+
+    @Column(name = "actual_amount")
+    private Integer actualAmount;
 
     @Column(name = "pop_status")
     @Enumerated(value = EnumType.STRING)
     PopStatus popStatus;
 
-    @Column(name = "requested_at", nullable = false)
+    @Column(name = "created_at", nullable = false)
     @CreatedDate
-    private LocalDateTime requestAt;
+    private LocalDateTime createdDatetime;
+
+    @Column(name = "requested_at")
+    private LocalDateTime requestedDatetime;
 
     @Column(name = "approved_at")
-    private LocalDateTime approvedAt;
+    private LocalDateTime approvedDatetime;
 
     @Column(name = "canceled_at")
-    private LocalDateTime canceledAt;
+    private LocalDateTime canceledDatetime;
 
     @Column(name = "target")
     @Enumerated(value = EnumType.STRING)
@@ -54,4 +63,9 @@ public class PopHistory {
     @JoinColumn(name = "related_user_id", nullable = true)
     private User relatedUser;
 
+    public void completeChargePayment(PopStatus status, PopTarget target){
+        this.popStatus = status;
+        this.popTarget = target;
+        this.createdDatetime = LocalDateTime.now();
+    }
 }
