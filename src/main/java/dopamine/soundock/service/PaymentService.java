@@ -1,6 +1,7 @@
 package dopamine.soundock.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dopamine.soundock.dto.RestResponse;
 import dopamine.soundock.dto.request.ConfirmPaymentRequest;
 import dopamine.soundock.dto.response.ConfirmPaymentResponse;
 import dopamine.soundock.dto.request.PreparePaymentRequest;
@@ -17,9 +18,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -121,5 +125,52 @@ public class PaymentService {
         tossPaymentRepository.save(tossPayment);
 
          return confirmPaymentResponse;
+    }
+    // PaymentKey를 통한 승인된 결제 조회
+    public ConfirmPaymentResponse getPaymentByKey(String paymentKey){
+        TossPayment tossPayment = tossPaymentRepository.findByPaymentKey(paymentKey)
+                .orElseThrow(() -> new ResourceNotFoundException("유효하지 않은 요청입니다. PaymentKey를 확인해주세요."));
+
+        // 승인된 결제에 대해서만 조회 가능
+        if (tossPayment.getApprovedDatetime() == null){
+            throw new IllegalArgumentException("승인 완료되지 않은 결제입니다.");
+        }
+
+        return tossWebClient.get()
+                .uri("/payments/{paymentKey}", paymentKey)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError,
+                        clientResponse -> clientResponse.bodyToMono(String.class)
+                                .flatMap(body -> Mono.error(
+                                        new ResourceNotFoundException("요청을 처리할 수 없습니다.")
+                                ))
+                )
+                .onStatus(HttpStatusCode::is5xxServerError,
+                        clientResponse -> Mono.error(
+                                new IllegalArgumentException("토스 서버 내부에서 오류가 발생했습니다.")
+                        ))
+                .bodyToMono(ConfirmPaymentResponse.class)
+                .block();
+    }
+
+    // orderId를 통한 승인된 결제 조회
+    public ConfirmPaymentResponse getPaymentById(String orderId) {
+        TossPayment tossPayment = tossPaymentRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("주문번호와 일치하는 주문 내역이 업습니다."));
+
+        // 이 리턴 받은 값을 재화 내역
+        return tossWebClient.get()
+                .uri("/payments/orders/{orderId}", orderId)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError,
+                        clientResponse -> clientResponse.bodyToMono(String.class)
+                                .flatMap(body -> Mono.error(new ResourceNotFoundException("요청을 처리할 수 없습니다."))
+                                ))
+                .onStatus(HttpStatusCode::is5xxServerError,
+                        clientResponse -> clientResponse.bodyToMono(String.class)
+                                .flatMap(body -> Mono.error(new IllegalArgumentException("토스 서버 내부에서 오류가 발생했습니다."))
+                                ))
+                .bodyToMono(ConfirmPaymentResponse.class)
+                .block();
     }
 }

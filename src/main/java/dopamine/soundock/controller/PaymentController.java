@@ -52,4 +52,19 @@ public class PaymentController {
 
         return ResponseEntity.ok("결제 성공");
     }
+
+    // PaymentKey를 통한 결제 조회
+    @GetMapping("/{paymentKey}")
+    public ResponseEntity<RestResponse<?>> getPaymentByKey(
+            @PathVariable(required = true) String paymentKey
+    ){
+         ConfirmPaymentResponse getPaymentResponse = paymentService.getPaymentByKey(paymentKey);
+         return ResponseEntity.ok(RestResponse.success(getPaymentResponse));
+    }
+
+    @GetMapping("/orders/{orderId}")
+    public ResponseEntity<RestResponse<?>> getPaymentById(@PathVariable String orderId){
+        ConfirmPaymentResponse getPaymentResponse = paymentService.getPaymentById(orderId);
+        return ResponseEntity.ok(RestResponse.success(getPaymentResponse));
+    }
 }
