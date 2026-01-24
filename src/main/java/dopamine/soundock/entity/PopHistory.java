@@ -68,4 +68,10 @@ public class PopHistory {
         this.popTarget = target;
         this.createdDatetime = LocalDateTime.now();
     }
+
+    public void completeCancelPayment(int changeAmount, PopStatus status){
+        this.changeAmount = changeAmount;
+        this.popStatus = status;
+        this.canceledDatetime = LocalDateTime.now();
+    }
 }

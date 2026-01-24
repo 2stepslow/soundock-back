@@ -1,7 +1,7 @@
 package dopamine.soundock.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dopamine.soundock.dto.RestResponse;
+import dopamine.soundock.dto.request.CancelPaymentRequest;
 import dopamine.soundock.dto.request.ConfirmPaymentRequest;
 import dopamine.soundock.dto.response.ConfirmPaymentResponse;
 import dopamine.soundock.dto.request.PreparePaymentRequest;
@@ -18,16 +18,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -45,9 +43,9 @@ public class PaymentService {
     public PreparePaymentRequest preparePayment(PreparePaymentRequest prepareRequest){
 
          // 결제 시도자가 로그인한 유저인지 검증
-//        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         // 테스트용
-            String email = "linlin@gmail.com";
+//            String email = "linlin@gmail.com";
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
@@ -112,7 +110,7 @@ public class PaymentService {
                          .block();
 
         // status가 DONE이 아닐 경우
-        if (!"DONE".equals(confirmPaymentResponse.getStatus())){
+        if (!Objects.requireNonNull(confirmPaymentResponse).getStatus().equals("DONE")){
             throw new IllegalArgumentException("결제가 완료되지 않았습니다. 현재 결제 상태 : " + confirmPaymentResponse.getStatus());
         }
 
@@ -121,7 +119,7 @@ public class PaymentService {
         popHistoryRepository.save(popHistory);
 
         // TossPayment 객체에서 받은 정보를 DB에 저장
-        TossPayment tossPayment = confirmPaymentResponse.toEntity();
+        TossPayment tossPayment = confirmPaymentResponse.toEntity(popHistory);
         tossPaymentRepository.save(tossPayment);
 
          return confirmPaymentResponse;
@@ -158,7 +156,10 @@ public class PaymentService {
         TossPayment tossPayment = tossPaymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("주문번호와 일치하는 주문 내역이 업습니다."));
 
-        // 이 리턴 받은 값을 재화 내역
+        if (tossPayment.getApprovedDatetime() == null){
+            throw new IllegalArgumentException(("승인 완료되지 않은 결제입니다."));
+        }
+
         return tossWebClient.get()
                 .uri("/payments/orders/{orderId}", orderId)
                 .retrieve()
@@ -172,5 +173,58 @@ public class PaymentService {
                                 ))
                 .bodyToMono(ConfirmPaymentResponse.class)
                 .block();
+    }
+    // 결제 취소
+    @Transactional
+    public ConfirmPaymentResponse cancelPayment(
+            String paymentKey,
+            CancelPaymentRequest cancelPaymentRequest
+    ){
+        // 유효한 paymentKey 값인지 확인
+        TossPayment tossPayment = tossPaymentRepository.findByPaymentKey(paymentKey)
+                .orElseThrow(() -> new ResourceNotFoundException("유효하지 않은 PaymentKey입니다."));
+
+         if (tossPayment.getTossPaymentStatus().equals("CANCELED")) {
+            throw new IllegalArgumentException("이미 취소된 결제 내역입니다.");
+        }
+
+        if (cancelPaymentRequest == null){
+            throw new IllegalArgumentException("결제 사유 취소를 입력해주세요.");
+        }
+
+        // 토스에서 받은 내역
+        ConfirmPaymentResponse cancelPaymentResponse
+                = tossWebClient.post()
+                .uri("/payments/{paymentKey}/cancel", paymentKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(cancelPaymentRequest)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
+                        clientResponse.bodyToMono(String.class)
+                                .flatMap(body -> Mono.error(new ResourceNotFoundException("요청을 처리할 수 업습니다."))
+                                ))
+                .onStatus(HttpStatusCode::is5xxServerError, clientResponse ->
+                        clientResponse.bodyToMono(String.class)
+                                .flatMap(body -> Mono.error(new IllegalArgumentException("토스 서버 내부에서 오류가 발생했습니다."))
+                                ))
+                .bodyToMono(ConfirmPaymentResponse.class)
+                .block();
+
+        // paymentKey 값을 통해 찾은 tossPayment
+        if (cancelPaymentResponse == null){
+            throw new NullPointerException("결제 취소 내역에 대한 정보를 전달 받지 못했습니다.");
+        }
+        // 취소 내역 DB 업데이트 후 저장
+        tossPayment.cancelUpdatePayment(cancelPaymentResponse);
+        tossPaymentRepository.save(tossPayment);
+
+        // tossPayment 객체의 orderId와 일치하는 popHistory 내역 업데이트
+        PopHistory popHistory = popHistoryRepository.findByOrderId(tossPayment.getOrderId())
+                .orElseThrow(() -> new ResourceNotFoundException("취소할 주문 내역이 존재하지 않습니다."));
+
+        popHistory.completeCancelPayment(popHistory.getChangeAmount()-tossPayment.getAmount(), PopStatus.CANCELED);
+        popHistoryRepository.save(popHistory);
+
+        return cancelPaymentResponse;
     }
 }

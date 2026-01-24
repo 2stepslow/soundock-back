@@ -1,8 +1,10 @@
 package dopamine.soundock.entity;
 
+import dopamine.soundock.dto.response.ConfirmPaymentResponse;
 import jakarta.persistence.*;
 import lombok.*;
 
+import javax.accessibility.AccessibleContext;
 import java.time.LocalDateTime;
 
 
@@ -20,7 +22,7 @@ public class TossPayment {
     @Column(name = "payment_id")
     private Integer paymentId;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pop_history_id", unique = true)
     private PopHistory popHistory;
 
@@ -47,4 +49,10 @@ public class TossPayment {
 
     @Column(name = "approved_at")
     private LocalDateTime approvedDatetime;
+
+    public void cancelUpdatePayment(ConfirmPaymentResponse confirmPaymentResponse){
+        this.tossPaymentStatus = confirmPaymentResponse.getStatus();
+        this.requestedDatetime = confirmPaymentResponse.getRequestedAt().toLocalDateTime();
+        this.approvedDatetime = confirmPaymentResponse.getApprovedAt().toLocalDateTime();
+    }
 }

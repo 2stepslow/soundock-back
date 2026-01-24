@@ -1,5 +1,6 @@
 package dopamine.soundock.controller;
 
+import dopamine.soundock.dto.request.CancelPaymentRequest;
 import dopamine.soundock.dto.request.ConfirmPaymentRequest;
 import dopamine.soundock.dto.response.ConfirmPaymentResponse;
 import dopamine.soundock.dto.request.PreparePaymentRequest;
@@ -62,9 +63,22 @@ public class PaymentController {
          return ResponseEntity.ok(RestResponse.success(getPaymentResponse));
     }
 
+    // OrderId를 통한 결제 조회
     @GetMapping("/orders/{orderId}")
-    public ResponseEntity<RestResponse<?>> getPaymentById(@PathVariable String orderId){
+    public ResponseEntity<RestResponse<?>> getPaymentById(
+            @PathVariable(required = true) String orderId
+    ){
         ConfirmPaymentResponse getPaymentResponse = paymentService.getPaymentById(orderId);
         return ResponseEntity.ok(RestResponse.success(getPaymentResponse));
+    }
+
+    // 결제 취소
+    @PostMapping("/{paymentKey}/cancel")
+    public ResponseEntity<RestResponse<ConfirmPaymentResponse>> cancelPayment(
+            @PathVariable String paymentKey,
+            @RequestBody CancelPaymentRequest cancelPaymentRequest
+    ){
+        ConfirmPaymentResponse cancelResponse = paymentService.cancelPayment(paymentKey, cancelPaymentRequest);
+        return ResponseEntity.ok(RestResponse.success(cancelResponse));
     }
 }

@@ -3,6 +3,7 @@ package dopamine.soundock.dto.response;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import dopamine.soundock.entity.PopHistory;
 import dopamine.soundock.entity.TossPayment;
 import lombok.*;
 
@@ -49,9 +50,10 @@ public class ConfirmPaymentResponse {
     }
 
     // TossPayment Entity로 전환
-    public TossPayment toEntity(){
+    public TossPayment toEntity(PopHistory popHistory){
         return TossPayment.builder()
                 .orderId(this.orderId)
+                .popHistory(popHistory)
                 .paymentKey(this.paymentKey)
                 .tossPaymentMethod(this.method)
                 .amount(this.totalAmount)
