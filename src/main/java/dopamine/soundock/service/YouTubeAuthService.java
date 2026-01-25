@@ -62,7 +62,7 @@ public class YouTubeAuthService {
                 .orElseThrow(() -> new CustomException("구글 연동 정보가 없습니다.", HttpStatus.NOT_FOUND));
 
         // 토큰 만료 여부 확인 (여유시간 3분 추가)
-        if (oauth.getExpiresAt().isBefore(LocalDateTime.now())) {
+        if (oauth.getExpiresAt().minusMinutes(3).isBefore(LocalDateTime.now())) {
             return refreshAccessToken(oauth);
         }
         return oauth.getAccessToken();

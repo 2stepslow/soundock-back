@@ -17,5 +17,7 @@ public interface PlaylistRepository extends JpaRepository<Playlist, Integer> {
     Optional<Playlist> findByUserAndYoutubeListId(User user, String youtubeListId);
 
     // 특정 플레이리스트 삭제 (마이페이지에서 삭제 시 사용)
-    void deleteByUserAndMemberPlaylistId(User user, Long memberPlaylistId);
+    void deleteByUserAndPlaylistId(User user, Integer PlaylistId);
+
+    boolean existsByUserAndPlaylistId(User user, Integer playlistId);
 }

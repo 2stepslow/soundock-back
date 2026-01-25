@@ -1,6 +1,5 @@
 package dopamine.soundock.service;
 
-import dopamine.soundock.config.JwtProperties;
 import dopamine.soundock.dto.request.*;
 import dopamine.soundock.dto.response.EmailCheckResult;
 import dopamine.soundock.dto.response.LoginResponse;
@@ -50,7 +49,6 @@ public class AuthService {
     private final VerificationTokenRepository  verificationTokenRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenProvider tokenProvider;
-    private final JwtProperties jwtProperties;
     private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
 
     private EmailCheckResult checkEmailAvailability(String email) {
@@ -234,7 +232,7 @@ public class AuthService {
                 .builder()
                 .token(refreshToken)
                 .user(user)
-                .expirationAt(LocalDateTime.now().plusSeconds(jwtProperties.getRefreshTokenValidity()/1000))
+                .expirationAt(LocalDateTime.now().plusSeconds(AppConstants.Time.REFRESH_TOKEN_VALIDITY_MS/1000))
                 .build();
 
         refreshTokenRepository.save(refresh);

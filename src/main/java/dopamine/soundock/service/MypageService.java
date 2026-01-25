@@ -3,12 +3,9 @@ package dopamine.soundock.service;
 import dopamine.soundock.dto.request.CurrentPasswdRequest;
 import dopamine.soundock.dto.request.UpdateInfoRequest;
 import dopamine.soundock.dto.request.UpdatePasswdRequest;
-import dopamine.soundock.entity.AccessTokenBlacklist;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.UserStatus;
 import dopamine.soundock.exceptions.*;
-import dopamine.soundock.global.TokenProvider;
-import dopamine.soundock.repository.AccessTokenBlacklistRepository;
 import dopamine.soundock.repository.RefreshTokenRepository;
 import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
@@ -30,8 +25,6 @@ public class MypageService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final TokenProvider tokenProvider;
-    private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
 
     @Transactional
     public void updateUserInfo(UpdateInfoRequest request) {
