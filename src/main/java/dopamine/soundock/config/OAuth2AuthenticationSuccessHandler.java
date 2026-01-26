@@ -120,7 +120,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
      * 인증 과정에서 썼던 임시 데이터(쿠키)들을 삭제
      * (protected 사용 이유)
      * 이 메서드는 부모 클래스(원래의 clearAuthenticationAttributes)의 청소 기능을 우리 식으로 변형한 것이니,
-     * 우리 클래스 내부와 우리를 상속받은 자식들 사이에서만 안전하게 공유하자"라는 약속
+     * "우리 클래스 내부와 우리를 상속받은 자식들 사이에서만 안전하게 공유하자"라는 약속
      * Override를 사용하지 않는 이유는 원래의 clearAuthenticationAttributes는 매개변수가 1개고, 커스텀한 지금 메서드는 매개변수가 2개이기 때문
      */
     protected void clearAuthenticationAttributes(HttpServletRequest request, HttpServletResponse response) {

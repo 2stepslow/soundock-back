@@ -1,15 +1,19 @@
 package dopamine.soundock.service;
 
+import dopamine.soundock.dto.request.PlaylistRegisterRequest;
 import dopamine.soundock.dto.response.YouTubeApiResponse;
 import dopamine.soundock.dto.response.YouTubePlaylistResponse;
+import dopamine.soundock.entity.Playlist;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
+import dopamine.soundock.repository.PlaylistRepository;
 import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -27,7 +31,9 @@ public class YouTubeService {
     private final UserRepository userRepository;
     private final YouTubeAuthService youTubeAuthService;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final PlaylistRepository playlistRepository;
 
+    @Transactional
     public List<YouTubePlaylistResponse> getUserYouTubePlaylists(String email) {
         // DB에서 해당 유저의 구글 액세스 토큰 가져오기
         User user = userRepository.findByEmail(email)
@@ -99,7 +105,7 @@ public class YouTubeService {
                         String thumbnailUrl = extractThumbnailUrl(item.getSnippet().getThumbnails());
 
                         return YouTubePlaylistResponse.builder()
-                                .playlistId(item.getId())
+                                .youtubeListId(item.getId())
                                 .title(item.getSnippet().getTitle())
                                 .thumbnailUrl(thumbnailUrl)
                                 .itemCount(item.getContentDetails().getItemCount())
@@ -133,5 +139,29 @@ public class YouTubeService {
         }
 
         return null;
+    }
+
+    @Transactional
+    public void registerPlaylist(String email, PlaylistRegisterRequest request) {
+        // 유저 확인
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("해당 유저를 찾을 수 없습니다."));
+
+        // 중복 등록 방지
+        if (playlistRepository.existsByUserAndYoutubeListId(user, request.getYoutubeListId())) {
+            throw new CustomException("이미 보관함에 등록된 플레이리스트 입니다.", HttpStatus.CONFLICT);
+        }
+
+        // 엔티티 생성 및 저장
+        Playlist playlist = Playlist
+                .builder()
+                .user(user)
+                .youtubeListId(request.getYoutubeListId())
+                .title(request.getTitle())
+                .thumbnailUrl(request.getThumbnailUrl())
+                .itemCount(request.getItemCount())
+                .build();
+
+        playlistRepository.save(playlist);
     }
 }
