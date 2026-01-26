@@ -45,7 +45,7 @@ public class BoardController {
     }
     @Operation(
             summary = "특정 카테고리 내 게시글 상세 조회",
-            description = "categoryType 내 boarI와 일치하는 게시글의 상세한 내용을 조회."
+            description = "categoryType 내 boarId와 일치하는 게시글의 상세한 내용을 조회."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "게시글 상세 조회", content = @Content(schema = @Schema(implementation = BoardResponse.class))),

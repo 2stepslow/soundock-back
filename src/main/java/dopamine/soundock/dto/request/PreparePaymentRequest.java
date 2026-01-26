@@ -1,5 +1,9 @@
 package dopamine.soundock.dto.request;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.*;
 
 @Getter
@@ -8,7 +12,14 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class PreparePaymentRequest {
+    @NotBlank
     private String orderId; // 생성한 주문 id
-    private int changeAmount; // 우리 DB 저장하는 재화 수량
-    private int amount; // 실제 결제 금액
+
+    @Positive
+    @Min(100)
+    private Integer changeAmount; // 우리 DB 저장하는 재화 수량
+
+    @Positive
+    @NotNull
+    private Integer amount; // 실제 결제 금액
 }

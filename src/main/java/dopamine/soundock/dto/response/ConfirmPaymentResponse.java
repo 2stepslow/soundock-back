@@ -59,7 +59,7 @@ public class ConfirmPaymentResponse {
                 .amount(this.totalAmount)
                 .tossPaymentStatus(this.status)
                 .requestedDatetime(this.requestedAt != null ? this.requestedAt.toLocalDateTime() : null)
-                .approvedDatetime(this.approvedAt != null ? this.requestedAt.toLocalDateTime() : null)
+                .approvedDatetime(this.approvedAt != null ? this.approvedAt.toLocalDateTime() : null)
                 .build();
     }
 }

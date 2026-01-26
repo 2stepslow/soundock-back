@@ -24,7 +24,7 @@ public class CommentController {
 
     @Operation(
             summary = "특정 카테고리 내 게시글에 댓글 작성",
-            description = "categoryType 내 boarI와 일치하는 게시글 내 댓글 작성."
+            description = "categoryType 내 boarId와 일치하는 게시글 내 댓글 작성."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "댓글 등록 성공", content = @Content(schema = @Schema(implementation = CommentResponse.class))),
@@ -43,7 +43,7 @@ public class CommentController {
 
     @Operation(
             summary = "로그인한 유저가 작성한 댓글 삭제",
-            description = "로그인한 유저가 categoryType 내 boarI와 일치하는 게시글에 작성한 댓글 삭제."
+            description = "로그인한 유저가 categoryType 내 boarId와 일치하는 게시글에 작성한 댓글 삭제."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "댓글 삭제 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
@@ -62,7 +62,7 @@ public class CommentController {
 
     @Operation(
             summary = "게시글에 등록된 댓글 조회",
-            description = "categoryType 내 boarI와 일치하는 게시글에 등록된 모든 댓글 조회"
+            description = "categoryType 내 boarId와 일치하는 게시글에 등록된 모든 댓글 조회"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "댓글 조회", content = @Content(schema = @Schema(implementation = CommentResponse.class))),

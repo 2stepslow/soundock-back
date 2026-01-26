@@ -3,8 +3,6 @@ package dopamine.soundock.entity;
 import dopamine.soundock.dto.response.ConfirmPaymentResponse;
 import jakarta.persistence.*;
 import lombok.*;
-
-import javax.accessibility.AccessibleContext;
 import java.time.LocalDateTime;
 
 
@@ -35,7 +33,7 @@ public class TossPayment {
     @Column(name = "toss_payment_key", nullable = false, unique = true)
     private String paymentKey;
 
-    @Column(name = "order_name", nullable = true)
+    @Column(name = "order_name")
     private String orderName;
 
     @Column(name = "amount", nullable = false)

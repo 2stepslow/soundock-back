@@ -6,6 +6,7 @@ import dopamine.soundock.dto.response.ConfirmPaymentResponse;
 import dopamine.soundock.dto.request.PreparePaymentRequest;
 import dopamine.soundock.dto.RestResponse;
 import dopamine.soundock.service.PaymentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +23,7 @@ public class PaymentController {
     // 결제 주문 정보 생성
     @PostMapping("/prepare")
     public ResponseEntity<RestResponse<?>> preparePayment(
-            @RequestBody PreparePaymentRequest paymentRequest
+            @Valid @RequestBody PreparePaymentRequest paymentRequest
     ){
         PreparePaymentRequest result = paymentService.preparePayment(paymentRequest);
         return ResponseEntity.ok(RestResponse.success(result));
@@ -31,33 +32,27 @@ public class PaymentController {
     // 결제 승인 요청
     @PostMapping("/confirm")
     public ResponseEntity<RestResponse<?>> confirmPayment(
-            @RequestBody ConfirmPaymentRequest confirmPaymentRequest
+            @Valid @RequestBody ConfirmPaymentRequest confirmPaymentRequest
     ) {
         ConfirmPaymentResponse confirmPaymentResponse = paymentService.confirmPayment(confirmPaymentRequest);
         return ResponseEntity.ok(RestResponse.success(confirmPaymentResponse));
     }
 
     @GetMapping("/success")
-    public ResponseEntity<String> success(
+    public ResponseEntity<RestResponse<?>> success(
             @RequestParam String paymentKey,
             @RequestParam String orderId,
             @RequestParam int amount
     ) {
-        ConfirmPaymentRequest request = ConfirmPaymentRequest.builder()
-                .paymentKey(paymentKey)
-                .orderId(orderId)
-                .amount(amount)
-                .build();
-
-        paymentService.confirmPayment(request);
-
-        return ResponseEntity.ok("결제 성공");
+        logger.info("Payment success received. paymeneKey = {}, orderId = {} , amount = {}",
+                paymentKey, orderId, amount);
+        return ResponseEntity.ok(RestResponse.success("결제 성공"));
     }
 
     // PaymentKey를 통한 결제 조회
     @GetMapping("/{paymentKey}")
     public ResponseEntity<RestResponse<?>> getPaymentByKey(
-            @PathVariable(required = true) String paymentKey
+            @PathVariable String paymentKey
     ){
          ConfirmPaymentResponse getPaymentResponse = paymentService.getPaymentByKey(paymentKey);
          return ResponseEntity.ok(RestResponse.success(getPaymentResponse));
@@ -66,7 +61,7 @@ public class PaymentController {
     // OrderId를 통한 결제 조회
     @GetMapping("/orders/{orderId}")
     public ResponseEntity<RestResponse<?>> getPaymentById(
-            @PathVariable(required = true) String orderId
+            @PathVariable String orderId
     ){
         ConfirmPaymentResponse getPaymentResponse = paymentService.getPaymentById(orderId);
         return ResponseEntity.ok(RestResponse.success(getPaymentResponse));
@@ -74,7 +69,7 @@ public class PaymentController {
 
     // 결제 취소
     @PostMapping("/{paymentKey}/cancel")
-    public ResponseEntity<RestResponse<ConfirmPaymentResponse>> cancelPayment(
+    public ResponseEntity<RestResponse<?>> cancelPayment(
             @PathVariable String paymentKey,
             @RequestBody CancelPaymentRequest cancelPaymentRequest
     ){

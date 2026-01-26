@@ -1,6 +1,5 @@
 package dopamine.soundock.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dopamine.soundock.dto.request.CancelPaymentRequest;
 import dopamine.soundock.dto.request.ConfirmPaymentRequest;
 import dopamine.soundock.dto.response.ConfirmPaymentResponse;
@@ -85,7 +84,7 @@ public class PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("주문 Id가 일치하지 않는 결제 요청입니다."));
 
         // 받은 실제 결제 금액과 DB에 저장된 값 일치하는지 검증
-        if (!popHistory.getActualAmount().equals(confirmRequest.getAmount())){
+        if (!Objects.equals(popHistory.getActualAmount(), confirmRequest.getAmount())){
             throw new ResourceNotFoundException("결제 요청 금액과 일치하지 않습니다.");
         }
 
@@ -103,8 +102,9 @@ public class PaymentService {
                                      ))
                          )
                          .onStatus(HttpStatusCode::is5xxServerError,
-                                 clientResponse -> Mono.error(
-                                         new IllegalArgumentException("토스 서버 내부에서 오류가 발생했습니다.")
+                                 clientResponse -> clientResponse.bodyToMono(String.class)
+                                         .flatMap(body -> Mono.error(
+                                         new IllegalArgumentException("토스 서버 내부에서 오류가 발생했습니다."))
                                  ))
                          .bodyToMono(ConfirmPaymentResponse.class)
                          .block();
@@ -173,7 +173,7 @@ public class PaymentService {
 
 
         TossPayment tossPayment = tossPaymentRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("주문번호와 일치하는 주문 내역이 업습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("주문번호와 일치하는 주문 내역이 없습니다."));
 
         if (tossPayment.getApprovedDatetime() == null){
             throw new IllegalArgumentException(("승인 완료되지 않은 결제입니다."));
@@ -215,7 +215,7 @@ public class PaymentService {
         }
 
         if (cancelPaymentRequest == null){
-            throw new IllegalArgumentException("결제 사유 취소를 입력해주세요.");
+            throw new IllegalArgumentException("결제 취소 사유를 입력해주세요.");
         }
 
         // 멱등키 존재 여부 확인
@@ -244,7 +244,7 @@ public class PaymentService {
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
                         clientResponse.bodyToMono(String.class)
-                                .flatMap(body -> Mono.error(new ResourceNotFoundException("요청을 처리할 수 업습니다."))
+                                .flatMap(body -> Mono.error(new ResourceNotFoundException("요청을 처리할 수 없습니다."))
                                 ))
                 .onStatus(HttpStatusCode::is5xxServerError, clientResponse ->
                         clientResponse.bodyToMono(String.class)
