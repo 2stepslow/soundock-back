@@ -147,6 +147,7 @@ public class YouTubeService {
         return null;
     }
 
+    // 플레이리스트 등록 API
     @Transactional
     public void registerPlaylist(String email, PlaylistRegisterRequest request) {
         // 유저 확인
@@ -174,5 +175,47 @@ public class YouTubeService {
                 .build();
 
         playlistRepository.save(playlist);
+    }
+
+
+    // 내가 등록한 플레이리스트 조회 API
+    @Transactional(readOnly = true)
+    public List<YouTubePlaylistResponse> getMyRegisterPlaylist(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+
+        // 연동 상태가 유효하지 않으면 즉시 예외 발생
+        if (!youTubeAuthService.validateAndCleanupOAuth(user)) {
+            throw new CustomException("유튜브 연동이 해제된 상태입니다. 다시 연동해주세요.", HttpStatus.UNAUTHORIZED);
+        }
+
+        List<Playlist> playlists = playlistRepository.findAllByUser(user);
+
+        return playlists.stream()
+                .map(YouTubePlaylistResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+
+    /** 내가 등록한 플레이리스트 삭제 */
+    @Transactional
+    public void deleteMyPlaylist(Integer playlistId, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+
+        // 연동 상태가 유효하지 않으면 즉시 예외 발생
+        if (!youTubeAuthService.validateAndCleanupOAuth(user)) {
+            throw new CustomException("유튜브 연동이 해제된 상태입니다. 다시 연동해주세요.", HttpStatus.UNAUTHORIZED);
+        }
+
+        Playlist playlist = playlistRepository.findByPlaylistId(playlistId)
+                .orElseThrow(() -> new ResourceNotFoundException("해당 플레이리스트를 찾을 수 없습니다."));
+
+        // 해당 플레이리스트의 검증(현재 로그인한 유저가 플레이리스트 등록 유저와 같은지 확인)
+        if (!playlist.getUser().equals(user)) {
+            throw new CustomException("이 플레이리스트를 삭제할 권한이 없습니다.", HttpStatus.FORBIDDEN);
+        }
+
+        playlistRepository.delete(playlist);
     }
 }
