@@ -37,19 +37,32 @@
     <div id="response" style="white-space: initial"></div>
 </div>
 
+<div class="box_section" style="width: 600px; text-align: left; border: 2px dashed #ff3b30; background-color: #fff0f0;">
+    <h3>🛑 결제 취소 테스트 (멱등키 검증)</h3>
+    <p style="font-size: 14px; color: #666; margin-bottom: 10px;">
+        1. 아래 버튼을 눌러 <b>정상 취소</b>를 확인하세요.<br>
+        2. DB에서 status만 'DONE'으로 되돌리고(cancelId는 유지) 다시 누르면 <b>멱등키 재사용</b>을 테스트할 수 있습니다.
+    </p>
+    <div style="display: flex; gap: 10px;">
+        <input type="text" id="cancelReason" class="button"
+               style="background-color: white; border: 1px solid #ccc; color: black; flex: 2; text-align: left;"
+               placeholder="취소 사유 입력" value="단순변심">
+        <button class="button" style="background-color: #ff3b30; flex: 1;" onclick="cancelPayment()">취소하기</button>
+    </div>
+</div>
+
 <script>
     // 쿼리 파라미터 값을 서버로 전달해 결제 요청할 때 보낸 데이터와 동일한지 반드시 확인하세요.
     const urlParams = new URLSearchParams(window.location.search);
 
-    // [수정] 네 백엔드로 결제 승인 요청
+    // 1. [결제 승인] confirm 로직
     async function confirm() {
       var requestData = {
         paymentKey: urlParams.get("paymentKey"),
         orderId: urlParams.get("orderId"),
-        amount: parseInt(urlParams.get("amount")), // 숫자로 변환
+        amount: parseInt(urlParams.get("amount")),
       };
 
-      // [수정] 엔드포인트를 네 백엔드 주소로 변경
       const response = await fetch("http://localhost:8080/v1/payments/confirm", {
         method: "POST",
         headers: {
@@ -61,7 +74,6 @@
       const json = await response.json();
 
       if (!response.ok) {
-        // [수정] 에러 응답 형식에 맞게 조정
         throw {
           message: json.message || json.error || '결제 승인 실패',
           code: json.code || json.status
@@ -71,14 +83,54 @@
       return json;
     }
 
+    // 2. [결제 취소] cancel 로직 (새로 추가됨)
+    async function cancelPayment() {
+        const paymentKey = urlParams.get("paymentKey"); // URL 파라미터에서 키 가져오기
+        const reason = document.getElementById("cancelReason").value;
+
+        if (!paymentKey) {
+            alert("PaymentKey가 없습니다.");
+            return;
+        }
+
+        try {
+            // 👇 [핵심 수정] 컨트롤러가 @PathVariable을 쓰므로, URL 뒤에 paymentKey를 붙여야 합니다.
+            // (주의: 앞에 '/v1/payments' 부분은 컨트롤러 클래스 상단의 @RequestMapping 주소를 확인해서 맞춰주세요!)
+            const url = `http://localhost:8080/v1/payments/${paymentKey}/cancel`;
+
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    // PaymentKey는 URL에 있으니 Body에는 사유만 보냅니다.
+                    cancelReason: reason
+                }),
+            });
+
+            const json = await response.json();
+
+            if (response.ok) {
+                alert("취소 성공!");
+                console.log("취소 응답:", json);
+                // 화면 갱신이 필요하면 location.reload();
+            } else {
+                // 백엔드 에러 메시지 출력
+                const errorMessage = json.message || json.error || "취소 실패";
+                alert("취소 실패: " + errorMessage);
+            }
+        } catch (e) {
+            console.error(e);
+            alert("통신 중 오류가 발생했습니다.");
+        }
+    }
+
+    // 페이지 로드 시 실행 (결제 승인)
     confirm()
       .then(function (data) {
-        // 결제 승인 성공
         console.log('결제 승인 성공:', data);
         document.getElementById("response").innerHTML = `<pre>${JSON.stringify(data, null, 4)}</pre>`;
       })
       .catch((err) => {
-        // 결제 승인 실패
         console.error('결제 승인 실패:', err);
         window.location.href = `/fail.html?message=${encodeURIComponent(err.message)}&code=${err.code}`;
       });
@@ -93,7 +145,6 @@
 </script>
 </body>
 </html>
-```
 
 <!--**주요 변경사항:**-->
 

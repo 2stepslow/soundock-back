@@ -26,8 +26,11 @@ public class TossPayment {
     @JoinColumn(name = "pop_history_id", unique = true)
     private PopHistory popHistory;
 
-    @Column(name = "toss_order_id", nullable = false)
+    @Column(name = "toss_order_id", nullable = false, unique = true)
     private String orderId; // toss에게 넘겨줄 주문 uuid
+
+    @Column(name = "toss_cancel_order_id", unique = true)
+    private String cancelId;
 
     @Column(name = "toss_payment_key", nullable = false, unique = true)
     private String paymentKey;
