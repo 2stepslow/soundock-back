@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="https://static.toss.im/icons/png/4x/icon-toss-logo.png" />
+    <link rel="stylesheet" type="text/css" href="/style.css" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>토스페이먼츠 샘플 프로젝트</title>
+</head>
+
+<body>
+<div class="box_section" style="width: 600px">
+    <img width="100px" src="https://static.toss.im/illusts/check-blue-spot-ending-frame.png" />
+    <h2>결제를 완료했어요</h2>
+
+    <div class="p-grid typography--p" style="margin-top: 50px">
+        <div class="p-grid-col text--left"><b>결제금액</b></div>
+        <div class="p-grid-col text--right" id="amount"></div>
+    </div>
+    <div class="p-grid typography--p" style="margin-top: 10px">
+        <div class="p-grid-col text--left"><b>주문번호</b></div>
+        <div class="p-grid-col text--right" id="orderId"></div>
+    </div>
+    <div class="p-grid typography--p" style="margin-top: 10px">
+        <div class="p-grid-col text--left"><b>paymentKey</b></div>
+        <div class="p-grid-col text--right" id="paymentKey" style="white-space: initial; width: 250px"></div>
+    </div>
+    <div class="p-grid" style="margin-top: 30px">
+        <button class="button p-grid-col5" onclick="location.href='https://docs.tosspayments.com/guides/v2/payment-widget/integration';">연동 문서</button>
+        <button class="button p-grid-col5" onclick="location.href='https://discord.gg/A4fRFXQhRu';" style="background-color: #e8f3ff; color: #1b64da">실시간 문의</button>
+    </div>
+</div>
+
+<div class="box_section" style="width: 600px; text-align: left">
+    <b>Response Data :</b>
+    <div id="response" style="white-space: initial"></div>
+</div>
+
+<div class="box_section" style="width: 600px; text-align: left; border: 2px dashed #ff3b30; background-color: #fff0f0;">
+    <h3>🛑 결제 취소 테스트 (멱등키 검증)</h3>
+    <p style="font-size: 14px; color: #666; margin-bottom: 10px;">
+        1. 아래 버튼을 눌러 <b>정상 취소</b>를 확인하세요.<br>
+        2. DB에서 status만 'DONE'으로 되돌리고(cancelId는 유지) 다시 누르면 <b>멱등키 재사용</b>을 테스트할 수 있습니다.
+    </p>
+    <div style="display: flex; gap: 10px;">
+        <input type="text" id="cancelReason" class="button"
+               style="background-color: white; border: 1px solid #ccc; color: black; flex: 2; text-align: left;"
+               placeholder="취소 사유 입력" value="단순변심">
+        <button class="button" style="background-color: #ff3b30; flex: 1;" onclick="cancelPayment()">취소하기</button>
+    </div>
+</div>
+
+<script>
+    // 쿼리 파라미터 값을 서버로 전달해 결제 요청할 때 보낸 데이터와 동일한지 반드시 확인하세요.
+    const urlParams = new URLSearchParams(window.location.search);
+
+    // 1. [결제 승인] confirm 로직
+    async function confirm() {
+      var requestData = {
+        paymentKey: urlParams.get("paymentKey"),
+        orderId: urlParams.get("orderId"),
+        amount: parseInt(urlParams.get("amount")),
+      };
+
+      const response = await fetch("http://localhost:8080/v1/payments/confirm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        throw {
+          message: json.message || json.error || '결제 승인 실패',
+          code: json.code || json.status
+        };
+      }
+
+      return json;
+    }
+
+    // 2. [결제 취소] cancel 로직 (새로 추가됨)
+    async function cancelPayment() {
+        const paymentKey = urlParams.get("paymentKey"); // URL 파라미터에서 키 가져오기
+        const reason = document.getElementById("cancelReason").value;
+
+        if (!paymentKey) {
+            alert("PaymentKey가 없습니다.");
+            return;
+        }
+
+        try {
+            // 👇 [핵심 수정] 컨트롤러가 @PathVariable을 쓰므로, URL 뒤에 paymentKey를 붙여야 합니다.
+            // (주의: 앞에 '/v1/payments' 부분은 컨트롤러 클래스 상단의 @RequestMapping 주소를 확인해서 맞춰주세요!)
+            const url = `http://localhost:8080/v1/payments/${paymentKey}/cancel`;
+
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    // PaymentKey는 URL에 있으니 Body에는 사유만 보냅니다.
+                    cancelReason: reason
+                }),
+            });
+
+            const json = await response.json();
+
+            if (response.ok) {
+                alert("취소 성공!");
+                console.log("취소 응답:", json);
+                // 화면 갱신이 필요하면 location.reload();
+            } else {
+                // 백엔드 에러 메시지 출력
+                const errorMessage = json.message || json.error || "취소 실패";
+                alert("취소 실패: " + errorMessage);
+            }
+        } catch (e) {
+            console.error(e);
+            alert("통신 중 오류가 발생했습니다.");
+        }
+    }
+
+    // 페이지 로드 시 실행 (결제 승인)
+    confirm()
+      .then(function (data) {
+        console.log('결제 승인 성공:', data);
+        document.getElementById("response").innerHTML = `<pre>${JSON.stringify(data, null, 4)}</pre>`;
+      })
+      .catch((err) => {
+        console.error('결제 승인 실패:', err);
+        window.location.href = `/fail.html?message=${encodeURIComponent(err.message)}&code=${err.code}`;
+      });
+
+    const paymentKeyElement = document.getElementById("paymentKey");
+    const orderIdElement = document.getElementById("orderId");
+    const amountElement = document.getElementById("amount");
+
+    orderIdElement.textContent = urlParams.get("orderId");
+    amountElement.textContent = urlParams.get("amount") + "원";
+    paymentKeyElement.textContent = urlParams.get("paymentKey");
+</script>
+</body>
+</html>
+
+<!--**주요 변경사항:**-->
+
+<!--1. **API 엔드포인트 변경**-->
+<!-- - `/v1/payments/confirm` → `http://localhost:8080/api/payments/confirm`-->
+
+<!--2. **amount를 숫자로 변환**-->
+<!-- - `amount: urlParams.get("amount")` → `amount: parseInt(urlParams.get("amount"))`-->
+<!-- - 네 백엔드가 Long 타입을 받으니까-->
+
+<!--3. **에러 처리 개선**-->
+<!-- - 네 백엔드 에러 응답 형식에 맞게 조정-->
+<!-- - `encodeURIComponent` 추가로 에러 메시지 안전하게 전달-->
+
+<!--**이제 전체 흐름:**-->
+<!--```-->
+<!--1. checkout.html: 결제하기 버튼 클릭-->
+<!--↓-->
+<!--2. POST http://localhost:8080/api/payments/prepare-->
+<!-- - 백엔드에서 orderId 생성 & 저장-->
+<!--↓-->
+<!--3. 토스 결제창 띄우기 (받은 orderId 사용)-->
+<!--↓-->
+<!--4. 결제 완료 → success.html로 리다이렉트-->
+<!--↓-->
+<!--5. POST http://localhost:8080/api/payments/confirm-->
+<!-- - 백엔드에서 금액 검증 & 토스 API 승인-->

@@ -1,10 +1,8 @@
 package dopamine.soundock.entity;
 
-import dopamine.soundock.enums.TossPaymentMethod;
-import dopamine.soundock.enums.TossPaymentStatus;
+import dopamine.soundock.dto.response.ConfirmPaymentResponse;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 
@@ -22,38 +20,40 @@ public class TossPayment {
     @Column(name = "payment_id")
     private Integer paymentId;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pop_history_id", unique = true)
     private PopHistory popHistory;
 
-    @Column(name = "toss_order_id", nullable = false)
-    private String tossOrderId; // toss에게 넘겨줄 주문 uuid
+    @Column(name = "toss_order_id", nullable = false, unique = true)
+    private String orderId; // toss에게 넘겨줄 주문 uuid
+
+    @Column(name = "toss_cancel_order_id", unique = true)
+    private String cancelId;
 
     @Column(name = "toss_payment_key", nullable = false, unique = true)
     private String paymentKey;
 
-    @Column(name = "order_name", nullable = false)
+    @Column(name = "order_name")
     private String orderName;
 
-    @Column(name = "total_amount", nullable = false)
-    private int totalAmount;
+    @Column(name = "amount", nullable = false)
+    private int amount;
 
-    @Enumerated(value = EnumType.STRING)
     @Column(name = "toss_payment_method", nullable = false)
-    TossPaymentMethod tossPaymentMethod;
+    private String tossPaymentMethod;
 
-    @Enumerated(value = EnumType.STRING)
     @Column(name = "toss_payment_status", nullable = false)
-    TossPaymentStatus tossPaymentStatus;
+    private String tossPaymentStatus;
 
     @Column(name = "requested_at", nullable = false)
-    private LocalDateTime requestedAt;
+    private LocalDateTime requestedDatetime;
 
     @Column(name = "approved_at")
-    private LocalDateTime approvedAt;
+    private LocalDateTime approvedDatetime;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
-
+    public void cancelUpdatePayment(ConfirmPaymentResponse confirmPaymentResponse){
+        this.tossPaymentStatus = confirmPaymentResponse.getStatus();
+        this.requestedDatetime = confirmPaymentResponse.getRequestedAt().toLocalDateTime();
+        this.approvedDatetime = confirmPaymentResponse.getApprovedAt().toLocalDateTime();
+    }
 }
