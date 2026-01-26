@@ -39,7 +39,7 @@ public class ConfirmPaymentResponse {
     private Integer taxExemptionAmount;
     @JsonProperty("requestedAt")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ssXXX", timezone = "Asia/Seoul")
-    public OffsetDateTime getRequestAtDisplay(){
+    public OffsetDateTime getRequestedAtDisplay(){
         return this.requestedAt;
     }
 

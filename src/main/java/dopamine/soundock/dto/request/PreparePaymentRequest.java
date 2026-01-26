@@ -12,7 +12,6 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class PreparePaymentRequest {
-    @NotBlank
     private String orderId; // 생성한 주문 id
 
     @Positive

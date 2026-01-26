@@ -44,7 +44,7 @@ public class PaymentController {
             @RequestParam String orderId,
             @RequestParam int amount
     ) {
-        logger.info("Payment success received. paymeneKey = {}, orderId = {} , amount = {}",
+        logger.info("Payment success received. paymentKey = {}, orderId = {} , amount = {}",
                 paymentKey, orderId, amount);
         return ResponseEntity.ok(RestResponse.success("결제 성공"));
     }
@@ -71,7 +71,7 @@ public class PaymentController {
     @PostMapping("/{paymentKey}/cancel")
     public ResponseEntity<RestResponse<?>> cancelPayment(
             @PathVariable String paymentKey,
-            @RequestBody CancelPaymentRequest cancelPaymentRequest
+            @Valid @RequestBody CancelPaymentRequest cancelPaymentRequest
     ){
         ConfirmPaymentResponse cancelResponse = paymentService.cancelPayment(paymentKey, cancelPaymentRequest);
         return ResponseEntity.ok(RestResponse.success(cancelResponse));
