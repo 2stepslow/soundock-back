@@ -3,7 +3,11 @@ package dopamine.soundock.repository;
 import dopamine.soundock.entity.Oauth;
 import dopamine.soundock.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -15,4 +19,11 @@ public interface OauthRepository extends JpaRepository<Oauth, Integer> {
 
     // 유저와 제공자(GOOGLE)를 함께 조건으로 조회
     Optional<Oauth> findByUserAndProvider(User user, String provider);
+
+    // Oauth2 연동 삭제
+    @Modifying
+    // 독립적인 새 트랜잭션에서 실행
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Query("DELETE FROM Oauth o WHERE o.user = :user")
+    void deleteByUser(User user);
 }

@@ -10,14 +10,17 @@ import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -68,6 +71,7 @@ public class YouTubeAuthService {
         return oauth.getAccessToken();
     }
 
+    /** 구글 리프레시 토큰을 이용한 액세스토큰 재발급 메서드 */
     @Transactional
     public String refreshAccessToken(Oauth oauth) {
         if (oauth.getRefreshToken() == null) {
@@ -107,13 +111,47 @@ public class YouTubeAuthService {
 
                 log.info("Access Token 갱신 성공: {}", oauth.getUser().getEmail());
                 return newAccessToken;
-            } else {
-                throw new CustomException("토큰 갱신에 실패했습니다.", HttpStatus.UNAUTHORIZED);
             }
+            return null;
 
+        } catch (HttpClientErrorException ex) {
+            if (ex.getResponseBodyAsString().contains("invalid_grant")) {
+                log.info("사용자가 구글 연동을 취소함. 유저: {}", oauth.getUser().getEmail());
+                return null;
+            }
+            throw ex;
         } catch (Exception e) {
             log.error("Access Token 갱신 중 오류 발생", e);
             throw new CustomException("토큰 갱신 중 오류가 발생했습니다. 다시 로그인해주세요.", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+
+    /** 토큰 유효 검사 메서드*/
+    @Transactional
+    public boolean validateAndCleanupOAuth(User user) {
+        Optional<Oauth> oauthOpt = oauthRepository.findByUser(user);
+        if (oauthOpt.isEmpty()) {
+            return false;
+        }
+        Oauth oauth = oauthOpt.get();
+        try {
+            // 구글에 토큰 상태 확인
+            String verifyUrl = "https://oauth2.googleapis.com/tokeninfo?access_token=" + oauth.getAccessToken();
+            restTemplate.getForEntity(verifyUrl, String.class);
+            return true;
+        } catch (Exception e) {
+            // 액세스토큰이 무효하다면 리프레시 토큰을 통해 갱신 시도
+            String newToken = refreshAccessToken(oauth);
+
+            if (newToken != null) {
+                return true;
+            } else {
+                log.warn("유튜브 연동 권한이 취소되어 DB 정보를 삭제: {}", user.getEmail());
+                oauthRepository.deleteByUser(user);
+
+                return false;
+            }
         }
     }
 }

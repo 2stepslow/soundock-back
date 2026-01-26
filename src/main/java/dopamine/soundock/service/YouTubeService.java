@@ -33,11 +33,17 @@ public class YouTubeService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final PlaylistRepository playlistRepository;
 
+    // 유튜브 플레이리스트 조회
     @Transactional
     public List<YouTubePlaylistResponse> getUserYouTubePlaylists(String email) {
         // DB에서 해당 유저의 구글 액세스 토큰 가져오기
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+
+        // 연동 상태가 유효하지 않으면 즉시 예외 발생
+        if (!youTubeAuthService.validateAndCleanupOAuth(user)) {
+            throw new CustomException("유튜브 연동이 해제된 상태입니다. 다시 연동해주세요.", HttpStatus.UNAUTHORIZED);
+        }
 
         // 유효한 AccessToken 가져오기 (만료시 자동 갱신)
         String accessToken = youTubeAuthService.getValidAccessToken(user);
@@ -146,6 +152,11 @@ public class YouTubeService {
         // 유저 확인
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 유저를 찾을 수 없습니다."));
+
+        // 연동 상태가 유효하지 않으면 즉시 예외 발생
+        if (!youTubeAuthService.validateAndCleanupOAuth(user)) {
+            throw new CustomException("유튜브 연동이 해제되었습니다. 다시 연동해주세요.", HttpStatus.UNAUTHORIZED);
+        }
 
         // 중복 등록 방지
         if (playlistRepository.existsByUserAndYoutubeListId(user, request.getYoutubeListId())) {

@@ -4,6 +4,7 @@ import dopamine.soundock.dto.*;
 import dopamine.soundock.dto.request.CurrentPasswdRequest;
 import dopamine.soundock.dto.request.UpdateInfoRequest;
 import dopamine.soundock.dto.request.UpdatePasswdRequest;
+import dopamine.soundock.dto.response.MyInfoResponse;
 import dopamine.soundock.service.MypageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -11,11 +12,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +27,27 @@ import org.springframework.web.bind.annotation.*;
 public class MypageController {
     private final MypageService mypageService;
 
-    // 유저 정보 수정
+    /** 내 정보 조회 */
+    @Operation(
+            summary = "내 정보 조회",
+            description = "마이페이지 진입 시 유저 프로필과 유튜브 연동 여부를 반환"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "내 정보 조회 성공",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (로그인 필요)",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "404", description = "존재하지 않는 사용자",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+    @GetMapping("/me")
+    public ResponseEntity<RestResponse<MyInfoResponse>> getMyInfo() {
+        MyInfoResponse response = mypageService.getMyInfo();
+        return ResponseEntity.ok(RestResponse.success(response));
+    }
+
+
+    /** 유저 정보 수정 */
     @Operation(
             summary = "회원 정보 수정(닉네임, 연락처)",
             description = "현재 로그인한 사용자의 닉네임 또는 연락처를 수정. 수정하고 싶은 항목만 선택적으로 가능."
@@ -46,7 +65,8 @@ public class MypageController {
         return ResponseEntity.ok(RestResponse.success("회원 정보 수정이 완료되었습니다."));
     }
 
-    // 비밀번호 수정
+
+    /** 비밀번호 수정 */
     @Operation(
             summary = "비밀번호 수정",
             description = "현재 로그인한 사용자의 비밀번호 수정"
@@ -63,7 +83,8 @@ public class MypageController {
         return ResponseEntity.ok(RestResponse.success("비밀번호 수정이 완료되었습니다."));
     }
 
-    // 현재 비밀번호 검증
+
+    /** 현재 비밀번호 검증 */
     @Operation(summary = "비밀번호 확인", description = "수정 페이지 진입 전 현재 비밀번호 일치 여부 검증")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "현재 비밀번호 확인 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
@@ -76,7 +97,8 @@ public class MypageController {
         return ResponseEntity.ok(RestResponse.success("비밀번호 확인에 성공했습니다."));
     }
 
-    // 회원 탈퇴
+
+    /** 회원 탈퇴 */
     @Operation(
             summary = "회원 탈퇴",
             description = "현재 로그인한 사용자의 계정을 탈퇴 처리(Soft Delete)하고, 사용 중인 토큰을 무효화."

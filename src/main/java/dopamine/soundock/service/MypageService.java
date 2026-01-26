@@ -3,9 +3,12 @@ package dopamine.soundock.service;
 import dopamine.soundock.dto.request.CurrentPasswdRequest;
 import dopamine.soundock.dto.request.UpdateInfoRequest;
 import dopamine.soundock.dto.request.UpdatePasswdRequest;
+import dopamine.soundock.dto.response.MyInfoResponse;
+import dopamine.soundock.entity.Oauth;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.UserStatus;
 import dopamine.soundock.exceptions.*;
+import dopamine.soundock.repository.OauthRepository;
 import dopamine.soundock.repository.RefreshTokenRepository;
 import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +29,30 @@ public class MypageService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final OauthRepository oauthRepository;
+    private final YouTubeAuthService youTubeAuthService;
 
+    // 내 정보 조회
+    @Transactional(readOnly = true)
+    public MyInfoResponse getMyInfo() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자 입니다."));
+
+        boolean isConnected = youTubeAuthService.validateAndCleanupOAuth(user);
+
+        return MyInfoResponse
+                .builder()
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .phoneNumber(user.getPhoneNumber())
+                .isYoutubeConnected(isConnected)
+                .build();
+    }
+
+
+    // 유저 정보 수정
     @Transactional
     public void updateUserInfo(UpdateInfoRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
