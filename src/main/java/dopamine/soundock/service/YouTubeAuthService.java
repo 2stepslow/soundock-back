@@ -137,9 +137,22 @@ public class YouTubeAuthService {
         }
         Oauth oauth = oauthOpt.get();
         try {
-            // 구글에 토큰 상태 확인
-            String verifyUrl = "https://oauth2.googleapis.com/tokeninfo?access_token=" + oauth.getAccessToken();
-            restTemplate.getForEntity(verifyUrl, String.class);
+            // 구글에 토큰 상태 확인 (GET + url -> POST + body 으로 변경 (민감 정보의 노출 방지때문에)
+            String verifyUrl = "https://oauth2.googleapis.com/tokeninfo";
+
+            // 1. 요청 파라미터 설정 (Body에 담길 내용)
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            params.add("access_token", oauth.getAccessToken());
+
+            // 2. 헤더 설정 (Form 데이터 형식임을 명시)
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+            // 3. 요청 엔티티 생성
+            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+
+            // 4. POST 방식으로 호출
+            restTemplate.postForEntity(verifyUrl, request, String.class);
             return true;
         } catch (Exception e) {
             // 액세스토큰이 무효하다면 리프레시 토큰을 통해 갱신 시도
