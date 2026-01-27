@@ -1,5 +1,7 @@
 package dopamine.soundock.global.constants;
 
+import java.time.LocalDateTime;
+
 public final class AppConstants {
     /**
      * 시간 관련 상수값
@@ -17,6 +19,8 @@ public final class AppConstants {
         public static final long X1280_API_POLLING_TIMEOUT_MS = 60000L; // 60 seconds
         // 패스워드리스 결과 API 재시도 딜레이 시간
         public static final long POLLING_RETRY_DELAY_MS = 2000L; // 2 seconds
+        // 재화 유효기간
+        public static final int POP_HISTORY_EXPIRATION_YEARS = 5; // 5 years
     }
 
     /**

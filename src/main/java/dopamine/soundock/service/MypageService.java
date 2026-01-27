@@ -5,14 +5,24 @@ import dopamine.soundock.dto.request.UpdateInfoRequest;
 import dopamine.soundock.dto.request.UpdatePasswdRequest;
 import dopamine.soundock.dto.response.MyInfoResponse;
 import dopamine.soundock.entity.Oauth;
+import dopamine.soundock.dto.response.PaymentHistoryResponse;
+import dopamine.soundock.dto.response.PopHistoryResponse;
+import dopamine.soundock.entity.AccessTokenBlacklist;
+import dopamine.soundock.entity.PopHistory;
 import dopamine.soundock.entity.User;
+import dopamine.soundock.enums.PopTarget;
 import dopamine.soundock.enums.UserStatus;
 import dopamine.soundock.exceptions.*;
 import dopamine.soundock.repository.OauthRepository;
+import dopamine.soundock.global.TokenProvider;
+import dopamine.soundock.global.constants.AppConstants;
+import dopamine.soundock.repository.AccessTokenBlacklistRepository;
+import dopamine.soundock.repository.PopHistoryRepository;
 import dopamine.soundock.repository.RefreshTokenRepository;
 import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cglib.core.Local;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,6 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +44,9 @@ public class MypageService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final OauthRepository oauthRepository;
     private final YouTubeAuthService youTubeAuthService;
+    private final TokenProvider tokenProvider;
+    private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
+    private final PopHistoryRepository popHistoryRepository;
 
     // 내 정보 조회
     @Transactional(readOnly = true)
@@ -139,4 +155,79 @@ public class MypageService {
         // Refresh Token 무효화
         refreshTokenRepository.deleteByUserId(user.getId());
     }
+
+    // 재화 구매(충전) 내역 조회
+    public List<PaymentHistoryResponse> getPaymentHistory(){
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+//        String email = "linlin@gmail.com";
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+
+        // popHistory 내역에서 사용자에 대한 정보 조회
+        List<PopHistory> results = popHistoryRepository.findByUserOrderByCreatedDatetimeDesc(user);
+        if (results.isEmpty()){
+            throw new ResourceNotFoundException("구매 내역이 없습니다.");
+        }
+
+        // 엔티티 정보를 받을 response 배열 생성
+        List<PaymentHistoryResponse> paymentHistoryResponses = new ArrayList<>();
+
+        for (PopHistory popHistory : results){
+            LocalDateTime expiredDatetime =
+                    popHistory.getCreatedDatetime().plusYears(AppConstants.Time.POP_HISTORY_EXPIRATION_YEARS);
+            // 구매 취소 여부
+            boolean isCanceled = popHistory.getCanceledDatetime() != null;
+
+            // popHistory 내역들 dto로 전환
+            PaymentHistoryResponse response = new PaymentHistoryResponse(
+                    popHistory.getCreatedDatetime(),
+                    popHistory.getChangeAmount(),
+                    popHistory.getPopTarget(),
+                    popHistory.getActualAmount(),
+                    expiredDatetime,
+                    isCanceled
+            );
+            paymentHistoryResponses.add(response);
+        }
+        return paymentHistoryResponses;
+    }
+
+    // 재화 사용 내역 조회
+    public List<PopHistoryResponse> getPopUsageHistory(){
+        // 로그인한 유저 확인
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+//        String email = "linlin@gmail.com";
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+
+        // popHistory 내역에서 사용자에 대한 정보 조회
+        // requested_at이 채워져있으면 사용한다고 요청이 들어온 상태
+        // target이 DONATION, FEATURED BOARD인 경우만 보여주기 위한 리스트
+        List<PopTarget> targets = List.of(PopTarget.DONATION, PopTarget.FEATURED_BOARD);
+        List<PopHistory> results = popHistoryRepository.findByUserAndRequestedDatetimeIsNotNullAndPopTargetIn(user, targets);
+
+        if (results.isEmpty()) {
+            throw new ResourceNotFoundException("사용 내역이 없습니다.");
+        }
+
+        List<PopHistoryResponse> responses = new ArrayList<>();
+
+
+        for (PopHistory popHistory : results) {
+            PopHistoryResponse.RelatedInfo related = PopHistoryResponse.createRelatedInfo(popHistory);
+
+            // 재화 사용 내역 popHistory dto로 전환
+            // 사용일시, 사용수량, 사용내용(target), 사용대상(boardId, related_user)
+            PopHistoryResponse popHistoryResponse = new PopHistoryResponse(
+                    popHistory.getApprovedDatetime(),
+                    popHistory.getChangeAmount(),
+                    popHistory.getPopTarget(),
+                    related
+            );
+            responses.add(popHistoryResponse);
+        }
+        return responses;
+    }
+
+
 }
