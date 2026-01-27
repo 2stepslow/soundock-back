@@ -1,8 +1,8 @@
 package dopamine.soundock.service;
 
+import dopamine.soundock.dto.TokenDto;
 import dopamine.soundock.dto.request.*;
 import dopamine.soundock.dto.response.EmailCheckResult;
-import dopamine.soundock.dto.response.LoginResponse;
 import dopamine.soundock.dto.response.RefreshResponse;
 import dopamine.soundock.dto.response.ValidateEmailResponse;
 import dopamine.soundock.entity.AccessTokenBlacklist;
@@ -221,7 +221,7 @@ public class AuthService {
      * 로그인
      */
     @Transactional
-    public LoginResponse login(
+    public TokenDto login(
             LoginRequest loginRequest
     ) {
         // 1. 존재 여부 확인 (탈퇴 시에도 Exception 발생)
@@ -252,22 +252,28 @@ public class AuthService {
 
         refreshTokenRepository.save(refresh);
 
-        return new LoginResponse(accessToken, refreshToken);
+        return new TokenDto(accessToken, refreshToken);
     }
 
     /**
      * 로그아웃
      */
     @Transactional
-    public void logout(LogoutRequest logoutRequest) {
+    public void logout(String accessToken, String refreshToken) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("추출된 인증 정보 : {}", email);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
-        refreshTokenRepository.deleteByUserId(user.getId());
+        // Refresh Token 삭제 (로그아웃 하려는 브라우저의 쿠키에 있는 특정 토큰만 삭제 or 유저의 모든 토큰 삭제)
+        if (refreshToken != null) {
+            // 이 경우 본인이 사용하고 있는 브라우저의 쿠키만 삭제되서 모바일이나 다른 컴퓨터의 로그인은 남아있음
+            refreshTokenRepository.deleteByToken(refreshToken);
+        } else {
+            // 쿠키가 없을 경우 안전하게 유저의 ID로 모든 Refresh Token 삭제
+            refreshTokenRepository.deleteByUserId(user.getId());
+        }
 
-        String accessToken = logoutRequest.getAccessToken();
         Date expDate = tokenProvider.getExpiration(accessToken);
         LocalDateTime convertedDate = expDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
 
@@ -284,28 +290,27 @@ public class AuthService {
      * Access Token 재발급
      */
     @Transactional
-    public RefreshResponse refresh(RefreshRequest refreshRequest) {
-        String userRefreshToken = refreshRequest.getRefreshToken();
+    public RefreshResponse refresh(String refreshToken) {
         // 1. 위/변조 여부 검증
-        if (!tokenProvider.validateToken(userRefreshToken)) {
+        if (!tokenProvider.validateToken(refreshToken)) {
             // 검증 실패 예외
             throw new InvalidTokenException("위조된 토큰 입니다.");
         }
 
         // 2. 우리 서버에 존재하는 refresh token 인지 검증
-        if(!refreshTokenRepository.existsByToken(userRefreshToken)){
+        if(!refreshTokenRepository.existsByToken(refreshToken)){
             throw new InvalidTokenException("올바르지 않은 토큰입니다.");
         }
 
         // 3. 만료시간 확인
-        Date expiration = tokenProvider.getExpiration(userRefreshToken);
+        Date expiration = tokenProvider.getExpiration(refreshToken);
         if(expiration.before(new Date())) {
             // 만료기간 지난 예외
             throw new InvalidTokenException("더 이상 사용할 수 없는 토큰입니다.");
         }
 
         // 4. 만료 안됐으면 새로운 access token을 만들어서 반환
-        String username = tokenProvider.getEmailFromToken(userRefreshToken);
+        String username = tokenProvider.getEmailFromToken(refreshToken);
         String accessToken = tokenProvider.generateAccessToken(username);
 
         return new RefreshResponse(accessToken);
