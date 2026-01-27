@@ -4,5 +4,6 @@ public enum PopTarget {
     CHARGE,
     DONATION,
     FEATURED_BOARD,
-    RECEIVED
+    RECEIVED,
+    EVENT
 }
