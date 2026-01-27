@@ -6,6 +6,7 @@ import dopamine.soundock.dto.response.LoginResponse;
 import dopamine.soundock.dto.response.RefreshResponse;
 import dopamine.soundock.dto.response.ValidateEmailResponse;
 import dopamine.soundock.exceptions.CustomException;
+import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,8 +17,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
@@ -154,8 +156,19 @@ public class AuthController {
     public ResponseEntity<RestResponse<LoginResponse>> login(
             @Valid @RequestBody LoginRequest loginRequest
     ) {
-        LoginResponse response = authService.login(loginRequest);
-        return ResponseEntity.ok(RestResponse.success("로그인에 성공 했습니다.", response));
+        TokenDto tokenDto = authService.login(loginRequest);
+
+        // Refresh Token을 담은 쿠키 생성
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", tokenDto.getRefreshToken())
+                .httpOnly(true) // JS에서 접근 불가 (XSS 방어)
+                .secure(false) // HTTPS에서만 전송 (테스트 환경에서는 false)
+                .path("/") // 모든 경로에서 쿠키 전송
+                .maxAge(AppConstants.Time.REFRESH_TOKEN_VALIDITY_MS / 1000)
+                .sameSite("Strict") // CSRF 방어
+                .build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(RestResponse.success("로그인에 성공했습니다.", new LoginResponse(tokenDto.getAccessToken())));
     }
 
     // 유저 로그아웃
@@ -169,9 +182,23 @@ public class AuthController {
             @ApiResponse(responseCode = "404", description = "토큰에서 추출된 사용자가 검색되지 않는 경우")
     })
     @PostMapping("/logout")
-    public ResponseEntity<RestResponse<Void>> logout(@Valid @RequestBody LogoutRequest logoutRequest) {
-        authService.logout(logoutRequest);
-        return ResponseEntity.ok(RestResponse.success("로그아웃을 완료 했습니다."));
+    public ResponseEntity<RestResponse<Void>> logout(
+            @RequestHeader("Authorization") String authHeader,
+            @CookieValue(name = "refreshToken", required = false) String refreshToken
+    ) {
+        String accessToken = authHeader.substring(7);
+        authService.logout(accessToken, refreshToken);
+
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(false) // 실제 배포단계에서는 true
+                .path("/")
+                .maxAge(0) // 만료시간 0 (즉시삭제)
+                .sameSite("Strict")
+                .build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(RestResponse.success("로그아웃을 완료 했습니다."));
     }
 
     // 리프레시 토큰
@@ -186,8 +213,10 @@ public class AuthController {
             )
     })
     @PostMapping("/refresh")
-    public ResponseEntity<RestResponse<RefreshResponse>> refresh(@Valid @RequestBody RefreshRequest refreshRequest) {
-        RefreshResponse response = authService.refresh(refreshRequest);
+    public ResponseEntity<RestResponse<RefreshResponse>> refresh(
+            @CookieValue(name = "refreshToken") String refreshToken // 쿠키에서 자동 추출
+    ) {
+        RefreshResponse response = authService.refresh(refreshToken);
         return ResponseEntity.ok(RestResponse.success(response));
     }
 

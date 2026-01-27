@@ -12,7 +12,4 @@ import lombok.Setter;
 public class LoginResponse {
     @Schema(description = "API 호출 시 인증에 필요한 Access Token (유효기간 1시간)")
     private String accessToken;
-
-    @Schema(description = "Access Token 만료 시 재발급을 위한 Refresh Token (유효기간 하루)")
-    private String refreshToken;
 }
