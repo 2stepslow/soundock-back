@@ -50,9 +50,7 @@ public class BoardService {
     }
 
     // 게시글 상세 조회
-    public BoardResponse getDetailBoard(
-            Integer boardId, CategoryType categoryType
-    ) {
+    public BoardResponse getDetailBoard(Integer boardId) {
         // boardId에 해당하는 삭제되지 않은 게시글인지 확인
         Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
@@ -94,7 +92,7 @@ public class BoardService {
 
     // 게시글 삭제
     @Transactional
-    public void deleteBoard(Integer boardId, CategoryType categoryType){
+    public void deleteBoard(Integer boardId){
         // 카테고리와 boardId에 해당하는 삭제되지 않은 게시글인지 확인
         Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
