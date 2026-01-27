@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @DynamicInsert
 @Builder
+// 보안 이슈 (accessToken과 refreshToken이 문자열 그대로 로그파일에 저장되는 것을 방지
+@ToString(exclude = {"user", "accessToken", "refreshToken"})
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "oauth")
 public class Oauth {

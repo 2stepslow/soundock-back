@@ -117,6 +117,7 @@ public class YouTubeAuthService {
         } catch (HttpClientErrorException ex) {
             if (ex.getResponseBodyAsString().contains("invalid_grant")) {
                 log.info("사용자가 구글 연동을 취소함. 유저: {}", oauth.getUser().getEmail());
+                oauthRepository.deleteByUser(oauth.getUser());
                 return null;
             }
             throw ex;
@@ -161,9 +162,6 @@ public class YouTubeAuthService {
             if (newToken != null) {
                 return true;
             } else {
-                log.warn("유튜브 연동 권한이 취소되어 DB 정보를 삭제: {}", user.getEmail());
-                oauthRepository.deleteByUser(user);
-
                 return false;
             }
         }
