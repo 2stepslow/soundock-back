@@ -15,6 +15,8 @@ import dopamine.soundock.repository.TossPaymentRepository;
 import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.NonUniqueResultException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -45,7 +47,7 @@ public class PaymentService {
          // 결제 시도자가 로그인한 유저인지 검증
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         // 테스트용
-//      String email = "linlin@gmail.com";
+//      String email = "xkfkr13@gmail.com";
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
@@ -77,7 +79,7 @@ public class PaymentService {
         // 결제 시도자가 로그인한 유저인지 검증
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         // 테스트용
-//      String email = "linlin@gmail.com" ;
+//      String email = "xkfkr13@gmail.com" ;
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
@@ -125,6 +127,9 @@ public class PaymentService {
         popHistory.completeChargePayment(PopStatus.COMPLETED, PopTarget.CHARGE);
         popHistoryRepository.save(popHistory);
 
+        // 유저 재화 잔여량 업데이트
+        user.increasePopBalance(popHistory.getChangeAmount());
+
         // TossPayment 객체에서 받은 정보를 DB에 저장
         TossPayment tossPayment = confirmPaymentResponse.toEntity(popHistory);
         tossPaymentRepository.save(tossPayment);
@@ -138,7 +143,7 @@ public class PaymentService {
         // 결제 내역 조회자가 로그인한 유저인지 검증
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         // 테스트용
-//      String email = "linlin@gmail.com" ;
+//      String email = "xkfkr13@gmail.com" ;
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
@@ -174,7 +179,7 @@ public class PaymentService {
         // 결제 내역 조회자가 로그인한 유저인지 검증
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         // 테스트용
-//      String email = "linlin@gmail.com" ;
+//      String email = "xkfkr13@gmail.com" ;
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
@@ -208,7 +213,7 @@ public class PaymentService {
         // 결제 취소 시도자가 로그인한 유저인지 검증
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         // 테스트용
-//      String email = "linlin@gmail.com" ;
+//      String email = "xkfkr13@gmail.com" ;
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
@@ -280,17 +285,28 @@ public class PaymentService {
             PopHistory popHistory = popHistoryRepository.findByOrderId(tossPayment.getOrderId())
                     .orElseThrow(() -> new ResourceNotFoundException("취소할 주문 내역이 존재하지 않습니다."));
 
-            // popHistory 테이블에서 취소된 상태인지 재검증
-            if (popHistory.getPopStatus() == PopStatus.CANCELED){
-                log.warn("이미 주문 내역 취소가 완료된 건입니다. orderId : {}", popHistory.getOrderId());
-                return cancelPaymentResponse;
+            // 이미 toss 취소된 내역에 대해서 취소처리 못하도록 제한
+            if (!popHistory.getOrderId().isEmpty()
+                    && PopStatus.CANCELED.equals(popHistory.getPopStatus())){
+                throw new IllegalArgumentException("이미 결제 취소된 내역입니다.");
             }
 
-            popHistory.completeCancelPayment(popHistory.getChangeAmount()-tossPayment.getAmount(), PopStatus.CANCELED);
-            popHistoryRepository.save(popHistory);
+            // popHistory 내역 새로 생성
+            PopHistory cancelPopHistory = PopHistory.builder()
+                    .user(user)
+                    .orderId(tossPayment.getOrderId())
+                    .changeAmount(-popHistory.getChangeAmount())
+                    .popStatus(PopStatus.CANCELED)
+                    .popTarget(PopTarget.CHARGE)
+                    .createdDatetime(LocalDateTime.now())
+                    .canceledDatetime(LocalDateTime.now())
+                    .build();
+            popHistoryRepository.save(cancelPopHistory);
+
+            // 사용자 재화 잔여량 업데이트
+            user.decreasePopBalance(popHistory.getChangeAmount());
 
             return cancelPaymentResponse;
-
         });
 
     }

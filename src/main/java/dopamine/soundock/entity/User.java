@@ -72,5 +72,28 @@ public class User {
 
     @Min(0)
     @Column(name = "pop_balance", nullable = false)
-    private int popBalance;
+    private Integer popBalance;
+
+    // 재화 변동액 처리
+    // 재화 충전
+    public void increasePopBalance(int amount){
+        if (amount < 0){
+            throw new IllegalArgumentException("잘못된 요청값 입니다.");
+        }
+        this.popBalance += amount;
+
+    }
+
+    // 결제 취소, 재화 사용
+    public void decreasePopBalance(int amount){
+        // change Amount가 +-로 들어올거임
+        if (this.popBalance == null){
+            popBalance = 0;
+        }
+        this.popBalance -= amount;
+
+        if (this.popBalance < 0) {
+            throw new IllegalArgumentException("잘못된 요청값 입니다.");
+        }
+    }
 }
