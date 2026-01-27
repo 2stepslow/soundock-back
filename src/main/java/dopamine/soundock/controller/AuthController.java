@@ -15,30 +15,23 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 @Tag(name = "Auth", description = "유저 관련 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
 @Validated
+@Slf4j
 public class AuthController {
     private final AuthService authService;
-
-    @Value("${app.frontend.success-url}")
-    private String successUrl;
-
-    @Value("${app.frontend.fail-url}")
-    private String failUrl;
 
     // 이메일 중복 체크
     @Operation(
@@ -112,35 +105,36 @@ public class AuthController {
     }
 
 
-    // 이메일 인증
+    /**
+     * 이메일 인증
+     */
     @Operation(
             summary = "이메일 인증 처리",
-            description = "사용자 이메일로 발송된 인증 토큰을 검증, 검증 결과에 따라 지정된 성공 또는 실패 페이지로 리다이렉트"
+            description = "사용자 이메일로 발송된 인증 토큰을 검증하고, 성공 또는 실패 결과 메시지가 담긴 HTML 페이지를 반환"
     )
     @ApiResponses(value = {
             @ApiResponse(
-                    responseCode = "303",
-                    description = "인증 성공 시 성공 페이지로 이동 (Redirect)"
-            ),
-            @ApiResponse(
-                    responseCode = "303",
-                    description = "인증 실패 시 에러 메시지를 포함하여 실페 페이지로 이동 (Redirect)"
+                    responseCode = "200",
+                    description = "인증 결과 페이지(HTML) 반환 성공"
             )
     })
     @GetMapping("/verify")
-    public ResponseEntity<?> verifyUser(@RequestParam("token") String token) {
+    public ModelAndView verifyUser(@RequestParam("token") String token) {
+        ModelAndView mav = new ModelAndView("verification-result");
         try {
             authService.verifyUser(token);
-            return ResponseEntity.status(HttpStatus.SEE_OTHER)
-                    .location(URI.create(successUrl))
-                    .build();
+            mav.addObject("success", true);
+            mav.addObject("message", "이메일 인증이 완료되었습니다. 원래 페이지로 돌아가 가입을 마무리 해주세요!");
         } catch (CustomException e) {
-            String encodedMessage = URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
-
-            return ResponseEntity.status(HttpStatus.SEE_OTHER)
-                    .location(URI.create(failUrl + "?message=" + encodedMessage))
-                    .build();
+            mav.addObject("success", false);
+            mav.addObject("message", e.getMessage());
+        } catch (Exception e) {
+            log.error("인증 처리 중 서버 에러 발생: ", e);
+            mav.addObject("success", false);
+            mav.addObject("message", "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
         }
+
+        return mav;
     }
 
     // 유저 로그인
@@ -195,5 +189,19 @@ public class AuthController {
     public ResponseEntity<RestResponse<RefreshResponse>> refresh(@Valid @RequestBody RefreshRequest refreshRequest) {
         RefreshResponse response = authService.refresh(refreshRequest);
         return ResponseEntity.ok(RestResponse.success(response));
+    }
+
+    /**
+     * 이메일 인증 상태 확인
+     */
+    @Operation(
+            summary = "이메일 인증 상태 확인",
+            description = "리액트 가입 대기 화면에서 유저의 상태가 ACTIVE(인증 완료)로 변했는지 확인하기 위해 호출"
+    )
+    @GetMapping("/verify/status")
+    public ResponseEntity<RestResponse<String>> checkStatus(@RequestParam("email") String email) {
+        String status = authService.getUserStatus(email);
+
+        return ResponseEntity.ok(RestResponse.success(status));
     }
 }

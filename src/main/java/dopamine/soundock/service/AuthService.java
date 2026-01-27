@@ -51,6 +51,9 @@ public class AuthService {
     private final TokenProvider tokenProvider;
     private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
 
+    /**
+     * 이메일 중복체크 메서드
+     */
     private EmailCheckResult checkEmailAvailability(String email) {
         Optional<User> userOpt = userRepository.findByEmail(email);
 
@@ -88,7 +91,9 @@ public class AuthService {
         return new ValidateEmailResponse(result.isAvailable(), result.getMessage());
     }
 
-    // 닉네임 중복 확인
+    /**
+     * 닉네임 중복 확인
+     */
     @Transactional(readOnly = true)
     public void validateNickname(ValidateNicknameRequest validateNicknameRequest) {
         // 중복 일 경우 예외 발생
@@ -97,7 +102,9 @@ public class AuthService {
         }
     }
 
-    // 회원가입
+    /**
+     * 회원가입
+     */
     @Transactional
     public void signupUser(UserSignupRequest userSignupRequest, String siteURL) {
         // 이메일 상태 체크 및 기존 데이터 정리
@@ -132,7 +139,9 @@ public class AuthService {
         sendVerificationEmail(emailRequest, siteURL);
     }
 
-    // 이메일 인증 토큰 생성
+    /**
+     * 이메일 인증 토큰 생성
+     */
     private void createVerificationToken(User user, String token) {
         // 기존 토큰이 있으면 삭제
         verificationTokenRepository.deleteByUser(user);
@@ -146,7 +155,9 @@ public class AuthService {
         verificationTokenRepository.save(verificationToken);
     }
 
-    // 이메일 전송
+    /**
+     * 이메일 전송
+     */
     @Transactional
     public void sendVerificationEmail(VerificationEmailRequest verificationEmailRequest, String siteURL) {
         try {
@@ -179,7 +190,9 @@ public class AuthService {
         }
     }
 
-    // 이메일 원클릭 인증
+    /**
+     * 이메일 원클릭 인증
+     */
     @Transactional
     public void verifyUser(String token) {
         VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
@@ -204,7 +217,9 @@ public class AuthService {
         verificationTokenRepository.save(verificationToken);
     }
 
-    // 로그인
+    /**
+     * 로그인
+     */
     @Transactional
     public LoginResponse login(
             LoginRequest loginRequest
@@ -240,7 +255,9 @@ public class AuthService {
         return new LoginResponse(accessToken, refreshToken);
     }
 
-    // 로그아웃
+    /**
+     * 로그아웃
+     */
     @Transactional
     public void logout(LogoutRequest logoutRequest) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -263,7 +280,9 @@ public class AuthService {
         accessTokenBlacklistRepository.save(accessTokenBlacklist);
     }
 
-    // Access Token 재발급
+    /**
+     * Access Token 재발급
+     */
     @Transactional
     public RefreshResponse refresh(RefreshRequest refreshRequest) {
         String userRefreshToken = refreshRequest.getRefreshToken();
@@ -290,5 +309,16 @@ public class AuthService {
         String accessToken = tokenProvider.generateAccessToken(username);
 
         return new RefreshResponse(accessToken);
+    }
+
+    /**
+     * 이메일 인증 완료 확인 메서드
+     */
+    @Transactional(readOnly = true)
+    public String getUserStatus(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자 입니다."));
+
+        return user.getStatus().name();
     }
 }
