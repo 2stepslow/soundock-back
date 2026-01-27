@@ -10,9 +10,9 @@ import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -112,7 +112,7 @@ public class YouTubeAuthService {
                 log.info("Access Token 갱신 성공: {}", oauth.getUser().getEmail());
                 return newAccessToken;
             }
-            return null;
+            throw new CustomException("토큰 갱신에 실패했습니다. 다시 로그인해주세요.", HttpStatus.UNAUTHORIZED);
 
         } catch (HttpClientErrorException ex) {
             if (ex.getResponseBodyAsString().contains("invalid_grant")) {
@@ -128,7 +128,8 @@ public class YouTubeAuthService {
 
 
     /** 토큰 유효 검사 메서드*/
-    @Transactional
+    // 이 메서드를 독립적인 트랜잭션으로 설정
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean validateAndCleanupOAuth(User user) {
         Optional<Oauth> oauthOpt = oauthRepository.findByUser(user);
         if (oauthOpt.isEmpty()) {

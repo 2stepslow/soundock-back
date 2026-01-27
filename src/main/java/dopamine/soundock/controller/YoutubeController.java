@@ -60,7 +60,7 @@ public class YoutubeController {
     @PostMapping("/playlist")
     public ResponseEntity<RestResponse<Void>> registerPlaylist(
             @AuthenticationPrincipal(expression = "username") String email,
-            @RequestBody PlaylistRegisterRequest request
+            @Valid @RequestBody PlaylistRegisterRequest request
             ) {
         youTubeService.registerPlaylist(email, request);
         return ResponseEntity.ok(RestResponse.success("플레이리스트가 성공적으로 등록되었습니다."));

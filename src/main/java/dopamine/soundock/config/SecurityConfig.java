@@ -42,13 +42,13 @@ public class SecurityConfig {
                 "http://localhost:3000",
                 "http://localhost:5173",
                 "http://192.168.200.84:5173",
-                "http://192.168.56.1:5173",
+                "http://192.168.200.42:5173",
                 "http://192.168.200.9:5173",
-                "http://192.168.200.45:5173",
+                "http://192.168.200.15:5173",
                 "http://192.168.200.84:3000",
-                "http://192.168.56.1:3000",
+                "http://192.168.200.42:3000",
                 "http://192.168.200.9:3000",
-                "http://192.168.200.45:3000"
+                "http://192.168.200.15:3000"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // 허용할 HTTP 메서드들
         configuration.addAllowedHeader("*"); // 모든 헤더 허용
