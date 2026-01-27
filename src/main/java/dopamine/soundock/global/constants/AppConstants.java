@@ -70,4 +70,14 @@ public final class AppConstants {
         public static final String PHONE_FORMAT_ERROR =
             "휴대폰 번호는 010으로 시작하는 " + Validation.PHONE_TOTAL_LENGTH + "자리 숫자여야 합니다.";
     }
+
+    /**
+     * 구글 OAuth2 관련 상수값
+     */
+    public static class OAuth2 {
+        public static final String OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME = "oauth2_auth_request";
+        public static final String REDIRECT_URI_PARAM_COOKIE_NAME = "redirect_uri";
+        public static final int cookieExpireSeconds = 180;
+        public static final String LINKING_USER_EMAIL_COOKIE_NAME = "linking_user_email";
+    }
 }

@@ -2,7 +2,6 @@ package dopamine.soundock.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dopamine.soundock.config.JwtProperties;
 import dopamine.soundock.config.X1280Properties;
 import dopamine.soundock.dto.response.PWLTokenResponse;
 import dopamine.soundock.entity.RefreshToken;
@@ -40,9 +39,8 @@ public class X1280ServiceImpl implements X1280Service {
     private final TokenProvider tokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
-    private final JwtProperties jwtProperties;
 
-    public X1280ServiceImpl(X1280Properties properties, TokenProvider tokenProvider, RefreshTokenRepository refreshTokenRepository, UserRepository userRepository, JwtProperties  jwtProperties) {
+    public X1280ServiceImpl(X1280Properties properties, TokenProvider tokenProvider, RefreshTokenRepository refreshTokenRepository, UserRepository userRepository) {
         this.properties = properties;
         // API 기본 설정 (기본 URL 및 공통 헤더 추가)
         this.restClient = RestClient.builder()
@@ -52,7 +50,6 @@ public class X1280ServiceImpl implements X1280Service {
         this.tokenProvider = tokenProvider;
         this.refreshTokenRepository = refreshTokenRepository;
         this.userRepository = userRepository;
-        this.jwtProperties = jwtProperties;
 
     }
 
@@ -200,7 +197,7 @@ public class X1280ServiceImpl implements X1280Service {
                                 .builder()
                                 .token(refreshToken)
                                 .user(user)
-                                .expirationAt(LocalDateTime.now().plusSeconds(jwtProperties.getRefreshTokenValidity() / 1000))
+                                .expirationAt(LocalDateTime.now().plusSeconds(AppConstants.Time.REFRESH_TOKEN_VALIDITY_MS / 1000))
                                 .build();
 
                         refreshTokenRepository.save(refresh);
