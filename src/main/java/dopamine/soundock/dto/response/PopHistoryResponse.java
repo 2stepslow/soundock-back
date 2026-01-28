@@ -20,7 +20,7 @@ public class PopHistoryResponse {
     private PopTarget popTarget;
     private RelatedInfo related;
 
-    //
+    // PopHistory 정보를 바탕으로 게시글 또는 사용자에 대한 관련 정보를 생성
     public static RelatedInfo createRelatedInfo(PopHistory popHistory){
         PopTarget target = popHistory.getPopTarget();
         // board와 관련된 경우
@@ -40,7 +40,8 @@ public class PopHistoryResponse {
                     popHistory.getRelatedUser().getNickname()
             );
         }
-        return null;
+        // 관련 게시글 또는 유저가 없는 경우 빈 RelatedInfo 반환
+        return new RelatedInfo(null, null);
     }
 
     @Getter

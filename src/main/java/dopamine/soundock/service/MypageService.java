@@ -149,8 +149,8 @@ public class MypageService {
         refreshTokenRepository.deleteByUserId(user.getId());
     }
 
-    @Transactional(readOnly = true)
     // 재화 구매(충전) 내역 조회
+    @Transactional(readOnly = true)
     public List<PaymentHistoryResponse> getPaymentHistory(){
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 //        String email = "linlin@gmail.com";
@@ -159,14 +159,23 @@ public class MypageService {
 
         // popHistory 내역에서 사용자에 대한 정보 조회
         List<PopHistory> results = popHistoryRepository.findByUserOrderByCreatedDatetimeDesc(user);
-        if (results.isEmpty()){
-            throw new ResourceNotFoundException("구매 내역이 없습니다.");
+
+        // 재화 구매(충전) 내역만 필터
+        List<PopHistory> chargeResults = new ArrayList<>();
+        for (PopHistory popHistory : results) {
+            if (popHistory.getPopTarget() == PopTarget.CHARGE) {
+                chargeResults.add(popHistory);
+            }
+        }
+        // 재화 구매(충전) 내역 유무 확인
+        if (chargeResults.isEmpty()){
+            throw new ResourceNotFoundException("재화 구매 내역이 없습니다.");
         }
 
         // 엔티티 정보를 받을 response 배열 생성
         List<PaymentHistoryResponse> paymentHistoryResponses = new ArrayList<>();
 
-        for (PopHistory popHistory : results){
+        for (PopHistory popHistory : chargeResults){
             LocalDateTime expiredDatetime =
                     popHistory.getCreatedDatetime().plusYears(AppConstants.Time.POP_HISTORY_EXPIRATION_YEARS);
             // 구매 취소 여부
@@ -186,8 +195,8 @@ public class MypageService {
         return paymentHistoryResponses;
     }
 
-    @Transactional(readOnly = true)
     // 재화 사용 내역 조회
+    @Transactional(readOnly = true)
     public List<PopHistoryResponse> getPopUsageHistory(){
         // 로그인한 유저 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -214,7 +223,7 @@ public class MypageService {
             // 재화 사용 내역 popHistory dto로 전환
             // 사용일시, 사용수량, 사용내용(target), 사용대상(boardId, related_user)
             PopHistoryResponse popHistoryResponse = new PopHistoryResponse(
-                    popHistory.getApprovedDatetime(),
+                    popHistory.getRequestedDatetime(),
                     popHistory.getChangeAmount(),
                     popHistory.getPopTarget(),
                     related

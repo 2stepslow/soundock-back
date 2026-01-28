@@ -125,12 +125,12 @@ public class PaymentService {
         popHistory.completeChargePayment(PopStatus.COMPLETED, PopTarget.CHARGE);
         popHistoryRepository.save(popHistory);
 
-        // 유저 재화 잔여량 업데이트
-        user.increasePopBalance(popHistory.getChangeAmount());
-
         // TossPayment 객체에서 받은 정보를 DB에 저장
         TossPayment tossPayment = confirmPaymentResponse.toEntity(popHistory);
         tossPaymentRepository.save(tossPayment);
+
+        // 유저 재화 잔여량 업데이트
+        user.increasePopBalance(popHistory.getChangeAmount());
 
          return confirmPaymentResponse;
     }
@@ -295,7 +295,7 @@ public class PaymentService {
                     .changeAmount(-popHistory.getChangeAmount())
                     .popStatus(PopStatus.CANCELED)
                     .popTarget(PopTarget.CHARGE)
-                    .createdDatetime(LocalDateTime.now())
+                    .createdDatetime(popHistory.getCreatedDatetime())
                     .canceledDatetime(LocalDateTime.now())
                     .build();
             popHistoryRepository.save(cancelPopHistory);

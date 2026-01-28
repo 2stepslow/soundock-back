@@ -121,14 +121,14 @@ public class MypageController {
 
     // 재화 구매 내역 조회
     @GetMapping("/pop-purchase")
-    public ResponseEntity<RestResponse<List<?>>> getPaymentHistory() {
+    public ResponseEntity<RestResponse<List<PaymentHistoryResponse>>> getPaymentHistory() {
         List<PaymentHistoryResponse> paymentHistoryResponses = mypageService.getPaymentHistory();
         return ResponseEntity.ok(RestResponse.success(paymentHistoryResponses));
     }
 
     // 재화 사용 내역 조회
     @GetMapping("/pop-usage")
-    public ResponseEntity<RestResponse<List<?>>> getPopUsageHistory(){
+    public ResponseEntity<RestResponse<List<PopHistoryResponse>>> getPopUsageHistory(){
         List<PopHistoryResponse> popHistoryResponses = mypageService.getPopUsageHistory();
         return ResponseEntity.ok(RestResponse.success(popHistoryResponses));
     }
