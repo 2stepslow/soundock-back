@@ -10,7 +10,6 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@NoArgsConstructor
 @Schema(description = "로그인 요청 정보")
 public class LoginRequest {
     @Schema(description = "가입된 이메일 주소")

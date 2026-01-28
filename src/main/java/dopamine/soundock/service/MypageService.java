@@ -7,22 +7,18 @@ import dopamine.soundock.dto.response.MyInfoResponse;
 import dopamine.soundock.entity.Oauth;
 import dopamine.soundock.dto.response.PaymentHistoryResponse;
 import dopamine.soundock.dto.response.PopHistoryResponse;
-import dopamine.soundock.entity.AccessTokenBlacklist;
 import dopamine.soundock.entity.PopHistory;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.PopTarget;
 import dopamine.soundock.enums.UserStatus;
 import dopamine.soundock.exceptions.*;
 import dopamine.soundock.repository.OauthRepository;
-import dopamine.soundock.global.TokenProvider;
 import dopamine.soundock.global.constants.AppConstants;
-import dopamine.soundock.repository.AccessTokenBlacklistRepository;
 import dopamine.soundock.repository.PopHistoryRepository;
 import dopamine.soundock.repository.RefreshTokenRepository;
 import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cglib.core.Local;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,8 +39,6 @@ public class MypageService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final OauthRepository oauthRepository;
     private final YouTubeAuthService youTubeAuthService;
-    private final TokenProvider tokenProvider;
-    private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
     private final PopHistoryRepository popHistoryRepository;
 
     // 내 정보 조회
