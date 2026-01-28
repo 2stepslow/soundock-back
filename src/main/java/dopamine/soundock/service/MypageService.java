@@ -149,6 +149,7 @@ public class MypageService {
         refreshTokenRepository.deleteByUserId(user.getId());
     }
 
+    @Transactional(readOnly = true)
     // 재화 구매(충전) 내역 조회
     public List<PaymentHistoryResponse> getPaymentHistory(){
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -185,6 +186,7 @@ public class MypageService {
         return paymentHistoryResponses;
     }
 
+    @Transactional(readOnly = true)
     // 재화 사용 내역 조회
     public List<PopHistoryResponse> getPopUsageHistory(){
         // 로그인한 유저 확인

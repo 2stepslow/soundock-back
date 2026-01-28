@@ -36,8 +36,8 @@ public class PopHistoryResponse {
                 && popHistory.getRelatedUser() != null){
             // 사람한테 후원하기
             return new RelatedInfo(
-                    popHistory.getUser().getId(),
-                    popHistory.getUser().getNickname()
+                    popHistory.getRelatedUser().getId(),
+                    popHistory.getRelatedUser().getNickname()
             );
         }
         return null;

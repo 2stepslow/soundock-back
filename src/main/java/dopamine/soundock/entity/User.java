@@ -77,6 +77,9 @@ public class User {
     // 재화 변동액 처리
     // 재화 충전
     public void increasePopBalance(int amount){
+        if (this.popBalance == null){
+            this.popBalance = 0;
+        }
         if (amount < 0){
             throw new IllegalArgumentException("잘못된 요청값 입니다.");
         }
