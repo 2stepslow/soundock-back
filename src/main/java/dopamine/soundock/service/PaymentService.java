@@ -15,8 +15,6 @@ import dopamine.soundock.repository.TossPaymentRepository;
 import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.NonUniqueResultException;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -84,7 +82,7 @@ public class PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
         // 받은 orderId와 DB에 저장된 값 일치하는지 검증
-        PopHistory popHistory = popHistoryRepository.findByOrderId(confirmRequest.getOrderId())
+        PopHistory popHistory = popHistoryRepository.findByOrderIdAndPopStatus(confirmRequest.getOrderId(), PopStatus.PENDING)
                 .orElseThrow(() -> new ResourceNotFoundException("주문 Id가 일치하지 않는 결제 요청입니다."));
 
         // 받은 실제 결제 금액과 DB에 저장된 값 일치하는지 검증
@@ -282,12 +280,11 @@ public class PaymentService {
             tossPaymentRepository.save(tossPayment);
 
             // tossPayment 객체의 orderId와 일치하는 popHistory 내역 업데이트
-            PopHistory popHistory = popHistoryRepository.findByOrderId(tossPayment.getOrderId())
+            PopHistory popHistory = popHistoryRepository.findByOrderIdAndPopStatus(tossPayment.getOrderId(), PopStatus.COMPLETED)
                     .orElseThrow(() -> new ResourceNotFoundException("취소할 주문 내역이 존재하지 않습니다."));
 
             // 이미 toss 취소된 내역에 대해서 취소처리 못하도록 제한
-            if (!popHistory.getOrderId().isEmpty()
-                    && PopStatus.CANCELED.equals(popHistory.getPopStatus())){
+            if (PopStatus.CANCELED.equals(popHistory.getPopStatus())){
                 throw new IllegalArgumentException("이미 결제 취소된 내역입니다.");
             }
 
