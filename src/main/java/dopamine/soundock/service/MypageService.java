@@ -158,24 +158,17 @@ public class MypageService {
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
         // popHistory 내역에서 사용자에 대한 정보 조회
-        List<PopHistory> results = popHistoryRepository.findByUserOrderByCreatedDatetimeDesc(user);
+        List<PopHistory> results = popHistoryRepository.findByUserAndPopTargetOrderByCreatedDatetimeDesc(user, PopTarget.CHARGE);
 
-        // 재화 구매(충전) 내역만 필터
-        List<PopHistory> chargeResults = new ArrayList<>();
-        for (PopHistory popHistory : results) {
-            if (popHistory.getPopTarget() == PopTarget.CHARGE) {
-                chargeResults.add(popHistory);
-            }
-        }
         // 재화 구매(충전) 내역 유무 확인
-        if (chargeResults.isEmpty()){
+        if (results.isEmpty()){
             throw new ResourceNotFoundException("재화 구매 내역이 없습니다.");
         }
 
         // 엔티티 정보를 받을 response 배열 생성
         List<PaymentHistoryResponse> paymentHistoryResponses = new ArrayList<>();
 
-        for (PopHistory popHistory : chargeResults){
+        for (PopHistory popHistory : results){
             LocalDateTime expiredDatetime =
                     popHistory.getCreatedDatetime().plusYears(AppConstants.Time.POP_HISTORY_EXPIRATION_YEARS);
             // 구매 취소 여부

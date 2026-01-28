@@ -74,32 +74,4 @@ public class User {
     @Column(name = "pop_balance")
     private Integer popBalance;
 
-    // 재화 변동액 처리
-    // 재화 충전
-    public void increasePopBalance(int amount){
-        if (this.popBalance == null){
-            this.popBalance = 0;
-        }
-        if (amount < 0){
-            throw new IllegalArgumentException("재화 충전 금액을 확인해주세요.");
-        }
-        this.popBalance += amount;
-    }
-
-    // 결제 취소, 재화 사용
-    public void decreasePopBalance(int amount){
-        // change Amount가 +-로 들어올거임
-        if (this.popBalance == null){
-            this.popBalance = 0;
-        }
-        if (amount <= 0){
-            throw new IllegalArgumentException("재화 차감 금액을 확인해주세요.");
-        }
-
-        this.popBalance -= amount;
-
-        if (this.popBalance < 0) {
-            throw new IllegalArgumentException("재화 내역을 업데이트 할 수 없습니다.");
-        }
-    }
 }

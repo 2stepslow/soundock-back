@@ -53,15 +53,7 @@ public class PaymentService {
         String orderId = UUID.randomUUID().toString();
 
         // 우리 DB에 기록할 주문 정보
-        PopHistory popHistory = PopHistory.builder()
-                .user(user)
-                .orderId(orderId)
-                .changeAmount(prepareRequest.getChangeAmount())
-                .actualAmount(prepareRequest.getAmount())
-                .popStatus(PopStatus.PENDING)
-                .popTarget(PopTarget.CHARGE)
-                .createdDatetime(LocalDateTime.now())
-                .build();
+        PopHistory popHistory = PopHistory.createPendingHistory(user, orderId, prepareRequest);
         popHistoryRepository.save(popHistory);
 
         return PreparePaymentRequest.builder()
@@ -130,7 +122,7 @@ public class PaymentService {
         tossPaymentRepository.save(tossPayment);
 
         // 유저 재화 잔여량 업데이트
-        user.increasePopBalance(popHistory.getChangeAmount());
+        userRepository.increasePopBalance(user.getEmail(), popHistory.getChangeAmount());
 
          return confirmPaymentResponse;
     }
@@ -181,7 +173,6 @@ public class PaymentService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
-
         TossPayment tossPayment = tossPaymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("주문번호와 일치하는 주문 내역이 없습니다."));
 
@@ -219,14 +210,26 @@ public class PaymentService {
             throw new IllegalArgumentException("결제 취소 사유를 입력해주세요.");
         }
 
-        // [트랜잭션 A] DB 조회하는 애들
+        // [트랜잭션 A] 유저 포인트 선 차감
         String idempotencyKey = transactionTemplate.execute(status -> {
             // 유효한 paymentKey 값인지 확인
             TossPayment tossPayment = tossPaymentRepository.findByPaymentKey(paymentKey)
                     .orElseThrow(() -> new ResourceNotFoundException("유효하지 않은 PaymentKey입니다."));
 
-            if (tossPayment.getTossPaymentStatus().equals("CANCELED")) {
+            // 토스 페이먼츠 객체 결제 상태 확인(취소 상태면 예외처리)
+            if ("CANCELED".equals(tossPayment.getTossPaymentStatus())) {
                 throw new IllegalArgumentException("이미 취소된 결제 내역입니다.");
+            }
+
+            // toss orderId와 일치하는 결제 완료 상태인 PopHistory 조회
+            PopHistory popHistory = popHistoryRepository.findByOrderIdAndPopStatus(tossPayment.getOrderId(), PopStatus.COMPLETED)
+                    .orElseThrow(() -> new ResourceNotFoundException("취소할 주문 내역이 존재하지 않습니다."));
+
+            // 사용자 재화 잔여량 차감 시도
+            // DB 업데이트 완료 결과값이 0으로 반환될 경우 재화가 0인 상태임. 예외처리(재화 업데이트 처리하지않음)
+            int updatedRow = userRepository.decreasePopBalance(user.getEmail(), popHistory.getChangeAmount());
+            if (updatedRow == 0){
+                throw new IllegalArgumentException("이미 모두 소모된 재화입니다. 현재 차감할 재화가 없습니다.");
             }
 
             // 멱등키 존재 여부 확인
@@ -245,31 +248,44 @@ public class PaymentService {
             }
         });
 
-        // 토스에서 받은 내역
-        ConfirmPaymentResponse cancelPaymentResponse
-                = tossWebClient.post()
-                .uri("/payments/{paymentKey}/cancel", paymentKey)
-                .contentType(MediaType.APPLICATION_JSON)
-                .header("Idempotency-Key", idempotencyKey)
-                .bodyValue(cancelPaymentRequest)
-                .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
-                        clientResponse.bodyToMono(String.class)
-                                .flatMap(body -> Mono.error(new IllegalArgumentException("토스 에러 : " + body))
-                                ))
-                .onStatus(HttpStatusCode::is5xxServerError, clientResponse ->
-                        clientResponse.bodyToMono(String.class)
-                                .flatMap(body -> Mono.error(new IllegalArgumentException("토스 에러 : " + body))
-                                ))
-                .bodyToMono(ConfirmPaymentResponse.class)
-                .block();
+        // 토스 api를 통해 토스 객체 받음
+        ConfirmPaymentResponse cancelPaymentResponse;
+        try {
+            cancelPaymentResponse =
+                    tossWebClient.post()
+                            .uri("/payments/{paymentKey}/cancel", paymentKey)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("Idempotency-Key", idempotencyKey)
+                            .bodyValue(cancelPaymentRequest)
+                            .retrieve()
+                            .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
+                                    clientResponse.bodyToMono(String.class)
+                                            .flatMap(body -> Mono.error(new IllegalArgumentException("토스 에러 : " + body))
+                                            ))
+                            .onStatus(HttpStatusCode::is5xxServerError, clientResponse ->
+                                    clientResponse.bodyToMono(String.class)
+                                            .flatMap(body -> Mono.error(new IllegalArgumentException("토스 에러 : " + body))
+                                            ))
+                            .bodyToMono(ConfirmPaymentResponse.class)
+                            .block();
+        } catch (Exception e) {
+            // [토스 요청 실패 - 트랜잭션]
+            transactionTemplate.execute(status -> {
+                TossPayment tossPayment = tossPaymentRepository.findByPaymentKey(paymentKey).orElseThrow();
+                PopHistory popHistory = popHistoryRepository.findByOrderIdAndPopStatus(tossPayment.getOrderId(), PopStatus.COMPLETED).orElseThrow();
+                // 유저 포인트 다시 복구
+                userRepository.increasePopBalance(user.getEmail(), popHistory.getChangeAmount());
+                return null;
+            });
+            throw e;
+        }
 
         // paymentKey 값을 통해 찾은 tossPayment
         if (cancelPaymentResponse == null){
             throw new NullPointerException("결제 취소 내역에 대한 정보를 전달 받지 못했습니다.");
         }
 
-        // [트랙잭션 B] 위의 트랜잭션 결과 반영
+        // [트랙잭션 B] 위의 트랜잭션 결과 반영 (취소 성공). PopHistory 취소 내역 생성
         return transactionTemplate.execute(status -> {
             // 새로운 트랜잭션에 진입해서 다시 tossPaymentKey로 조회
             TossPayment tossPayment = tossPaymentRepository.findByPaymentKey(paymentKey)
@@ -279,29 +295,12 @@ public class PaymentService {
             tossPayment.cancelUpdatePayment(cancelPaymentResponse);
             tossPaymentRepository.save(tossPayment);
 
-            // tossPayment 객체의 orderId와 일치하는 popHistory 내역 업데이트
-            PopHistory popHistory = popHistoryRepository.findByOrderIdAndPopStatus(tossPayment.getOrderId(), PopStatus.COMPLETED)
-                    .orElseThrow(() -> new ResourceNotFoundException("취소할 주문 내역이 존재하지 않습니다."));
+            // 결제 완료되어있는 PopHistory 조회
+            PopHistory originHistory = popHistoryRepository.findByOrderIdAndPopStatus(tossPayment.getOrderId(), PopStatus.COMPLETED).orElseThrow();
 
-            // 이미 toss 취소된 내역에 대해서 취소처리 못하도록 제한
-            if (PopStatus.CANCELED.equals(popHistory.getPopStatus())){
-                throw new IllegalArgumentException("이미 결제 취소된 내역입니다.");
-            }
-
-            // popHistory 내역 새로 생성
-            PopHistory cancelPopHistory = PopHistory.builder()
-                    .user(user)
-                    .orderId(tossPayment.getOrderId())
-                    .changeAmount(-popHistory.getChangeAmount())
-                    .popStatus(PopStatus.CANCELED)
-                    .popTarget(PopTarget.CHARGE)
-                    .createdDatetime(popHistory.getCreatedDatetime())
-                    .canceledDatetime(LocalDateTime.now())
-                    .build();
+            // cancel PopHistory 내역 새로 생성
+            PopHistory cancelPopHistory = PopHistory.createCancelHistory(user, originHistory);
             popHistoryRepository.save(cancelPopHistory);
-
-            // 사용자 재화 잔여량 업데이트
-            user.decreasePopBalance(popHistory.getChangeAmount());
 
             return cancelPaymentResponse;
         });
