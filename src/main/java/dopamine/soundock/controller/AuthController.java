@@ -8,6 +8,7 @@ import dopamine.soundock.dto.response.ValidateEmailResponse;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.service.AuthService;
+import dopamine.soundock.service.EmailService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -34,6 +35,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @Slf4j
 public class AuthController {
     private final AuthService authService;
+    private final EmailService emailService;
 
     // 이메일 중복 체크
     @Operation(
@@ -71,7 +73,7 @@ public class AuthController {
     // 회원 가입
     @Operation(
             summary = "회원 가입 및 인증 메일 발송",
-            description = "새로원 회원을 등록하고, 본인 확인을 위한 인증 링크를 이메일로 발송"
+            description = "새로원 회원을 등록하고, 본인 확인을 위한 인증 링크를 이메일로 발송, 회원가입 성공 즉시 응답하며, 실제 메일 발송은 백그라운드에서 진행"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "회원가입 요청 성공 및 인증 이메일 전송"),
@@ -94,8 +96,12 @@ public class AuthController {
     // 이메일 전송 (재전송시 사용)
     @Operation(
             summary = "인증 이메일 재전송",
-            description = "인증 메일을 받지 못했거나 만료된 경우, 해당 이메일로 인증 링크를 다시 발송"
+            description = "인증 메일을 받지 못했거나 만료된 경우, 해당 이메일로 인증 링크를 다시 발송, 도배 방지를 위해 1분 이내 재요청 시 에러가 발생"
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "인증 이메일 발송 요청 성공"),
+            @ApiResponse(responseCode = "429", description = "너무 잦은 요청 (1분 쿨타임 미경과)")
+    })
     @PostMapping("/verification")
     public ResponseEntity<RestResponse<Void>> verification(
             @Valid @RequestBody VerificationEmailRequest verificationEmailRequest) {
@@ -124,7 +130,7 @@ public class AuthController {
     public ModelAndView verifyUser(@RequestParam("token") String token) {
         ModelAndView mav = new ModelAndView("verification-result");
         try {
-            authService.verifyUser(token);
+            emailService.verifyUser(token);
             mav.addObject("success", true);
             mav.addObject("message", "이메일 인증이 완료되었습니다. 원래 페이지로 돌아가 가입을 마무리 해주세요!");
         } catch (CustomException e) {

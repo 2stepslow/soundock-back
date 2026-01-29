@@ -1,6 +1,7 @@
 package dopamine.soundock.service;
 
 import dopamine.soundock.dto.TokenDto;
+import dopamine.soundock.event.UserSignedUpEvent;
 import dopamine.soundock.dto.request.*;
 import dopamine.soundock.dto.response.EmailCheckResult;
 import dopamine.soundock.dto.response.RefreshResponse;
@@ -18,18 +19,14 @@ import dopamine.soundock.repository.AccessTokenBlacklistRepository;
 import dopamine.soundock.repository.RefreshTokenRepository;
 import dopamine.soundock.repository.UserRepository;
 import dopamine.soundock.repository.VerificationTokenRepository;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.time.LocalDateTime;
@@ -44,12 +41,13 @@ import java.util.UUID;
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JavaMailSender mailSender;
-    private final TemplateEngine templateEngine;
+    private final EmailService emailService;
     private final VerificationTokenRepository  verificationTokenRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenProvider tokenProvider;
     private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
+    // 스프링의 이벤트 발행기
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 이메일 중복체크 메서드
@@ -135,8 +133,9 @@ public class AuthService {
 
         userRepository.save(user);
 
-        VerificationEmailRequest emailRequest = new VerificationEmailRequest(user.getEmail());
-        sendVerificationEmail(emailRequest, siteURL);
+        // 이메일 서비스 직접 호출 하지 않고 이벤트를 발행
+        // 직접 호출하지 않고 이벤트를 발행함으로써 회원가입 로직과 이메일 로직을 완전히 분리
+        eventPublisher.publishEvent(new UserSignedUpEvent(user.getEmail(), siteURL));
     }
 
     /**
@@ -156,65 +155,38 @@ public class AuthService {
     }
 
     /**
-     * 이메일 전송
+     * 이메일 전송 준비
      */
     @Transactional
     public void sendVerificationEmail(VerificationEmailRequest verificationEmailRequest, String siteURL) {
-        try {
-            User user = userRepository.findByEmail(verificationEmailRequest.getEmail())
-                    .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND));
+        // 비동기 스레드에서 유저 정보 확인 (회원가입 로직에서 DB 저장이 완전히 끝난후 (COMMIT 된후)기 때문에 DB에 유저 내용 존재
+        User user = userRepository.findByEmail(verificationEmailRequest.getEmail())
+                .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND));
 
-            String token = UUID.randomUUID().toString();
-            createVerificationToken(user, token);
+        // 기존 토큰 정보 확인
+        Optional<VerificationToken> tokenOpt = verificationTokenRepository.findByUser(user);
 
-            String recipientAddress = verificationEmailRequest.getEmail();
-            String subject = "이메일 인증 요청";
-            String verificationUrl = siteURL + "/api/auth/verify?token=" + token;
+        if (tokenOpt.isPresent()) {
+            VerificationToken oldToken = tokenOpt.get();
 
-            Context context = new Context();
-            context.setVariable("verificationUrl", verificationUrl);
-            String htmlContent = templateEngine.process("verification-email", context);
-
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
-
-            helper.setTo(recipientAddress);
-            helper.setSubject(subject);
-            helper.setText(htmlContent, true);
-
-            mailSender.send(message);
-        } catch (MessagingException e) {
-            log.error("이메일 발송 실패 - 수신자: {}, 원인: {}"
-                    , verificationEmailRequest.getEmail(), e.getMessage(), e);
-            throw new MailSendingException();
-        }
-    }
-
-    /**
-     * 이메일 원클릭 인증
-     */
-    @Transactional
-    public void verifyUser(String token) {
-        VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
-                .orElseThrow(() -> new CustomException("유효하지 않은 토큰입니다.", HttpStatus.BAD_REQUEST));
-
-        if (verificationToken.isVerified()) {
-            throw new CustomException("이미 인증이 완료된 링크입니다.", HttpStatus.CONFLICT);
+            // 쿨타임 체크 :1분 이내 재요청 시 차단
+            if (oldToken.getCreatedAt().isAfter(LocalDateTime.now().minusMinutes(1))) {
+                throw new CustomException("1분 후에 다시 시도해주세요.", HttpStatus.TOO_MANY_REQUESTS);
+            }
         }
 
-        // 만료 시간 null 체크
-        LocalDateTime expiryDate = verificationToken.getExpiryDate();
-        if (expiryDate == null || expiryDate.isBefore(LocalDateTime.now())) {
-            throw new CustomException("인증 시간이 만료되었습니다. 다시 시도해주세요.", HttpStatus.GONE);
-        }
+        String token = UUID.randomUUID().toString();
+        createVerificationToken(user, token);
 
-        User user = verificationToken.getUser();
-        if (user != null) {
-            user.setStatus(UserStatus.ACTIVE);
-            userRepository.save(user);
-        }
-        verificationToken.setVerified(true);
-        verificationTokenRepository.save(verificationToken);
+        String recipientAddress = verificationEmailRequest.getEmail();
+        String subject = "이메일 인증 요청";
+        String verificationUrl = siteURL + "/api/auth/verify?token=" + token;
+
+        Context context = new Context();
+        context.setVariable("verificationUrl", verificationUrl);
+
+        // 앞의 부분은 전부 동기 지만 메일 보내는 메서드인 sendMailAsync만 비동기(여기를 끝으로 sendMailAsync 메서드는 따로 시작하고 sendVerificationEmail은 종료)
+        emailService.sendMailAsync(recipientAddress, subject, "verification-email", context);
     }
 
     /**

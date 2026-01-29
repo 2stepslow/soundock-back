@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
+import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
 
@@ -41,4 +42,8 @@ public class VerificationToken {
     @NotNull
     @Column(name = "is_verified", nullable = false)
     private boolean isVerified;
+
+    @CreatedDate
+    @Column(name = "created_at",nullable = false)
+    private LocalDateTime createdAt;
 }
