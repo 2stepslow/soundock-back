@@ -71,6 +71,7 @@ public class User {
     private LocalDateTime deletedAt;
 
     @Min(0)
-    @Column(name = "pop_balance", nullable = false)
-    private int popBalance;
+    @Column(name = "pop_balance")
+    private Integer popBalance;
+
 }

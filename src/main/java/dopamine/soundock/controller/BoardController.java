@@ -53,12 +53,11 @@ public class BoardController {
             @ApiResponse(responseCode = "404", description = "미등록 게시글", content = @Content(schema = @Schema(implementation = RestResponse.class))),
     })
     // 게시글 상세 조회
-    @GetMapping("/{categoryType}/{boardId}")
+    @GetMapping("/{boardId}")
     public ResponseEntity<RestResponse<BoardResponse>> getDetailBoard(
-            @PathVariable(required = true) CategoryType categoryType,
             @PathVariable(required = true) Integer boardId
     ){
-        BoardResponse boardResponse = boardService.getDetailBoard(boardId, categoryType);
+        BoardResponse boardResponse = boardService.getDetailBoard(boardId);
         return ResponseEntity.ok(RestResponse.success(boardResponse));
     }
 
@@ -91,12 +90,11 @@ public class BoardController {
             @ApiResponse(responseCode = "404", description = "미등록 카테고리, 게시글", content = @Content(schema = @Schema(implementation = RestResponse.class))),
     })
     // 게시글 삭제
-    @DeleteMapping("/{categoryType}/{boardId}")
+    @DeleteMapping("/{boardId}")
     public ResponseEntity<RestResponse<?>> deleteBoard(
-            @PathVariable(required = true) CategoryType categoryType,
             @PathVariable(required = true) Integer boardId
     ){
-        boardService.deleteBoard(boardId, categoryType);
+        boardService.deleteBoard(boardId);
         return ResponseEntity.ok(RestResponse.success());
     }
 
@@ -110,9 +108,8 @@ public class BoardController {
             @ApiResponse(responseCode = "404", description = "미등록 카테고리, 게시글", content = @Content(schema = @Schema(implementation = RestResponse.class))),
     })
     // 게시글 수정
-    @PatchMapping("/{categoryType}/{boardId}")
+    @PatchMapping("/{boardId}")
     public ResponseEntity<RestResponse<?>> updateBoard(
-            @PathVariable(required = true) CategoryType categoryType,
             @PathVariable(required = true) Integer boardId,
             @Valid @RequestBody BoardCreateRequest updaterequest
     ){

@@ -1,5 +1,6 @@
 package dopamine.soundock.entity;
 
+import dopamine.soundock.dto.request.PreparePaymentRequest;
 import dopamine.soundock.enums.PopStatus;
 import dopamine.soundock.enums.PopTarget;
 import jakarta.persistence.*;
@@ -55,11 +56,11 @@ public class PopHistory {
     @JoinColumn(name = "board_id", nullable = true)
     private Board board;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "related_user_id", nullable = true)
     private User relatedUser;
 
@@ -68,10 +69,29 @@ public class PopHistory {
         this.popTarget = target;
         this.createdDatetime = LocalDateTime.now();
     }
+    // 결제 주문 내역 생성 메서드
+    public static PopHistory createPendingHistory(User user, String orderId, PreparePaymentRequest prepareRequest){
+        return PopHistory.builder()
+                .user(user)
+                .orderId(orderId)
+                .changeAmount(prepareRequest.getChangeAmount())
+                .actualAmount(prepareRequest.getAmount())
+                .popStatus(PopStatus.PENDING)
+                .popTarget(PopTarget.CHARGE)
+                .createdDatetime(LocalDateTime.now())
+                .build();
+    }
 
-    public void completeCancelPayment(int changeAmount, PopStatus status){
-        this.changeAmount = changeAmount;
-        this.popStatus = status;
-        this.canceledDatetime = LocalDateTime.now();
+    // 취소 내역 생성 메서드
+    public static PopHistory createCancelHistory(User user, PopHistory orginPopHistory){
+        return PopHistory.builder()
+                .user(user)
+                .orderId(orginPopHistory.getOrderId())
+                .changeAmount(-orginPopHistory.getChangeAmount())
+                .popStatus(PopStatus.CANCELED)
+                .popTarget(PopTarget.CHARGE)
+                .createdDatetime(orginPopHistory.getCreatedDatetime())
+                .canceledDatetime(LocalDateTime.now())
+                .build();
     }
 }

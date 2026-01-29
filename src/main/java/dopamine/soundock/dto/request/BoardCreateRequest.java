@@ -1,13 +1,13 @@
 package dopamine.soundock.dto.request;
 
 import jakarta.validation.constraints.NotEmpty;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Setter
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class BoardCreateRequest {
     @NotEmpty(message = "최소 1글자 이상 입력해주세요.")
     private String title;

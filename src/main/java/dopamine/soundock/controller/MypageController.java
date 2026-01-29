@@ -4,6 +4,8 @@ import dopamine.soundock.dto.*;
 import dopamine.soundock.dto.request.CurrentPasswdRequest;
 import dopamine.soundock.dto.request.UpdateInfoRequest;
 import dopamine.soundock.dto.request.UpdatePasswdRequest;
+import dopamine.soundock.dto.response.PaymentHistoryResponse;
+import dopamine.soundock.dto.response.PopHistoryResponse;
 import dopamine.soundock.dto.response.MyInfoResponse;
 import dopamine.soundock.service.MypageService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @Tag(name = "Mypage", description = "마이페이지 기능 관련 API")
@@ -113,5 +117,19 @@ public class MypageController {
     public ResponseEntity<RestResponse<Void>> deleteUser() {
         mypageService.deleteUser();
         return ResponseEntity.ok(RestResponse.success("회원 탈퇴가 완료되었습니다."));
+    }
+
+    // 재화 구매 내역 조회
+    @GetMapping("/pop-purchase")
+    public ResponseEntity<RestResponse<List<PaymentHistoryResponse>>> getPaymentHistory() {
+        List<PaymentHistoryResponse> paymentHistoryResponses = mypageService.getPaymentHistory();
+        return ResponseEntity.ok(RestResponse.success(paymentHistoryResponses));
+    }
+
+    // 재화 사용 내역 조회
+    @GetMapping("/pop-usage")
+    public ResponseEntity<RestResponse<List<PopHistoryResponse>>> getPopUsageHistory(){
+        List<PopHistoryResponse> popHistoryResponses = mypageService.getPopUsageHistory();
+        return ResponseEntity.ok(RestResponse.success(popHistoryResponses));
     }
 }
