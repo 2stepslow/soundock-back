@@ -1,6 +1,7 @@
 package dopamine.soundock.service;
 
 import dopamine.soundock.dto.request.InquiryCreateRequest;
+import dopamine.soundock.dto.response.InquirySummaryResponse;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.entity.UserInquiry;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
@@ -8,6 +9,8 @@ import dopamine.soundock.repository.UserInquiryRepository;
 import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,5 +50,20 @@ public class InquiryService {
                 .build();
 
         userInquiryRepository.save(userInquiry);
+    }
+
+    /**
+     * 1:1 문의 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public Page<InquirySummaryResponse> getMyInquiryList(String email, Pageable pageable) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+
+        // 1. DB에서 페이징된 엔티티 조회
+        Page<UserInquiry> inquiries = userInquiryRepository.findAllByUser(user, pageable);
+
+        // 2. 엔티티를 DTO로 변환하여 반환
+        return inquiries.map(InquirySummaryResponse::from);
     }
 }

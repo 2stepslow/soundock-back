@@ -37,7 +37,6 @@ public class MypageService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final OauthRepository oauthRepository;
     private final YouTubeAuthService youTubeAuthService;
     private final PopHistoryRepository popHistoryRepository;
 
