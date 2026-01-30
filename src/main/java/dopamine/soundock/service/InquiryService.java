@@ -1,9 +1,11 @@
 package dopamine.soundock.service;
 
 import dopamine.soundock.dto.request.InquiryCreateRequest;
+import dopamine.soundock.dto.response.InquiryDetailResponse;
 import dopamine.soundock.dto.response.InquirySummaryResponse;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.entity.UserInquiry;
+import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.repository.UserInquiryRepository;
 import dopamine.soundock.repository.UserRepository;
@@ -65,5 +67,16 @@ public class InquiryService {
 
         // 2. 엔티티를 DTO로 변환하여 반환
         return inquiries.map(InquirySummaryResponse::from);
+    }
+
+    /**
+     * 1:1 문의 내역 상세조회
+     */
+    @Transactional(readOnly = true)
+    public InquiryDetailResponse getInquiry(Integer userInquiryId, String email) {
+        UserInquiry inquiry = userInquiryRepository.findByUserInquiryId(userInquiryId)
+                .orElseThrow(() -> new ResourceNotFoundException("문의 내역을 찾을 수 없습니다."));
+
+        return InquiryDetailResponse.from(inquiry);
     }
 }
