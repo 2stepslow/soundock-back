@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -92,7 +93,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v1/payments/**","/payment/**").permitAll() // ** : 테스트용 /api/payments/, /payment/ 뒤의 모든 것들 허용
                         .requestMatchers("/api/auth/**").permitAll() // ** : /api/auth/ 뒤의 모든 것들 허용
-                        .requestMatchers("/api/boards/**").permitAll() // ** : 테스트용 /api/boards/ 뒤의 모든 것들 허용
+                        .requestMatchers(HttpMethod.GET,"/api/boards/**").permitAll() // ** : 테스트용 /api/boards/ 뒤의 모든 것들 허용
                         .requestMatchers(
                                 "/payment/*.html",
                                 "/swagger-ui/**",

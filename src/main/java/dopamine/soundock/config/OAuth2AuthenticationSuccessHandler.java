@@ -1,15 +1,18 @@
 package dopamine.soundock.config;
 
+import dopamine.soundock.entity.User;
+import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.global.CookieUtils;
 import dopamine.soundock.global.TokenProvider;
 import dopamine.soundock.global.constants.AppConstants;
+import dopamine.soundock.repository.UserRepository;
 import dopamine.soundock.service.YouTubeAuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseCookie;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
@@ -17,6 +20,7 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -38,10 +42,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final YouTubeAuthService youTubeAuthService;
     // 우리 사이트 전용 통행증(JWT)을 만들어주는 도구
     private final TokenProvider tokenProvider;
+    private final UserRepository userRepository;
 
-    // application.properties에서 환경 변수 주입
-    @Value("${app.cookie.secure}")
-    private boolean secureCookie;
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
@@ -66,6 +68,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String targetEmail = CookieUtils.getCookie(request, AppConstants.OAuth2.LINKING_USER_EMAIL_COOKIE_NAME)
                 .map(Cookie::getValue)
                 .orElse(oAuth2User.getAttribute("email")); // 쿠키 없으면 구글 이메일 사용
+        User user = userRepository.findByEmail(targetEmail)
+                .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND));
+        // JWT 액세스토큰 생성에 사용할 사용자ID + 권한
+        Integer userId = user.getId();
+        String role = user.getRole().name();
 
         // 구글이 준 실제 데이터들을 변수에 담는다.
         String accessToken = client.getAccessToken().getTokenValue();
@@ -86,34 +93,20 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
          * 2) 브라우저가 외부 사이트를 거쳐 돌아오는 동안 기존의 인증 상태가 불안정해지는 경우
          * 3) 나중에 회원가입을 통한 로그인 뿐 아니라 sns나 구글 계정 등으로 로그인을 할 수 있게 되는 경우
          */
-        String jwtToken = tokenProvider.generateAccessToken(targetEmail);
 
-        // 5. JWT를 HttpOnly 쿠키에 담기
-        addJwtCookie(response, jwtToken);
+        String jwtToken = tokenProvider.generateAccessToken(targetEmail, userId, role);
 
-        // 6. 프론트엔드(React)로 성공 페이지 리다이렉트 할 변수 선언
-        String targetUrl = frontendUrl + "/oauth-redirect?success=true";
+        // 5. 프론트엔드(React)로 성공 페이지 리다이렉트 할 변수 선언
+        String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth-redirect")
+                .queryParam("token", jwtToken)
+                .queryParam("success", "true")
+                .build().toUriString();
 
-        // 7. 임시 쿠키 삭제
+        // 6. 임시 쿠키 삭제
         clearAuthenticationAttributes(request, response);
 
-        // 8. 리다이렉트 실행
+        // 7. 리다이렉트 실행
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
-    }
-
-    /**
-     * 우리 서비스의 전용 JWT를 보안 쿠키에 담는 도우미 메서드
-     */
-    private void addJwtCookie(HttpServletResponse response, String token) {
-        ResponseCookie cookie = ResponseCookie.from("access_token", token)
-                .httpOnly(true) // 자바스크립트로 훔쳐볼 수 없게 차단 (보안)
-                .secure(secureCookie)  // 개발 환경에서는 false로 설정 (HTTPS를 안쓰기 때문에)
-                .path("/")
-                .maxAge(60 * 60)  // 1시간 동안 유효
-                .sameSite("Lax")  // 서로 다른 도메인(React-Spring) 간의 통신 설정
-                .build();
-
-        response.addHeader("Set-Cookie", cookie.toString());
     }
 
     /**

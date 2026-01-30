@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,11 +25,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UserDetailsService userDetailsService;
     private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
 
+    /**
+     * OncePerRequestFilter에서 제공하는 기능
+     * 특정 조건 일때 doFilterInternal(필터 로직)을 실행하지 않고 그냥 통과
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+
+        return path.startsWith("/api/auth/refresh");
+    }
+
+
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
         // 토큰 추출 및 "Bearer " 부분의 7자 이후 정보를 token에 저장

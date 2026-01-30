@@ -164,7 +164,7 @@ public class AuthController {
                 .secure(false) // HTTPS에서만 전송 (테스트 환경에서는 false)
                 .path("/") // 모든 경로에서 쿠키 전송
                 .maxAge(AppConstants.Time.REFRESH_TOKEN_VALIDITY_MS / 1000)
-                .sameSite("Strict") // CSRF 방어
+                .sameSite("Lax") // CSRF 방어
                 .build();
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
@@ -194,7 +194,7 @@ public class AuthController {
                 .secure(false) // 실제 배포단계에서는 true
                 .path("/")
                 .maxAge(0) // 만료시간 0 (즉시삭제)
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .build();
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())

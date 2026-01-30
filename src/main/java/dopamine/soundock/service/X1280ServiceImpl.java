@@ -188,7 +188,7 @@ public class X1280ServiceImpl implements X1280Service {
                         User user = userRepository.findByEmail(email)
                                 .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
 
-                        String accessToken = tokenProvider.generateAccessToken(user.getEmail());
+                        String accessToken = tokenProvider.generateAccessToken(user.getEmail(), user.getId(), user.getRole().name());
                         String refreshToken = tokenProvider.generateRefreshToken(user.getEmail());
 
 

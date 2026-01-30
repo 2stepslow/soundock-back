@@ -239,7 +239,7 @@ public class AuthService {
         }
 
         // 로그인 성공 -> 토큰 발급
-        String accessToken = tokenProvider.generateAccessToken(user.getEmail());
+        String accessToken = tokenProvider.generateAccessToken(user.getEmail(), user.getId(), user.getRole().name());
         String refreshToken = tokenProvider.generateRefreshToken(user.getEmail());
 
         // Refresh Token 을 DB에 추가
@@ -310,8 +310,11 @@ public class AuthService {
         }
 
         // 4. 만료 안됐으면 새로운 access token을 만들어서 반환
-        String username = tokenProvider.getEmailFromToken(refreshToken);
-        String accessToken = tokenProvider.generateAccessToken(username);
+        String email = tokenProvider.getEmailFromToken(refreshToken);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND));
+
+        String accessToken = tokenProvider.generateAccessToken(email, user.getId(), user.getRole().name());
 
         return new RefreshResponse(accessToken);
     }
