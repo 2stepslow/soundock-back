@@ -26,12 +26,14 @@ public class TokenProvider {
     }
 
     // 액세스 토큰 생성
-    public String generateAccessToken(String email) {
+    public String generateAccessToken(String email, Integer userId, String role) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + ACCESS_TOKEN_VALIDITY);
 
         return Jwts.builder()
                 .setSubject(email)
+                .claim("userId", userId)
+                .claim("role", role)
                 .setIssuedAt(new Date())
                 .setExpiration(expiry)
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -71,6 +73,7 @@ public class TokenProvider {
                 .getSubject();
     }
 
+    // 만료 시간 추출
     public Date getExpiration(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
@@ -79,4 +82,24 @@ public class TokenProvider {
                 .getBody()
                 .getExpiration();
     }
+
+//    // 토큰에서 userId 추출
+//    public Integer getUserIdFromToken(String token) {
+//        return Jwts.parserBuilder()
+//                .setSigningKey(key)
+//                .build()
+//                .parseClaimsJws(token)
+//                .getBody()
+//                .get("userId", Integer.class);
+//    }
+
+//    // 토큰에서 권한(Role) 추출
+//    public String getRoleFromToken(String token) {
+//        return Jwts.parserBuilder()
+//                .setSigningKey(key)
+//                .build()
+//                .parseClaimsJws(token)
+//                .getBody()
+//                .get("role", String.class);
+//    }
 }
