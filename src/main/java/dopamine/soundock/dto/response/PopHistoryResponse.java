@@ -17,6 +17,8 @@ public class PopHistoryResponse {
     // 사용자id, 사용수량, 사용내용(target), 사용대상(boardId, related_user)
     private Integer userId;
 
+    private Integer popHistoryId;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
     private LocalDateTime createdDatetime;
 

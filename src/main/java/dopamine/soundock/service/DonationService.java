@@ -6,6 +6,7 @@ import dopamine.soundock.entity.PopHistory;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.PopStatus;
 import dopamine.soundock.enums.PopTarget;
+import dopamine.soundock.enums.UserStatus;
 import dopamine.soundock.exceptions.InvalidCancelDonationException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.global.constants.AppConstants;
@@ -42,6 +43,11 @@ public class DonationService {
         // targetUserId와 일치하는 유저 존재 확인
         User targetUSer = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("후원하려는 유저 정보를 찾을 수 없습니다."));
+
+        // targetUser가 탈퇴한 회원인지 확인
+        if(targetUSer.isDeleted() || targetUSer.getStatus().equals(UserStatus.QUITTED)){
+            throw new IllegalArgumentException("탈퇴한 유저입니다. 탈퇴 유저에게 후원할 수 없습니다.");
+        }
 
         // targetUserId와 후원자가 일치하는지 확인
         if (targetUSer.getId().equals(user.getId())){
@@ -179,6 +185,7 @@ public class DonationService {
 
             PopHistoryResponse response = new PopHistoryResponse(
                     popHistory.getUser().getId(),
+                    popHistory.getPopHistoryId(),
                     popHistory.getCreatedDatetime(),
                     popHistory.getRequestedDatetime(),
                     popHistory.getApprovedDatetime(),
@@ -219,6 +226,7 @@ public class DonationService {
 
             PopHistoryResponse response = new PopHistoryResponse(
                     popHistory.getUser().getId(),
+                    popHistory.getPopHistoryId(),
                     popHistory.getCreatedDatetime(),
                     popHistory.getRequestedDatetime(),
                     popHistory.getApprovedDatetime(),

@@ -1,6 +1,7 @@
 package dopamine.soundock.controller;
 
 import dopamine.soundock.dto.*;
+import dopamine.soundock.dto.request.CancelUsedPopRequest;
 import dopamine.soundock.dto.request.CurrentPasswdRequest;
 import dopamine.soundock.dto.request.UpdateInfoRequest;
 import dopamine.soundock.dto.request.UpdatePasswdRequest;
@@ -8,6 +9,7 @@ import dopamine.soundock.dto.response.PaymentHistoryResponse;
 import dopamine.soundock.dto.response.PopHistoryResponse;
 import dopamine.soundock.dto.response.MyInfoResponse;
 import dopamine.soundock.service.MypageService;
+import dopamine.soundock.service.PopService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -30,6 +32,7 @@ import java.util.List;
 @RequestMapping("/api/mypage")
 public class MypageController {
     private final MypageService mypageService;
+    private final PopService popService;
 
     /** 내 정보 조회 */
     @Operation(
@@ -122,14 +125,23 @@ public class MypageController {
     // 재화 구매 내역 조회
     @GetMapping("/pop-purchase")
     public ResponseEntity<RestResponse<List<PaymentHistoryResponse>>> getPaymentHistory() {
-        List<PaymentHistoryResponse> paymentHistoryResponses = mypageService.getPaymentHistory();
+        List<PaymentHistoryResponse> paymentHistoryResponses = popService.getPaymentHistory();
         return ResponseEntity.ok(RestResponse.success(paymentHistoryResponses));
     }
 
     // 재화 사용 내역 조회
     @GetMapping("/pop-usage")
     public ResponseEntity<RestResponse<List<PopHistoryResponse>>> getPopUsageHistory(){
-        List<PopHistoryResponse> popHistoryResponses = mypageService.getPopUsageHistory();
+        List<PopHistoryResponse> popHistoryResponses = popService.getPopUsageHistory();
         return ResponseEntity.ok(RestResponse.success(popHistoryResponses));
+    }
+
+    // 재화 사용 취소
+    @PostMapping("/pop-usage")
+    public ResponseEntity<RestResponse<Void>> cancelUsedPop(
+            @Valid @RequestBody CancelUsedPopRequest cancelRequest
+    ){
+       popService.cancelUsedPop(cancelRequest);
+       return ResponseEntity.ok(RestResponse.success("재화 사용 취소가 완료되었습니다."));
     }
 }

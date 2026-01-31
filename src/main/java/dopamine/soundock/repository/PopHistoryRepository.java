@@ -30,16 +30,6 @@ public interface PopHistoryRepository extends JpaRepository<PopHistory, Integer>
     // 수혜자의 id와 후원 popHistory의 transactionId와 일치하는 내역 조회
     Optional<PopHistory> findByTransactionIdAndPopTarget(String transactionId, PopTarget popTarget);
 
-    // 후원 취소 요청 시 유저가 후원한 내역 조회에 사용
-    @Query("SELECT p FROM PopHistory p " +
-            "WHERE p.user = :userId " +
-            "AND p.popHistoryId = :popHistoryId " +
-            "AND p.createdDatetime > :cutOffDay "  +
-            "AND p.popStatus = 'COMPLETED' " +
-            "AND p.popTarget = 'DONATION' " +
-            "AND p.canceledDatetime IS NULL ")
-    Optional<PopHistory> findUserDonationHistory(
-            @Param("userId") Integer userId,
-            @Param("popHistoryId") Integer popHistoryId,
-            @Param("cutOffDay") LocalDateTime cutOffDay);
+    // popTarget이 FEATURED_BOARD, boardId와 일치하는 내역 조회
+    Optional<PopHistory> findByPopTargetAndBoardBoardId(PopTarget popTarget, Integer boardId);
 }

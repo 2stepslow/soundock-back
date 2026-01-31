@@ -16,7 +16,7 @@ import java.util.Optional;
 @EnableJpaRepositories
 public interface BoardRepository extends JpaRepository<Board, Integer> {
     // 카테고리-boardId에 해당하는 삭제되지 않은 게시글 조회
-    Optional<Board> findByBoardIdAndDeletedDateTimeIsNullAndCategoryCategoryType(int boardId, CategoryType categoryType);
+    Optional<Board> findByBoardIdAndCategoryCategoryType(Integer boardId, CategoryType categoryType);
 
     Optional<Board> findByBoardIdAndDeletedDateTimeIsNull(int boardId);
     // 카테고리의 삭제되지 않은 게시글 조회
