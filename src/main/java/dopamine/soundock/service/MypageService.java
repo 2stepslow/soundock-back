@@ -153,7 +153,6 @@ public class MypageService {
     @Transactional(readOnly = true)
     public List<PaymentHistoryResponse> getPaymentHistory(){
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-//        String email = "linlin@gmail.com";
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
@@ -193,7 +192,6 @@ public class MypageService {
     public List<PopHistoryResponse> getPopUsageHistory(){
         // 로그인한 유저 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-//        String email = "linlin@gmail.com";
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
@@ -209,22 +207,24 @@ public class MypageService {
 
         List<PopHistoryResponse> responses = new ArrayList<>();
 
-
         for (PopHistory popHistory : results) {
             PopHistoryResponse.RelatedInfo related = PopHistoryResponse.createRelatedInfo(popHistory);
 
             // 재화 사용 내역 popHistory dto로 전환
             // 사용일시, 사용수량, 사용내용(target), 사용대상(boardId, related_user)
-            PopHistoryResponse popHistoryResponse = new PopHistoryResponse(
-                    popHistory.getRequestedDatetime(),
-                    popHistory.getChangeAmount(),
-                    popHistory.getPopTarget(),
-                    related
-            );
+            PopHistoryResponse popHistoryResponse = PopHistoryResponse.builder()
+                    .userId(user.getId())
+                    .createdDatetime(popHistory.getCreatedDatetime())
+                    .requestedDatetime(popHistory.getRequestedDatetime())
+                    .approvedDatetime(popHistory.getApprovedDatetime())
+                    .cancelDatetime(popHistory.getCanceledDatetime())
+                    .changeAmount(popHistory.getChangeAmount())
+                    .popTarget(popHistory.getPopTarget())
+                    .related(related)
+                    .build();
             responses.add(popHistoryResponse);
         }
         return responses;
     }
-
 
 }
