@@ -39,7 +39,8 @@ public interface PopHistoryRepository extends JpaRepository<PopHistory, Integer>
             "AND p.popStatus = :popStatus " +
             "AND p.requestedDatetime IS NULL " +
             "AND p.approvedDatetime IS NULL " +
-            "AND p.createdDatetime <= :availableDay ")
+            "AND p.createdDatetime <= :availableDay " +
+            "AND ORDER BY p.createdDatetime DESC ")
     List<PopHistory> findAvailableSettlement(
             @Param("userId") Integer userId,
             @Param("popTarget") PopTarget popTarget,

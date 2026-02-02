@@ -152,9 +152,10 @@ public class MypageController {
     @PostMapping("/pop-usage/cancel")
     public ResponseEntity<RestResponse<Void>> cancelUsedPop(
             @Valid @RequestBody CancelUsedPopRequest cancelRequest
-    ){
+    ) {
         popService.cancelUsedPop(cancelRequest);
         return ResponseEntity.ok(RestResponse.success("재화 사용 취소가 완료되었습니다."));
+    }
     /**
      * 1:1 문의 내역 목록 조회
      */
@@ -215,7 +216,7 @@ public class MypageController {
     }
 
     // 정산 내역 조회
-    @GetMapping("/settlements/available")
+    @GetMapping("/settlements/history")
     public ResponseEntity<RestResponse<?>> getListSettlement(){
         List<PopHistoryResponse> settlementResponse = settlementService.getListSettlement();
         return ResponseEntity.ok(RestResponse.success(settlementResponse));

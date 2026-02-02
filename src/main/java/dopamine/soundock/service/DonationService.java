@@ -191,6 +191,7 @@ public class DonationService {
                     .approvedDatetime(popHistory.getApprovedDatetime())
                     .cancelDatetime(popHistory.getCanceledDatetime())
                     .changeAmount(popHistory.getChangeAmount())
+                    .popStatus(popHistory.getPopStatus())
                     .popTarget(popHistory.getPopTarget())
                     .related(related)
                     .build();
@@ -232,6 +233,7 @@ public class DonationService {
                     .approvedDatetime(popHistory.getApprovedDatetime())
                     .cancelDatetime(popHistory.getCanceledDatetime())
                     .changeAmount(popHistory.getChangeAmount())
+                    .popStatus(popHistory.getPopStatus())
                     .popTarget(popHistory.getPopTarget())
                     .related(related)
                     .build();

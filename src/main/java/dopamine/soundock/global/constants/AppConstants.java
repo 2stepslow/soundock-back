@@ -80,8 +80,11 @@ public final class AppConstants {
         // 파일명: 특수문자 + 공백 포함 금지(".", "-", "_" 만 허용)
         public static final String FILE_NAME_REGEX = "^[a-zA-Z0-9가-힣._-]+$";
 
-        // 계좌번호 : 502로 시작, 1로 끝나는 총 11자리 숫자
+        // 계좌번호: 502로 시작, 1로 끝나는 총 11자리 숫자
         public static final String ACCOUNT_PATTERN = "^502[0-9]{7}1$";
+
+        // 이름: 한글, 영문
+        public static final String NAME_PATTERN = "^[가-힣a-zA-Z]+$";
     }
 
     /**
@@ -106,6 +109,8 @@ public final class AppConstants {
                 "내용은 공백 제외 최소 " + Validation.INQUIRY_CONTENT_MIN_LENGTH + "자 이상이어야 합니다.";
         public static final String ACCOUNT_FORMAT_ERROR =
             "계좌 번호는 502로 시작하며 1로 끝나는 " + Validation.ACCOUNT_TOTAL_LENGTH + "자리 숫자여야 합니다.";
+        public static final String NAME_PATTERN_ERROR =
+                "이름은 한글, 영문만 입력 가능합니다.";
     }
 
     /**
