@@ -103,4 +103,9 @@ public class PopHistory {
         this.popStatus = PopStatus.CANCEL_REQUEST;
         this.requestedDatetime = LocalDateTime.now();
     }
+    // 정산 요청 내역 생성 메서드
+    public void requestSettlementPop(){
+        this.requestedDatetime = LocalDateTime.now();
+        this.popStatus = PopStatus.SETTLEMENT_REQUEST;
+    }
 }

@@ -7,8 +7,13 @@ import dopamine.soundock.dto.request.UpdateInfoRequest;
 import dopamine.soundock.dto.request.UpdatePasswdRequest;
 import dopamine.soundock.dto.response.*;
 import dopamine.soundock.service.InquiryService;
+import dopamine.soundock.dto.request.*;
+import dopamine.soundock.dto.response.PaymentHistoryResponse;
+import dopamine.soundock.dto.response.PopHistoryResponse;
+import dopamine.soundock.dto.response.MyInfoResponse;
 import dopamine.soundock.service.MypageService;
 import dopamine.soundock.service.PopService;
+import dopamine.soundock.service.SettlementService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -39,6 +44,7 @@ public class MypageController {
     private final MypageService mypageService;
     private final PopService popService;
     private final InquiryService inquiryService;
+    private final SettlementService settlementService;
 
     /** 내 정보 조회 */
     @Operation(
@@ -143,7 +149,7 @@ public class MypageController {
     }
 
     // 재화 사용 취소
-    @PostMapping("/pop-usage")
+    @PostMapping("/pop-usage/cancel")
     public ResponseEntity<RestResponse<Void>> cancelUsedPop(
             @Valid @RequestBody CancelUsedPopRequest cancelRequest
     ){
@@ -191,5 +197,27 @@ public class MypageController {
     ) {
         InquiryDetailResponse response = inquiryService.getInquiry(userInquiryId, email);
         return ResponseEntity.ok(RestResponse.success(response));
+    }
+
+    // 정산 정보 등록
+    @PostMapping("/settlements")
+    public ResponseEntity<RestResponse<?>> registerSettlementInfo(
+            @Valid @RequestBody RegisterSettlementRequest settlementRequest){
+        settlementService.registerSettlementInfo(settlementRequest);
+        return ResponseEntity.ok(RestResponse.success("정산 정보 등록이 완료되었습니다."));
+    }
+
+    // 정산 신청
+    @PostMapping("/settlements/request")
+    public ResponseEntity<RestResponse<?>> requestSettlement(){
+        settlementService.requestSettlement();
+        return ResponseEntity.ok(RestResponse.success( "정산 신청이 완료되었습니다."));
+    }
+
+    // 정산 내역 조회
+    @GetMapping("/settlements/available")
+    public ResponseEntity<RestResponse<?>> getListSettlement(){
+        List<PopHistoryResponse> settlementResponse = settlementService.getListSettlement();
+        return ResponseEntity.ok(RestResponse.success(settlementResponse));
     }
 }
