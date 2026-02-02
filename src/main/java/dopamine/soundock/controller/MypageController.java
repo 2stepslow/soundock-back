@@ -141,7 +141,7 @@ public class MypageController {
     public ResponseEntity<RestResponse<Void>> cancelUsedPop(
             @Valid @RequestBody CancelUsedPopRequest cancelRequest
     ){
-       popService.cancelUsedPop(cancelRequest);
-       return ResponseEntity.ok(RestResponse.success("재화 사용 취소가 완료되었습니다."));
+        popService.cancelUsedPop(cancelRequest);
+        return ResponseEntity.ok(RestResponse.success("재화 사용 취소가 완료되었습니다."));
     }
 }

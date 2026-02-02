@@ -125,12 +125,12 @@ public class PopService {
                 .orElseThrow(() -> new ResourceNotFoundException("SPOTLIGHT에 등록된 게시글이 아닙니다. 해당 게시글에 대해 재화 사용 취소를 할 수 없습니다."));
 
         // 게시글 작성자와 로그인한 유저가 일치하는지 검증
-        if (!board.getBoardId().equals(user.getId())){
+        if (!board.getUser().getId().equals(user.getId())){
             throw new IllegalArgumentException("게시글 작성자와 사용자 정보와 일치하지 않습니다.");
         }
 
         // 이미 홍보 만료 기간이 지난 게시글인지 검증
-        if (!board.getFeaturedExpiredDateTime().isBefore(LocalDateTime.now())){
+        if (board.getFeaturedExpiredDateTime().isBefore(LocalDateTime.now())){
             throw new IllegalArgumentException("이미 홍보가 완료된 게시글입니다. 취소 요청이 불가합니다.");
         }
 
@@ -140,11 +140,11 @@ public class PopService {
 
         // 게시글 작성 시각 10분 이내인 경우만 환불
         if (LocalDateTime.now()
-                .isBefore(board.getCreatedDateTime().plusMinutes(AppConstants.Time.AVAILABLE_REQUEST_CANCEL_MINUTES))){
+                .isAfter(board.getCreatedDateTime().plusMinutes(AppConstants.Time.AVAILABLE_REQUEST_CANCEL_MINUTES))){
             throw new InvalidCancelFeaturedBoardException("게시글 등록 후 10분 이내인 경우만 재화 환불이 가능합니다.");
         }
         // 유저 popBalance 업데이트
-        userRepository.increasePopBalance(user.getEmail(), usedPop.getChangeAmount());
+        userRepository.increasePopBalance(user.getEmail(), Math.abs(usedPop.getChangeAmount()));
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -156,6 +156,7 @@ public class PopService {
                 .createdDatetime(now)
                 .canceledDatetime(now)
                 .board(board)
+                .user(user)
                 .build();
 
         popHistoryRepository.save(popHistory);

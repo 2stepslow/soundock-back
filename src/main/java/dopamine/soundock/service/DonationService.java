@@ -63,7 +63,7 @@ public class DonationService {
         // 현재 후원하려는 유저의 재화 차감
         int updatedRow = userRepository.decreasePopBalance(user.getEmail(), donationRequest.getChangeAmount());
         if (updatedRow == 0){
-            throw new IllegalArgumentException("차감할 재화가 없습니다.");
+            throw new IllegalArgumentException("차감할 재화가 없습니다. 재화가 부족하거나 이미 처리된 요청입니다.");
         }
 
         // 수혜자-후원자 한 쌍 확인용 UUID 생성

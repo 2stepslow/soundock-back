@@ -22,7 +22,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 public class BoardController {
-    private BoardService boardService;
+    private final BoardService boardService;
 
     @Operation(
             summary = "특정 카테고리 내 게시글 작성",

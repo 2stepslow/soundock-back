@@ -1,7 +1,6 @@
 package dopamine.soundock.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import dopamine.soundock.entity.PopHistory;
 import dopamine.soundock.enums.PopTarget;
 import lombok.*;

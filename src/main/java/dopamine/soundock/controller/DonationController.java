@@ -31,7 +31,7 @@ public class DonationController {
     @PostMapping("/{userId}/donations/{donationId}")
     public ResponseEntity<RestResponse<?>> cancelDonation(
             @PathVariable Integer userId,
-            DonationRequest donationCancelRequest
+            @RequestBody DonationRequest donationCancelRequest
     ){
         donationService.cancelDonation(userId, donationCancelRequest);
         return ResponseEntity.ok(RestResponse.success("후원 취소 요청을 완료했습니다. 관리자 확인 후 취소 요청이 완료됩니다."));
@@ -52,6 +52,6 @@ public class DonationController {
             @PathVariable Integer userId
     ){
         List<PopHistoryResponse> receivedPopResponse = donationService.getReceivedResult(userId);
-      return ResponseEntity.ok(RestResponse.success(receivedPopResponse));
+        return ResponseEntity.ok(RestResponse.success(receivedPopResponse));
     }
 }
