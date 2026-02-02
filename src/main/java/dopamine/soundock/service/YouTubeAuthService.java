@@ -29,6 +29,7 @@ public class YouTubeAuthService {
 
     private final OauthRepository oauthRepository;
     private final UserRepository userRepository;
+    private final OauthService oauthService;
     private final RestTemplate restTemplate =  new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -117,7 +118,7 @@ public class YouTubeAuthService {
         } catch (HttpClientErrorException ex) {
             if (ex.getResponseBodyAsString().contains("invalid_grant")) {
                 log.info("사용자가 구글 연동을 취소함. 유저: {}", oauth.getUser().getEmail());
-                oauthRepository.deleteByUser(oauth.getUser());
+                oauthService.deleteConnection(oauth.getUser());
                 return null;
             }
             throw ex;

@@ -4,7 +4,6 @@ import dopamine.soundock.dto.request.CurrentPasswdRequest;
 import dopamine.soundock.dto.request.UpdateInfoRequest;
 import dopamine.soundock.dto.request.UpdatePasswdRequest;
 import dopamine.soundock.dto.response.MyInfoResponse;
-import dopamine.soundock.entity.Oauth;
 import dopamine.soundock.dto.response.PaymentHistoryResponse;
 import dopamine.soundock.dto.response.PopHistoryResponse;
 import dopamine.soundock.entity.PopHistory;
@@ -12,7 +11,6 @@ import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.PopTarget;
 import dopamine.soundock.enums.UserStatus;
 import dopamine.soundock.exceptions.*;
-import dopamine.soundock.repository.OauthRepository;
 import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.repository.PopHistoryRepository;
 import dopamine.soundock.repository.RefreshTokenRepository;
@@ -26,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +34,6 @@ public class MypageService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final OauthRepository oauthRepository;
     private final YouTubeAuthService youTubeAuthService;
     private final PopHistoryRepository popHistoryRepository;
 

@@ -4,6 +4,7 @@ import dopamine.soundock.global.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -45,7 +46,7 @@ public class SecurityConfig {
                 "http://192.168.56.1:3000",
                 "http://192.168.200.*:3000"
         ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // 허용할 HTTP 메서드들
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")); // 허용할 HTTP 메서드들
         configuration.addAllowedHeader("*"); // 모든 헤더 허용
         configuration.setAllowCredentials(true); // 쿠키 허용
 
@@ -94,6 +95,8 @@ public class SecurityConfig {
                         .requestMatchers("/v1/payments/**","/payment/**").permitAll() // ** : 테스트용 /api/payments/, /payment/ 뒤의 모든 것들 허용
                         .requestMatchers("/api/auth/**").permitAll() // ** : /api/auth/ 뒤의 모든 것들 허용
                         .requestMatchers(HttpMethod.GET,"/api/boards/**").permitAll() // ** : 테스트용 /api/boards/ 뒤의 모든 것들 허용
+                        .requestMatchers(HttpMethod.GET,"/uploads/profiles/**", "/uploads/boards/**").permitAll() // 프로필 및 게시글 파일은 모두 허용
+                        .requestMatchers(HttpMethod.GET,"/uploads/music/**").hasAuthority("USER") // 음악 파일은 회원만 확인 가능
                         .requestMatchers(
                                 "/payment/*.html",
                                 "/swagger-ui/**",
@@ -134,6 +137,9 @@ public class SecurityConfig {
     public static class CustomAuthorizationRequestResolver implements OAuth2AuthorizationRequestResolver {
         // 스프링 시큐리티가 기본으로 제공하는 리졸버(기본적인 틀)
         private final OAuth2AuthorizationRequestResolver defaultResolver;
+
+        @Value("${oauth.request.dev}")
+        private boolean dev;
 
         /**
          * 생성자: 기본 리졸버를 초기화
@@ -179,8 +185,7 @@ public class SecurityConfig {
             // 사용자가 구글 로그인 화면에서 어떤 경험을 할지 결정
             // 개발 중일 때는 (true) prompt=consent
             // 배포 환경에서는 (false) prompt=select_account 로 변경
-            boolean isDevelopment = true;
-            if (isDevelopment) {
+            if (dev) {
                 extraParams.put("prompt", "consent");    // 매번 동의 화면을 띄워 리프레시 토큰 재발급 강제
             } else {
                 extraParams.put("prompt", "select_account"); // 계정 선택 창만 띄우고, 동의 화면은 최초 1회만 표시

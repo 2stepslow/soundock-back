@@ -56,6 +56,8 @@ public class BoardService {
                 .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
 
         BoardResponse boardResponse = BoardResponse.builder()
+                .userId(board.getUser().getId())
+                .boardId(board.getBoardId())
                 .title(board.getTitle())
                 .nickname(board.getUser().getNickname())
                 .content(board.getContent())
@@ -78,6 +80,7 @@ public class BoardService {
         List<BoardResponse> boardResponses = new ArrayList<>();
         for (Board board : boards){
             BoardResponse newResponse = BoardResponse.builder()
+                    .boardId(board.getBoardId())
                     .title(board.getTitle())
                     .nickname(board.getUser().getNickname())
                     .createdDateTime(board.getCreatedDateTime())
@@ -135,12 +138,9 @@ public class BoardService {
         if (updateRequest.getContent() != null){
             board.setContent(updateRequest.getContent());
         }
-        if (updateRequest.getFileUrl() != null){
-            board.setFileUrl(updateRequest.getFileUrl());
-        }
+
         // 게시글 수정일 업데이트
         board.setUpdatedDateTime(LocalDateTime.now());
         boardRepository.save(board);
     }
-
 }
