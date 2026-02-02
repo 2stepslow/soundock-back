@@ -5,6 +5,7 @@ import dopamine.soundock.dto.request.*;
 import dopamine.soundock.dto.response.LoginResponse;
 import dopamine.soundock.dto.response.RefreshResponse;
 import dopamine.soundock.dto.response.ValidateEmailResponse;
+import dopamine.soundock.dto.response.VerificationStatusResponse;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.service.AuthService;
@@ -16,6 +17,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -70,33 +72,33 @@ public class AuthController {
         return ResponseEntity.ok(RestResponse.success("사용 가능한 닉네임 입니다."));
     }
 
-    // 회원 가입
+    /**
+     * 회원가입 API
+     */
     @Operation(
-            summary = "회원 가입 및 인증 메일 발송",
-            description = "새로원 회원을 등록하고, 본인 확인을 위한 인증 링크를 이메일로 발송, 회원가입 성공 즉시 응답하며, 실제 메일 발송은 백그라운드에서 진행"
+            summary = "회원 가입 완료",
+            description = "이메일 인증이 완료된 상태에서 호출, 최종적으로 사용자 정보를 DB에 저장"
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "회원가입 요청 성공 및 인증 이메일 전송"),
-            @ApiResponse(responseCode = "400", description = "입력 데이터 유효성 검사 실패"),
+            @ApiResponse(responseCode = "200", description = "회원가입 성공"),
+            @ApiResponse(responseCode = "400", description = "이메일 인증 미완료 또는 데이터 유효성 실패"),
             @ApiResponse(responseCode = "409", description = "이미 존재하는 이메일 or 닉네임")
     })
     @PostMapping("/signup")
     public ResponseEntity<RestResponse<Void>> register(
             @Valid @RequestBody UserSignupRequest userSignupRequest
     ) {
-
-        // ----------테스트 단계에서는 현재 주소를 자동으로 추적하는 이 코드를 사용하지만 배포환경에서는 변경이 필요함-------------------
-        String siteURL = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
-        // ------------------------------------------------------------------------------------------------------------
-        // 유효성 검사 통과시 로직 실행
-        authService.signupUser(userSignupRequest, siteURL);
-        return ResponseEntity.ok(RestResponse.success("인증 이메일 전송이 완료되었습니다. 이메일을 확인해주세요."));
+        // 유효성 검사 통과시 로직 실행 및 DB 저장
+        authService.signupUser(userSignupRequest);
+        return ResponseEntity.ok(RestResponse.success("회원가입이 성공적으로 완료되었습니다. 환영합니다!"));
     }
 
-    // 이메일 전송 (재전송시 사용)
+    /**
+     * 이메일 전송 (전송 및 재전송시 사용)
+     */
     @Operation(
-            summary = "인증 이메일 재전송",
-            description = "인증 메일을 받지 못했거나 만료된 경우, 해당 이메일로 인증 링크를 다시 발송, 도배 방지를 위해 1분 이내 재요청 시 에러가 발생"
+            summary = "인증 이메일 전송",
+            description = "입력한 이메일로 인증 링크를 발송, 도배 방지를 위해 1분 이내 재요청 시 에러가 발생"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "인증 이메일 발송 요청 성공"),
@@ -114,7 +116,7 @@ public class AuthController {
 
 
     /**
-     * 이메일 인증
+     * 이메일 링크 클릭 처리
      */
     @Operation(
             summary = "이메일 인증 처리",
@@ -228,16 +230,20 @@ public class AuthController {
     }
 
     /**
-     * 이메일 인증 상태 확인
+     * 이메일 인증 상태 확인 API
      */
     @Operation(
             summary = "이메일 인증 상태 확인",
-            description = "리액트 가입 대기 화면에서 유저의 상태가 ACTIVE(인증 완료)로 변했는지 확인하기 위해 호출"
+            description = "리액트 가입화면에서 폴링을 통해 유저의 인증 완료 또는 미완료 확인"
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "상태 조회 성공")
+    })
     @GetMapping("/verify/status")
-    public ResponseEntity<RestResponse<String>> checkStatus(@RequestParam("email") String email) {
-        String status = authService.getUserStatus(email);
-
-        return ResponseEntity.ok(RestResponse.success(status));
+    public ResponseEntity<RestResponse<VerificationStatusResponse>> checkStatus(
+            @RequestParam("email") String email
+    ) {
+        VerificationStatusResponse response = authService.checkEmailVerificationStatus(email);
+        return ResponseEntity.ok(RestResponse.success(response));
     }
 }
