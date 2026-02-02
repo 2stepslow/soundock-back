@@ -3,6 +3,7 @@ package dopamine.soundock.config;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,9 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
     // 쿠키 저장소(실패했을 때도 쿠키를 지워야 하므로 가져옴)
     private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
     /**
      * 인증 실패 시 호출되는 핵심 메서드
      * 인증 과정에서 발생한 구체적인 에러 정보가 담겨 있다
@@ -28,7 +32,7 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException {
         // 1. 사용자를 다시 보낼 리액트(프론트엔드) 주소를 설정
         // 결과가 '실패'라는 것과, 어떤 에러인지(?error=...) 주소창에 적어서 보냄
-        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:5173/oauth-redirect")
+        String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth-redirect")
                 .queryParam("error", exception.getLocalizedMessage())
                 .build().toUriString();
 

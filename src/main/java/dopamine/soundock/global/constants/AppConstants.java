@@ -41,6 +41,12 @@ public final class AppConstants {
         public static final int NICKNAME_MAX_LENGTH = 10;
         // 휴대폰 번호 길이
         public static final int PHONE_TOTAL_LENGTH = 11; // 010 + 8 digits
+        // 1:1 문의 제목 최소 길이
+        public static final int INQUIRY_TITLE_MIN_LENGTH = 2;
+        // 1:1 문의 내용 최소 길이
+        public static final int INQUIRY_CONTENT_MIN_LENGTH = 10;
+        // 파일 용량 최대값
+        public static final long MAX_FILE_SIZE = 20 * 1024 * 1024;
     }
 
     /**
@@ -59,6 +65,15 @@ public final class AppConstants {
 
         // 전화번호: 010으로 시작, 뒤에 8자리 숫자
         public static final String PHONE_PATTERN = "^010[0-9]{8}$";
+
+        // 1:1 문의 제목: 공백 제외 최소 2자 이상
+        public static final String INQUIRY_TITLE_PATTERN = "^(\\s*\\S\\s*){2,}$";
+
+        // 1:1 문의 내용: 공백 제외 최소 10자 이상
+        public static final String INQUIRY_CONTENT_PATTERN = "^(\\s*\\S\\s*){10,}$";
+
+        // 파일명: 특수문자 + 공백 포함 금지(".", "-", "_" 만 허용)
+        public static final String FILE_NAME_REGEX = "^[a-zA-Z0-9가-힣._-]+$";
     }
 
     /**
@@ -77,6 +92,10 @@ public final class AppConstants {
             + Validation.NICKNAME_MAX_LENGTH + "자 이하의 한글, 영문, 숫자만 가능합니다.";
         public static final String PHONE_FORMAT_ERROR =
             "휴대폰 번호는 010으로 시작하는 " + Validation.PHONE_TOTAL_LENGTH + "자리 숫자여야 합니다.";
+        public static final String INQUIRY_TITLE_ERROR =
+                "제목은 공백 제외 최소 " + Validation.INQUIRY_TITLE_MIN_LENGTH + "자 이상이어야 합니다.";
+        public static final String INQUIRY_CONTENT_ERROR =
+                "내용은 공백 제외 최소 " + Validation.INQUIRY_CONTENT_MIN_LENGTH + "자 이상이어야 합니다.";
     }
 
     /**

@@ -10,6 +10,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class BoardResponse{
+    private Integer userId;
+    private Integer boardId;
     private String title;
     private String content;
     private String nickname;

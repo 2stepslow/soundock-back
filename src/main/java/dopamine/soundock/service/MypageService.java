@@ -4,10 +4,17 @@ import dopamine.soundock.dto.request.CurrentPasswdRequest;
 import dopamine.soundock.dto.request.UpdateInfoRequest;
 import dopamine.soundock.dto.request.UpdatePasswdRequest;
 import dopamine.soundock.dto.response.MyInfoResponse;
+import dopamine.soundock.dto.response.PaymentHistoryResponse;
+import dopamine.soundock.dto.response.PopHistoryResponse;
+import dopamine.soundock.entity.PopHistory;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.UserStatus;
 import dopamine.soundock.exceptions.*;
 import dopamine.soundock.repository.*;
+import dopamine.soundock.global.constants.AppConstants;
+import dopamine.soundock.repository.PopHistoryRepository;
+import dopamine.soundock.repository.RefreshTokenRepository;
+import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor

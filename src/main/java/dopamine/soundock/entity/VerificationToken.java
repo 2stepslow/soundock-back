@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
@@ -15,6 +17,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @DynamicInsert
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "verification_tokens")
 public class VerificationToken {
     @Id
@@ -28,10 +31,9 @@ public class VerificationToken {
     private String token;
 
     // 회원 Id
-    @NotNull
-    @OneToOne(targetEntity = User.class, fetch = FetchType.EAGER)
-    @JoinColumn(nullable = false, name = "user_id")
-    private User user;
+    @NotBlank
+    @Column(name = "email", nullable = false)
+    private String email;
 
     // 만료 시간
     @NotNull
@@ -41,4 +43,8 @@ public class VerificationToken {
     @NotNull
     @Column(name = "is_verified", nullable = false)
     private boolean isVerified;
+
+    @CreatedDate
+    @Column(name = "created_at",nullable = false)
+    private LocalDateTime createdAt;
 }
