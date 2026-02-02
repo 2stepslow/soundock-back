@@ -34,7 +34,7 @@ public class BoardController {
             @ApiResponse(responseCode = "404", description = "미등록 카테고리", content = @Content(schema = @Schema(implementation = RestResponse.class))),
     })
     // 게시글 작성
-    @PostMapping("/{categoryType}")
+    @PostMapping("/category/{categoryType}")
     public ResponseEntity<RestResponse<?>> createNewBoard(
             @PathVariable(required = true) CategoryType categoryType,
             @Valid @RequestBody BoardCreateRequest createRequest
@@ -71,7 +71,7 @@ public class BoardController {
     })
 
     // 게시판 카테고리별 목록 조회
-    @GetMapping("/{categoryType}")
+    @GetMapping("/category/{categoryType}")
     public ResponseEntity<RestResponse<?>> getBoards(
             @PathVariable(required = true) CategoryType categoryType
     ){

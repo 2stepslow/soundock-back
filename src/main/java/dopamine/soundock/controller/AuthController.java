@@ -223,6 +223,7 @@ public class AuthController {
             @CookieValue(name = "refreshToken") String refreshToken // 쿠키에서 자동 추출
     ) {
         RefreshResponse response = authService.refresh(refreshToken);
+        log.info("{}", response.getAccessToken());
         return ResponseEntity.ok(RestResponse.success(response));
     }
 
