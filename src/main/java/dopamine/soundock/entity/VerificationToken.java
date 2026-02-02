@@ -31,10 +31,9 @@ public class VerificationToken {
     private String token;
 
     // 회원 Id
-    @NotNull
-    @OneToOne(targetEntity = User.class, fetch = FetchType.EAGER)
-    @JoinColumn(nullable = false, name = "user_id")
-    private User user;
+    @NotBlank
+    @Column(name = "email", nullable = false)
+    private String email;
 
     // 만료 시간
     @NotNull

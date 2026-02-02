@@ -1,11 +1,11 @@
 package dopamine.soundock.service;
 
 import dopamine.soundock.dto.TokenDto;
-import dopamine.soundock.event.UserSignedUpEvent;
 import dopamine.soundock.dto.request.*;
 import dopamine.soundock.dto.response.EmailCheckResult;
 import dopamine.soundock.dto.response.RefreshResponse;
 import dopamine.soundock.dto.response.ValidateEmailResponse;
+import dopamine.soundock.dto.response.VerificationStatusResponse;
 import dopamine.soundock.entity.AccessTokenBlacklist;
 import dopamine.soundock.entity.RefreshToken;
 import dopamine.soundock.entity.User;
@@ -21,7 +21,6 @@ import dopamine.soundock.repository.UserRepository;
 import dopamine.soundock.repository.VerificationTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -46,8 +45,6 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenProvider tokenProvider;
     private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
-    // 스프링의 이벤트 발행기
-    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 이메일 중복체크 메서드
@@ -104,7 +101,7 @@ public class AuthService {
      * 회원가입
      */
     @Transactional
-    public void signupUser(UserSignupRequest userSignupRequest, String siteURL) {
+    public void signupUser(UserSignupRequest userSignupRequest) {
         // 이메일 상태 체크 및 기존 데이터 정리
         boolean needsCleanup = validateEmailForSignup(userSignupRequest.getEmail());
         if (needsCleanup) {
@@ -117,6 +114,13 @@ public class AuthService {
             throw new DuplicateNicknameException();
         }
 
+        // 이메일 인증 여부 최종 확인
+        VerificationToken token = verificationTokenRepository.findByEmail(userSignupRequest.getEmail())
+                .orElseThrow(() -> new CustomException("인증 정보가 없습니다",HttpStatus.BAD_REQUEST));
+
+        if (!token.isVerified())
+            throw new CustomException("이메일 인증이 완료되지 않았습니다.", HttpStatus.BAD_REQUEST);
+
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(userSignupRequest.getPassword());
 
@@ -128,26 +132,24 @@ public class AuthService {
                 .nickname(userSignupRequest.getNickname())
                 .phoneNumber(userSignupRequest.getPhoneNumber())
                 .role(UserRole.USER)
-                .status(UserStatus.PENDING)
+                .status(UserStatus.ACTIVE)
                 .build();
 
         userRepository.save(user);
 
-        // 이메일 서비스 직접 호출 하지 않고 이벤트를 발행
-        // 직접 호출하지 않고 이벤트를 발행함으로써 회원가입 로직과 이메일 로직을 완전히 분리
-        eventPublisher.publishEvent(new UserSignedUpEvent(user.getEmail(), siteURL));
+        verificationTokenRepository.deleteByEmail(userSignupRequest.getEmail());
     }
 
     /**
      * 이메일 인증 토큰 생성
      */
-    private void createVerificationToken(User user, String token) {
+    private void createVerificationToken(String email, String token) {
         // 기존 토큰이 있으면 삭제
-        verificationTokenRepository.deleteByUser(user);
+        verificationTokenRepository.deleteByEmail(email);
 
         VerificationToken verificationToken = VerificationToken
                 .builder()
-                .user(user)
+                .email(email)
                 .token(token)
                 .expiryDate(LocalDateTime.now().plusMinutes(AppConstants.Time.VERIFICATION_TOKEN_EXPIRY_MINUTES))
                 .build();
@@ -159,12 +161,10 @@ public class AuthService {
      */
     @Transactional
     public void sendVerificationEmail(VerificationEmailRequest verificationEmailRequest, String siteURL) {
-        // 비동기 스레드에서 유저 정보 확인 (회원가입 로직에서 DB 저장이 완전히 끝난후 (COMMIT 된후)기 때문에 DB에 유저 내용 존재
-        User user = userRepository.findByEmail(verificationEmailRequest.getEmail())
-                .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND));
+        String email = verificationEmailRequest.getEmail();
 
         // 기존 토큰 정보 확인
-        Optional<VerificationToken> tokenOpt = verificationTokenRepository.findByUser(user);
+        Optional<VerificationToken> tokenOpt = verificationTokenRepository.findByEmail(email);
 
         if (tokenOpt.isPresent()) {
             VerificationToken oldToken = tokenOpt.get();
@@ -176,9 +176,8 @@ public class AuthService {
         }
 
         String token = UUID.randomUUID().toString();
-        createVerificationToken(user, token);
+        createVerificationToken(email, token);
 
-        String recipientAddress = verificationEmailRequest.getEmail();
         String subject = "이메일 인증 요청";
         String verificationUrl = siteURL + "/api/auth/verify?token=" + token;
 
@@ -186,7 +185,29 @@ public class AuthService {
         context.setVariable("verificationUrl", verificationUrl);
 
         // 앞의 부분은 전부 동기 지만 메일 보내는 메서드인 sendMailAsync만 비동기(여기를 끝으로 sendMailAsync 메서드는 따로 시작하고 sendVerificationEmail은 종료)
-        emailService.sendMailAsync(recipientAddress, subject, "verification-email", context);
+        emailService.sendMailAsync(email, subject, "verification-email", context);
+    }
+
+    /**
+     * 이메일 인증 확인 메서드
+     */
+    @Transactional(readOnly = true)
+    public VerificationStatusResponse checkEmailVerificationStatus(String email) {
+        return verificationTokenRepository.findByEmail(email)
+                .map(token -> {
+                    boolean isExpired = token.getExpiryDate().isBefore(LocalDateTime.now());
+
+                    return VerificationStatusResponse.builder()
+                            .email(email)
+                            .isVerified(token.isVerified())
+                            .isExpired(isExpired)
+                            .build();
+                })
+                .orElse(VerificationStatusResponse.builder()
+                        .email(email)
+                        .isVerified(false)
+                        .isExpired(false)
+                        .build());
     }
 
     /**
@@ -289,16 +310,5 @@ public class AuthService {
         String accessToken = tokenProvider.generateAccessToken(email, user.getId(), user.getRole().name());
 
         return new RefreshResponse(accessToken);
-    }
-
-    /**
-     * 이메일 인증 완료 확인 메서드
-     */
-    @Transactional(readOnly = true)
-    public String getUserStatus(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자 입니다."));
-
-        return user.getStatus().name();
     }
 }

@@ -1,10 +1,7 @@
 package dopamine.soundock.service;
 
-import dopamine.soundock.entity.User;
 import dopamine.soundock.entity.VerificationToken;
-import dopamine.soundock.enums.UserStatus;
 import dopamine.soundock.exceptions.CustomException;
-import dopamine.soundock.repository.UserRepository;
 import dopamine.soundock.repository.VerificationTokenRepository;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +25,6 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final SpringTemplateEngine templateEngine;
     private final VerificationTokenRepository verificationTokenRepository;
-    private final UserRepository userRepository;
 
     /**
      * 이메일 발송 메서드 (메일 발송이라는 무거운 작업을 따로 실행하기 위해 비동기 처리)
@@ -68,11 +64,6 @@ public class EmailService {
             throw new CustomException("인증 시간이 만료되었습니다. 다시 시도해주세요.", HttpStatus.GONE);
         }
 
-        User user = verificationToken.getUser();
-        if (user != null) {
-            user.setStatus(UserStatus.ACTIVE);
-            userRepository.save(user);
-        }
         verificationToken.setVerified(true);
         verificationTokenRepository.save(verificationToken);
     }
