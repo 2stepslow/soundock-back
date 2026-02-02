@@ -1,10 +1,7 @@
 package dopamine.soundock.dto.response;
 
 import dopamine.soundock.entity.UserInquiry;
-import dopamine.soundock.enums.InquiryStatus;
-import dopamine.soundock.enums.InquiryType;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

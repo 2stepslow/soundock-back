@@ -1,6 +1,5 @@
 package dopamine.soundock.config;
 
-import dopamine.soundock.global.constants.AppConstants;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;

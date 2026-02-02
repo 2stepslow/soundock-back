@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,17 +38,25 @@ public class InquiryService {
 
         // 파일 업로드 (파일이 없다면 null 반환)
         String fileUrl = fileService.uploadToLocal(request.getAttachment(), "inquiries");
+        try {
+            // DB 저장
+            UserInquiry userInquiry = UserInquiry.builder()
+                    .title(request.getTitle())
+                    .content(request.getContent())
+                    .inquiryType(request.getInquiryType())
+                    .fileUrl(fileUrl)
+                    .user(user)
+                    .build();
 
-        // DB 저장
-        UserInquiry userInquiry = UserInquiry.builder()
-                .title(request.getTitle())
-                .content(request.getContent())
-                .inquiryType(request.getInquiryType())
-                .fileUrl(fileUrl)
-                .user(user)
-                .build();
+            userInquiryRepository.save(userInquiry);
+        } catch (Exception e) {
+            // DB 저장 실패 시 이미 저장된 파일 삭제
+            if (fileUrl != null) {
+                fileService.deleteFile(fileUrl);
+            }
+            throw new CustomException("문의 저장 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
-        userInquiryRepository.save(userInquiry);
     }
 
     /**

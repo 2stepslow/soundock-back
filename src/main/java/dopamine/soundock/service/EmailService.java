@@ -33,7 +33,7 @@ public class EmailService {
     /**
      * 이메일 발송 메서드 (메일 발송이라는 무거운 작업을 따로 실행하기 위해 비동기 처리)
      */
-    @Async
+    @Async("threadPoolTaskExecutor")
     public void sendMailAsync(String email, String subject, String templateName, Context context) {
         try {
             String htmlContent = templateEngine.process(templateName, context);

@@ -22,8 +22,6 @@ public interface OauthRepository extends JpaRepository<Oauth, Integer> {
 
     // Oauth2 연동 삭제
     @Modifying
-    // 독립적인 새 트랜잭션에서 실행
-    @Transactional
     @Query("DELETE FROM Oauth o WHERE o.user = :user")
     void deleteByUser(User user);
 }

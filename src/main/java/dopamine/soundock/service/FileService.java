@@ -15,6 +15,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -63,7 +65,6 @@ public class FileService {
             Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
             // DB에 저장할 접근 경로
-            // 공개 가능이면 /uploads/public/saveName, 비공개면 /uploads/private/saveName
             return "/uploads/" + folderName + "/" + saveName;
 
         } catch (IOException e) {
@@ -71,6 +72,27 @@ public class FileService {
         } catch (Exception e) {
             log.error("파일 업로드 실패: {}", file.getOriginalFilename(), e);
             throw new CustomException("파일 업로드 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * 저장 파일 삭제 메서드
+     */
+    public void deleteFile(String fileUrl) {
+        if (fileUrl == null || fileUrl.isEmpty()) return;
+
+        try {
+            // DB 저장용 경로를 실제 물리 경로로 변환
+            String relativePath = fileUrl.replace("/uploads/", "");
+            Path path = Paths.get(basePath, relativePath).toAbsolutePath().normalize();
+
+            // 파일이 실제로 존재하는지 확인 후 삭제
+            boolean isExist = Files.deleteIfExists(path);
+            log.info("파일 삭제 성공 {}", path);
+        } catch (Exception e) {
+            // 삭제 실패시 로그 기록
+            // 예외를 던지지 않는 이유는 파일 삭제 실패때문에 서비스의 로직 전체를 방해하지 않기 위해
+            log.error("파일 삭제 중 오류 발생: {}", fileUrl, e);
         }
     }
 
@@ -102,7 +124,7 @@ public class FileService {
 //    }
 
     /**
-     * 파일 용량 체크 및 파일명 체크 메서드
+     * 파일 용량 체크 및 파일타입, 파일명 체크 메서드
      */
     public void validateFile(MultipartFile file) {
         // 파일이 없다면 메서드 건너 뜀
@@ -110,6 +132,25 @@ public class FileService {
 
         // 용량 체크 : 20MB
         if (file.getSize() > AppConstants.Validation.MAX_FILE_SIZE) throw new CustomException("20MB 초과", HttpStatus.BAD_REQUEST);
+
+        // 허용된 확장자 리스트
+        List<String> allowedExtensions = Arrays.asList("jpg", "jpeg", "png", "gif", "pdf", "mp3", "wav");
+        String extension = StringUtils.getFilenameExtension(file.getOriginalFilename());
+
+        if (extension == null || !allowedExtensions.contains(extension.toLowerCase())) {
+            throw new CustomException("허용되지 않는 파일 형식입니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        // 실제 타입 확인(확장자를 임의로 고치는 경우 방지)
+        String contentType = file.getContentType();
+        // 허용 리스트 = 이미지, PDF, 오디오(MP3, WAV)
+        boolean isImage = contentType != null && contentType.startsWith("image/");
+        boolean isPdf = "application/pdf".equals(contentType);
+        boolean isAudio = contentType != null && contentType.startsWith("audio/");
+
+        if (!isImage && !isPdf && !isAudio) {
+            throw new CustomException("허용되지 않는 파일 형식입니다. (이미지, PDF, 오디오만 가능)", HttpStatus.BAD_REQUEST);
+        }
 
         // 파일명 체크 : 공백/특수문자
         String name = file.getOriginalFilename();

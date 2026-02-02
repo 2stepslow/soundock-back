@@ -22,7 +22,7 @@ public class UserEventListener {
      */
     // 회원가입 스레드가 이미 커밋되서 인증 토큰 저장이 원활하게 이루어지지 않음...
     // 그래서 DB작업(인증 토큰 저장)을 안전하게 수행하기 위해 새로운 스레드로 작업하기 위한 비동기 처리
-    @Async
+    @Async("threadPoolTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleUserSignedUpEvent(UserSignedUpEvent event) {
         // 회원 가입 성공이 확인된 이후, 실제 이메일 발송 메서드 호출
