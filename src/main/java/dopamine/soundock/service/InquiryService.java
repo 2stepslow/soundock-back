@@ -32,15 +32,11 @@ public class InquiryService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
 
-        String fileUrl = null;
+        // 파일 검증 (파일이 없다면 그대로 그냥 통과)
+        fileService.validateFile(request.getAttachment());
 
-        if (request.getAttachment() != null && !request.getAttachment().isEmpty()) {
-            // 용량 및 특수문제 검증 수행
-            fileService.validateFile(request.getAttachment());
-
-            // 파일 서비스 호출 (지금은 로컬 저장, S3 사용시 메서드 교체 필요)
-            fileUrl = fileService.uploadToLocal(request.getAttachment());
-        }
+        // 파일 업로드 (파일이 없다면 null 반환)
+        String fileUrl = fileService.uploadToLocal(request.getAttachment(), "inquiries");
 
         // DB 저장
         UserInquiry userInquiry = UserInquiry.builder()
@@ -74,7 +70,7 @@ public class InquiryService {
      */
     @Transactional(readOnly = true)
     public InquiryDetailResponse getInquiry(Integer userInquiryId, String email) {
-        UserInquiry inquiry = userInquiryRepository.findByUserInquiryId(userInquiryId)
+        UserInquiry inquiry = userInquiryRepository.findByUserInquiryIdAndUser_Email(userInquiryId, email)
                 .orElseThrow(() -> new ResourceNotFoundException("문의 내역을 찾을 수 없습니다."));
 
         return InquiryDetailResponse.from(inquiry);

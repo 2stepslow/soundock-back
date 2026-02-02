@@ -8,12 +8,14 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.web.multipart.MultipartFile;
 
 @Getter
 @Setter
 @AllArgsConstructor
+@NoArgsConstructor
 @Schema(description = "1:1문의 등록 요청")
 public class InquiryCreateRequest {
     @Schema(description = "1:1 문의 타입")

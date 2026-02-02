@@ -12,5 +12,5 @@ public interface UserInquiryRepository extends JpaRepository<UserInquiry, Intege
     // 유저의 모든 1:1 문의 조회(생성일자로 내림차순) + 페이징
     Page<UserInquiry> findAllByUser(User user, Pageable pageable);
 
-    Optional<UserInquiry> findByUserInquiryId(Integer userInquiryId);
+    Optional<UserInquiry> findByUserInquiryIdAndUser_Email(Integer userInquiryId, String email);
 }

@@ -4,10 +4,7 @@ import dopamine.soundock.enums.CommentStatus;
 import dopamine.soundock.enums.InquiryStatus;
 import dopamine.soundock.enums.InquiryType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -20,6 +17,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @DynamicInsert
 @Builder
+@ToString
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "user_inquiries")
 public class UserInquiry {
@@ -36,6 +34,7 @@ public class UserInquiry {
     private String content;
 
     @Column(name = "inquiry_type", nullable = false)
+    @ToString.Exclude
     @Enumerated(EnumType.STRING)
     private InquiryType inquiryType;
 
@@ -64,10 +63,12 @@ public class UserInquiry {
     private LocalDateTime commentCreatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @ToString.Exclude // 무한 루프 및 성능 저하 방지 (ToString으로 서로 참조하게 되면 무한루프 된다고 함)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @ToString.Exclude
     @JoinColumn(name = "admin_id")
     private User admin;
 

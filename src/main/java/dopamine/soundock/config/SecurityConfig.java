@@ -94,6 +94,7 @@ public class SecurityConfig {
                         .requestMatchers("/v1/payments/**","/payment/**").permitAll() // ** : 테스트용 /api/payments/, /payment/ 뒤의 모든 것들 허용
                         .requestMatchers("/api/auth/**").permitAll() // ** : /api/auth/ 뒤의 모든 것들 허용
                         .requestMatchers(HttpMethod.GET,"/api/boards/**").permitAll() // ** : 테스트용 /api/boards/ 뒤의 모든 것들 허용
+                        .requestMatchers(HttpMethod.GET,"/uploads/**").permitAll() // 이미지 조회 요청만 로그인 없이 허용
                         .requestMatchers(
                                 "/payment/*.html",
                                 "/swagger-ui/**",

@@ -102,14 +102,4 @@ public final class AppConstants {
         public static final int cookieExpireSeconds = 180;
         public static final String LINKING_USER_EMAIL_COOKIE_NAME = "linking_user_email";
     }
-
-    /**
-     * 파일 업로드 경로 관리
-     */
-    public static class File {
-        // 1:1 문의 백엔드 서버 업로드 경로
-        public static final String FILE_UPLOAD_PATH_INQUIRY = "C:/uploads/inquiries";
-        // 1:1 문의 DB URL 저장 경로
-        public static final String FILE_DB_URL_INQUIRY = "/uploads/inquiries";
-    }
 }

@@ -29,30 +29,42 @@ public class FileService {
     // @Value("${cloud.aws.s3.bucket}")
     // private String bucket;
 
+    @Value("${file.upload.base-path}")
+    private String basePath;
+
 
 
     /**
-     * 로컬 스토리지 업로드 메서드
+     * 로컬 스토리지 업로드 메서드(공개 가능 파일들)
      */
-    public String uploadToLocal(MultipartFile file) {
+    public String uploadToLocal(MultipartFile file, String folderName) {
+        // 파일을 업로드 하지 않았다면 null 반환
+        if (file == null || file.isEmpty()) return null;
+
         try {
-            // 저장 디렉터리 생성
-            Path root =  Paths.get(AppConstants.File.FILE_UPLOAD_PATH_INQUIRY);
+            // .toAbsolutePath() : 절대 경로 변환
+            // .normalize() : 경로 정규화 (불필요한 경로 제거 ex) "..", ".", "/" 등)
+            Path root =  Paths.get(basePath, folderName).toAbsolutePath().normalize();
+
+            // 저장 디렉터리 없으면 생성
             if (!Files.exists(root)) {
                 Files.createDirectories(root);
             }
 
-            // 고유 파일명 생성 (UUID + 확장자)
-            // 원본 파일명을 그대로 사용하면 경로 조작 공격 위험이 있으니 파일명도 변경
+            // 고유 파일명 생성
+            String uuid = UUID.randomUUID().toString();
             String extension = StringUtils.getFilenameExtension(file.getOriginalFilename());
-            String saveName = UUID.randomUUID() + "_" + extension;
+
+            // 확장자가 있을 때 .을 붙여서 생성 (없으면 uuid만)
+            String saveName = StringUtils.hasText(extension) ? uuid + "." + extension : uuid;
 
             // 파일 물리 저장
             Path targetPath = root.resolve(saveName);
             Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
             // DB에 저장할 접근 경로
-            return AppConstants.File.FILE_DB_URL_INQUIRY + "/" + saveName;
+            // 공개 가능이면 /uploads/public/saveName, 비공개면 /uploads/private/saveName
+            return "/uploads/" + folderName + "/" + saveName;
 
         } catch (IOException e) {
             throw new CustomException("로컬 저장 실패", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -93,13 +105,16 @@ public class FileService {
      * 파일 용량 체크 및 파일명 체크 메서드
      */
     public void validateFile(MultipartFile file) {
+        // 파일이 없다면 메서드 건너 뜀
+        if (file == null || file.isEmpty()) return;
+
         // 용량 체크 : 20MB
-        if (file.getSize() > AppConstants.Validation.MAX_FILE_SIZE) throw new IllegalArgumentException("20MB 초과");
+        if (file.getSize() > AppConstants.Validation.MAX_FILE_SIZE) throw new CustomException("20MB 초과", HttpStatus.BAD_REQUEST);
 
         // 파일명 체크 : 공백/특수문자
         String name = file.getOriginalFilename();
         if (name == null || name.contains(" ") || !name.matches(AppConstants.ValidationPattern.FILE_NAME_REGEX)) {
-            throw new IllegalArgumentException("파일명에 공백 및 특수문제를 빼주세요 (점(.), 언더바(_), 하이픈(-)만 허용)");
+            throw new CustomException("파일명에 공백 및 특수문자를 빼주세요 (점(.), 언더바(_), 하이픈(-)만 허용)", HttpStatus.BAD_REQUEST);
         }
     }
 }

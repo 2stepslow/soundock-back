@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @DynamicInsert
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "verification_tokens")
 public class VerificationToken {
     @Id
