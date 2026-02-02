@@ -1,11 +1,9 @@
 package dopamine.soundock.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import dopamine.soundock.entity.PopHistory;
 import dopamine.soundock.enums.PopTarget;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -13,9 +11,25 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class PopHistoryResponse {
-    // 사용일시, 사용수량, 사용내용(target), 사용대상(boardId, related_user)
-    private LocalDateTime usageDatetime;
+    // 사용자id, 사용수량, 사용내용(target), 사용대상(boardId, related_user)
+    private Integer userId;
+
+    private Integer popHistoryId;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+    private LocalDateTime createdDatetime;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+    private LocalDateTime requestedDatetime;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+    private LocalDateTime approvedDatetime;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+    private LocalDateTime cancelDatetime;
+
     private Integer changeAmount;
     private PopTarget popTarget;
     private RelatedInfo related;
@@ -24,9 +38,9 @@ public class PopHistoryResponse {
     public static RelatedInfo createRelatedInfo(PopHistory popHistory){
         PopTarget target = popHistory.getPopTarget();
         // board와 관련된 경우
-        if ((target.equals(PopTarget.DONATION) || target.equals(PopTarget.FEATURED_BOARD))
+        if ((target.equals(PopTarget.FEATURED_BOARD))
                 && popHistory.getBoard() != null){
-            // 게시글에 후원하거나 글쓰기 상품 구매한 경우
+            // 글쓰기 상품 구매한 경우
 
             return new RelatedInfo(
                     popHistory.getBoard().getBoardId(),

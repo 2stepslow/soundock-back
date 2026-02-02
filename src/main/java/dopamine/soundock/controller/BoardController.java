@@ -12,16 +12,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
-@AllArgsConstructor
 @RequestMapping("/api/boards")
 @RestController
+@RequiredArgsConstructor
 public class BoardController {
-    private BoardService boardService;
+    private final BoardService boardService;
 
     @Operation(
             summary = "특정 카테고리 내 게시글 작성",

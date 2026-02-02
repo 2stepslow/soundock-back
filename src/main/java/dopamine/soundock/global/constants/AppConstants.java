@@ -1,6 +1,7 @@
 package dopamine.soundock.global.constants;
 
 
+
 public final class AppConstants {
     /**
      * 시간 관련 상수값
@@ -20,6 +21,10 @@ public final class AppConstants {
         public static final long POLLING_RETRY_DELAY_MS = 2000L; // 2 seconds
         // 재화 유효기간
         public static final int POP_HISTORY_EXPIRATION_YEARS = 5; // 5 years
+        // 후원 취소 가능일
+        public static final int AVAILABLE_REQUEST_CANCEL_DAYS = 3; // 3 days
+        // 게시글 재화 사용 취소 가능 시간
+        public static final long AVAILABLE_REQUEST_CANCEL_MINUTES = 10; // 10 minutes
     }
 
     /**

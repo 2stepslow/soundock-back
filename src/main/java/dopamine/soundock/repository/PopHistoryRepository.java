@@ -19,4 +19,14 @@ public interface PopHistoryRepository extends JpaRepository<PopHistory, Integer>
     // 사용자 재화 사용 내역 조회
     @EntityGraph(attributePaths = {"board", "relatedUser"})
     List<PopHistory> findByUserAndRequestedDatetimeIsNotNullAndPopTargetIn(User user, List<PopTarget> targets);
+
+    // 후원 내역 조회(후원자, 수혜자 모두 사용)
+    @EntityGraph(attributePaths = {"board", "relatedUser"})
+    List<PopHistory> findByUserAndCreatedDatetimeIsNotNullAndPopTarget(User user, PopTarget targets);
+
+    // 수혜자의 id와 후원 popHistory의 transactionId와 일치하는 내역 조회
+    Optional<PopHistory> findByTransactionIdAndPopTarget(String transactionId, PopTarget popTarget);
+
+    // popTarget이 FEATURED_BOARD, boardId와 일치하는 내역 조회
+    Optional<PopHistory> findByPopTargetAndBoardBoardId(PopTarget popTarget, Integer boardId);
 }

@@ -25,6 +25,9 @@ public class PopHistory {
     @Column(name = "toss_order_id")
     private String orderId;
 
+    @Column(name = "transaction_id")
+    private String transactionId;
+
     @Column(name = "change_amount", nullable = false)
     private Integer changeAmount;
 
@@ -82,7 +85,7 @@ public class PopHistory {
                 .build();
     }
 
-    // 취소 내역 생성 메서드
+    // 결제 취소 내역 생성 메서드
     public static PopHistory createCancelHistory(User user, PopHistory orginPopHistory){
         return PopHistory.builder()
                 .user(user)
@@ -93,5 +96,11 @@ public class PopHistory {
                 .createdDatetime(orginPopHistory.getCreatedDatetime())
                 .canceledDatetime(LocalDateTime.now())
                 .build();
+    }
+
+    // 후원 취소 요청 내역 생성 메서드
+    public void requestCancelPop(){
+        this.popStatus = PopStatus.CANCEL_REQUEST;
+        this.requestedDatetime = LocalDateTime.now();
     }
 }
