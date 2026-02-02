@@ -39,7 +39,7 @@ public class SettlementService {
             throw new IllegalArgumentException("수혜자 본인에 대해서만 정산 정보 등록이 가능합니다.");
         }
         // 회원 가입 시 입력한 전화번호와 일치하는지 검증
-        if (settlementRequest.getPhoneNumber().equals(user.getPhoneNumber())){
+        if (!settlementRequest.getPhoneNumber().equals(user.getPhoneNumber())){
             throw new IllegalArgumentException("회원 정보에 등록된 전화번호와 일치하지 않습니다.");
         }
     }
@@ -55,20 +55,20 @@ public class SettlementService {
         // popStatus = COMPLETED, target = RECEIVED인 정산 요청, 승인 기록이 없는 popHistory 내역 조회
         // 후원 받은 날짜(createdDatetime)로부터 3일이 지나야 정산 신청 가능
         LocalDateTime availableDay = LocalDateTime.now().minusDays(AppConstants.Time.AVAILABLE_REQUEST_SETTLEMENT_DAYS);
-        List<PopHistory> availableSettlement = popHistoryRepository.findAvailableSettlement(
-                user.getId(), PopTarget.RECEIVED, PopStatus.COMPLETED ,availableDay);
+        List<PopHistory> availableSettlements = popHistoryRepository.findAvailableSettlement(
+                user.getId(), PopTarget.RECEIVED, PopStatus.COMPLETED, availableDay);
 
         // popHistory 내역이 없을 경우 예외
-        if (availableSettlement.isEmpty()){
+        if (availableSettlements.isEmpty()){
             throw new ResourceNotFoundException("현재 정산 가능한 내역이 없습니다.");
         }
         // 정산 신청한 popHistory 내역들 상태 업데이트
         int totalSettleAmount = 0;
-        for (PopHistory popHistory : availableSettlement){
+        for (PopHistory popHistory : availableSettlements){
             popHistory.requestSettlementPop();
             totalSettleAmount = totalSettleAmount + popHistory.getChangeAmount();
         }
-        log.info("총 정산 요청된 건수는 : {}건, 총 정산 금액은 : {} 원 입니다.", availableSettlement.size() , totalSettleAmount);
+        log.info("총 정산 요청된 건수는 : {}건, 총 정산 금액은 : {} 원 입니다.", availableSettlements.size() , totalSettleAmount);
     }
 
     // 정산 내역 조회
