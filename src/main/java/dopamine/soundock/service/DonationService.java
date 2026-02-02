@@ -41,16 +41,16 @@ public class DonationService {
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
         // targetUserId와 일치하는 유저 존재 확인
-        User targetUSer = userRepository.findById(targetUserId)
+        User targetUser = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("후원하려는 유저 정보를 찾을 수 없습니다."));
 
         // targetUser가 탈퇴한 회원인지 확인
-        if(targetUSer.isDeleted() || targetUSer.getStatus().equals(UserStatus.QUITTED)){
+        if(targetUser.isDeleted() || targetUser.getStatus().equals(UserStatus.QUITTED)){
             throw new IllegalArgumentException("탈퇴한 유저입니다. 탈퇴 유저에게 후원할 수 없습니다.");
         }
 
         // targetUserId와 후원자가 일치하는지 확인
-        if (targetUSer.getId().equals(user.getId())){
+        if (targetUser.getId().equals(user.getId())){
             throw new IllegalArgumentException("본인에게는 후원할 수 없습니다.");
         }
 
@@ -78,7 +78,7 @@ public class DonationService {
                 .createdDatetime(now)
                 .requestedDatetime(now)
                 .popTarget(PopTarget.DONATION)
-                .relatedUser(targetUSer)
+                .relatedUser(targetUser)
                 .user(user)
                 .build();
         popHistoryRepository.save(donatedPopHistory);
@@ -91,7 +91,7 @@ public class DonationService {
                 .createdDatetime(now)
                 .popTarget(PopTarget.RECEIVED)
                 .relatedUser(user)
-                .user(targetUSer)
+                .user(targetUser)
                 .build();
         popHistoryRepository.save(receivedPopHistory);
     }
@@ -171,7 +171,7 @@ public class DonationService {
         }
 
         // 로그인한 사람 후원 내역 조회. 없다면 예외 던짐
-        List<PopHistory> donatedPop = popHistoryRepository.findByUserAndCreatedDatetimeIsNotNullAndPopTarget(user, PopTarget.DONATION);
+        List<PopHistory> donatedPop = popHistoryRepository.findByUserAndCreatedDatetimeIsNotNullAndPopTargetOrderByCreatedDatetimeDesc(user, PopTarget.DONATION);
 
         if (donatedPop.isEmpty()){
             throw new ResourceNotFoundException("후원 내역이 없습니다.");
@@ -183,17 +183,17 @@ public class DonationService {
         for (PopHistory popHistory : donatedPop){
             PopHistoryResponse.RelatedInfo related = PopHistoryResponse.createRelatedInfo(popHistory);
 
-            PopHistoryResponse response = new PopHistoryResponse(
-                    popHistory.getUser().getId(),
-                    popHistory.getPopHistoryId(),
-                    popHistory.getCreatedDatetime(),
-                    popHistory.getRequestedDatetime(),
-                    popHistory.getApprovedDatetime(),
-                    popHistory.getCanceledDatetime(),
-                    popHistory.getChangeAmount(),
-                    popHistory.getPopTarget(),
-                    related
-            );
+            PopHistoryResponse response = PopHistoryResponse.builder()
+                    .userId(popHistory.getUser().getId())
+                    .popHistoryId(popHistory.getPopHistoryId())
+                    .createdDatetime(popHistory.getCreatedDatetime())
+                    .requestedDatetime(popHistory.getRequestedDatetime())
+                    .approvedDatetime(popHistory.getApprovedDatetime())
+                    .cancelDatetime(popHistory.getCanceledDatetime())
+                    .changeAmount(popHistory.getChangeAmount())
+                    .popTarget(popHistory.getPopTarget())
+                    .related(related)
+                    .build();
             donatedPopResponse.add(response);
         }
         return donatedPopResponse;
@@ -212,7 +212,7 @@ public class DonationService {
         }
 
         // 로그인한 사용자의 후원 받은 내역 조회. 없다면 예외 던짐
-        List<PopHistory> receivedPop = popHistoryRepository.findByUserAndCreatedDatetimeIsNotNullAndPopTarget(user, PopTarget.RECEIVED);
+        List<PopHistory> receivedPop = popHistoryRepository.findByUserAndCreatedDatetimeIsNotNullAndPopTargetOrderByCreatedDatetimeDesc(user, PopTarget.RECEIVED);
 
         if (receivedPop.isEmpty()){
             throw new ResourceNotFoundException("후원 받은 내역이 없습니다.");
@@ -224,17 +224,18 @@ public class DonationService {
         for (PopHistory popHistory : receivedPop){
             PopHistoryResponse.RelatedInfo related = PopHistoryResponse.createRelatedInfo(popHistory);
 
-            PopHistoryResponse response = new PopHistoryResponse(
-                    popHistory.getUser().getId(),
-                    popHistory.getPopHistoryId(),
-                    popHistory.getCreatedDatetime(),
-                    popHistory.getRequestedDatetime(),
-                    popHistory.getApprovedDatetime(),
-                    popHistory.getCanceledDatetime(),
-                    popHistory.getChangeAmount(),
-                    popHistory.getPopTarget(),
-                    related
-            );
+            PopHistoryResponse response = PopHistoryResponse.builder()
+                    .userId(popHistory.getUser().getId())
+                    .popHistoryId(popHistory.getPopHistoryId())
+                    .createdDatetime(popHistory.getCreatedDatetime())
+                    .requestedDatetime(popHistory.getRequestedDatetime())
+                    .approvedDatetime(popHistory.getApprovedDatetime())
+                    .cancelDatetime(popHistory.getCanceledDatetime())
+                    .changeAmount(popHistory.getChangeAmount())
+                    .popTarget(popHistory.getPopTarget())
+                    .related(related)
+                    .build();
+
             receivedPopResponse.add(response);
         }
         return receivedPopResponse;
