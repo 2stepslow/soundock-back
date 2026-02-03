@@ -246,4 +246,14 @@ public class AuthController {
         VerificationStatusResponse response = authService.checkEmailVerificationStatus(email);
         return ResponseEntity.ok(RestResponse.success(response));
     }
+
+    /**
+     * 이메일 찾기 API
+     */
+    @PostMapping("/find-email")
+    public ResponseEntity<RestResponse<Void>> findEmail(@Valid @RequestBody SearchEmailRequest request) {
+        authService.emailSearch(request.getEmail());
+
+        return ResponseEntity.ok(RestResponse.success("입력하신 이메일로 확인 메일을 발송했습니다."));
+    }
 }

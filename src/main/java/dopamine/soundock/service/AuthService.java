@@ -21,6 +21,7 @@ import dopamine.soundock.repository.UserRepository;
 import dopamine.soundock.repository.VerificationTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,6 +46,12 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenProvider tokenProvider;
     private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
+
+    @Value("${search.email.login}")
+    private String loginUrl;
+
+    @Value("${search.email.signup}")
+    private String signupUrl;
 
     /**
      * 이메일 중복체크 메서드
@@ -313,5 +320,29 @@ public class AuthService {
         String accessToken = tokenProvider.generateAccessToken(email, user.getId(), user.getRole().name());
 
         return new RefreshResponse(accessToken);
+    }
+
+    /**
+     * 이메일 찾기 메서드
+     */
+    public void emailSearch(String email) {
+        boolean isRegistered = userRepository.existsByEmail(email);
+
+        String subject = "[Soundock] 가입 확인 안내";
+        String templateName;
+
+        Context context = new Context();
+        context.setVariable("email", email);
+
+        if (isRegistered) {
+            // 가입 된 경우 (true)
+            templateName = "email/register-guide";
+            context.setVariable("loginUrl", loginUrl);
+        } else {
+            templateName = "email/not-register-guide";
+            context.setVariable("signupUrl", signupUrl);
+        }
+
+        emailService.sendMailAsync(email, subject, templateName, context);
     }
 }
