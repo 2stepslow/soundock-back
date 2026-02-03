@@ -76,4 +76,23 @@ public class CommentController {
         List<CommentResponse> responses = commentService.getComment(boardId);
         return ResponseEntity.ok(RestResponse.success(responses));
     }
+
+    // 댓글 수정
+    @PatchMapping("/{commentId}")
+    public ResponseEntity<RestResponse<?>> updateComment(
+            @PathVariable Integer commentId,
+            @RequestBody CommentCreateRequest updateRequest
+    ){
+        commentService.updateComment(commentId, updateRequest);
+        return ResponseEntity.ok(RestResponse.success("댓글 수정이 완료되었습니다."));
+    }
+
+    // 댓글 추천
+    @PostMapping("/{commentId}/like")
+    public ResponseEntity<RestResponse<Boolean>> recommendComment(
+            @PathVariable Integer commentId
+    ){
+        boolean toggledComment = commentService.recommendComment(commentId);
+        return ResponseEntity.ok(RestResponse.success(toggledComment));
+    }
 }
