@@ -67,8 +67,8 @@ public class BoardService {
 
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            Optional<LikeBoard> likeId = boardLikeRepository.findByUserIdAndBoardId(user, board);
-            isLiked = likeId.isPresent();
+            Optional<LikeBoard> existingLike = boardLikeRepository.findByUserAndBoard(user, board);
+            isLiked = existingLike.isPresent();
         }
 
         BoardResponse boardResponse = BoardResponse.builder()
@@ -163,6 +163,7 @@ public class BoardService {
     }
 
     // 게시글 좋아요
+    @Transactional
     public void likeBoard(Integer boardId){
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
@@ -171,19 +172,17 @@ public class BoardService {
         Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
 
-        Optional<LikeBoard> disLike = boardLikeRepository.findByUserIdAndBoardId(user, board);
+        Optional<LikeBoard> existingLike = boardLikeRepository.findByUserAndBoard(user, board);
 
-        if (disLike.isPresent()){
-            boardLikeRepository.delete(disLike.get());
-            board.setLikes(board.getLikes() -1);
-            boardRepository.save(board);
+        if (existingLike.isPresent()){
+            boardLikeRepository.delete(existingLike.get());
+            boardRepository.decreaseLikes(boardId);
         } else {
             LikeBoard likeboard = new LikeBoard();
             likeboard.setUserId(user);
             likeboard.setBoardId(board);
             boardLikeRepository.save(likeboard);
-            board.setLikes(board.getLikes() +1);
-            boardRepository.save(board);
+            boardRepository.increaseLikes(boardId);
         }
 
     }
