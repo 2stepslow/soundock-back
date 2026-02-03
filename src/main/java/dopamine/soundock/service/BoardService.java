@@ -64,13 +64,14 @@ public class BoardService {
 
         Boolean isLiked = false;
 
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<User> userOptional = userRepository.findByEmail(email);
 
         if (userOptional.isPresent()) {
             User user = userOptional.get();
             Optional<LikeBoard> existingLike = boardLikeRepository.findByUserAndBoard(user, board);
             isLiked = existingLike.isPresent();
+        }
+        
         if (viewService.checkView(boardId, email, clientIp)) {
             boardRepository.incrementViews(boardId);
         }
@@ -183,8 +184,8 @@ public class BoardService {
             boardRepository.decreaseLikes(boardId);
         } else {
             LikeBoard likeboard = new LikeBoard();
-            likeboard.setUserId(user);
-            likeboard.setBoardId(board);
+            likeboard.setUser(user);
+            likeboard.setBoard(board);
             boardLikeRepository.save(likeboard);
             boardRepository.increaseLikes(boardId);
         }

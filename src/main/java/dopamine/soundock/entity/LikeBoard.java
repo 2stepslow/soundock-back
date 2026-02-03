@@ -23,9 +23,9 @@ public class LikeBoard {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private User userId;
+    private User user;
 
     @ManyToOne
     @JoinColumn(name = "board_id", nullable = false)
-    private Board boardId;
+    private Board board;
 }

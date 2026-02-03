@@ -27,10 +27,10 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
     // 카테고리의 삭제되지 않은 게시글 조회
     List<Board> findByDeletedDateTimeIsNullAndCategoryCategoryType(CategoryType categoryType);
 
-    @Query("UPDATE board b SET b.likes = b.likes + 1 WHERE b.id = : boardId")
+    @Query("UPDATE Board b SET b.likes = b.likes + 1 WHERE b.id = : boardId")
     void increaseLikes(@Param("boardId") Integer boardId);
 
-    @Query("UPDATE board b SET b.likes = b.likes - 1 WHERE b.id = : boardId")
+    @Query("UPDATE Board b SET b.likes = b.likes - 1 WHERE b.id = : boardId")
     void decreaseLikes(@Param("boardId") Integer boardId);
     // 쿼리 실행 후 영속성 컨텍스트를 비워 데이터 불일치 방지
     @Modifying(clearAutomatically = true)
