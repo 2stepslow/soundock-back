@@ -121,7 +121,7 @@ public class PopService {
             throw new IllegalArgumentException("현재 사용자의 재화 사용 내역과 일치하지 않습니다.");
         }
         // 홍보 카테고리에 등록된 게시글이 맞는지 검증
-        Board board = boardRepository.findByBoardIdAndCategoryCategoryType(cancelRequest.getBoardId(), CategoryType.Spotlight)
+        Board board = boardRepository.findByBoardIdAndCategoryCategoryType(cancelRequest.getBoardId(), CategoryType.SPOTLIGHT)
                 .orElseThrow(() -> new ResourceNotFoundException("SPOTLIGHT에 등록된 게시글이 아닙니다. 해당 게시글에 대해 재화 사용 취소를 할 수 없습니다."));
 
         // 게시글 작성자와 로그인한 유저가 일치하는지 검증

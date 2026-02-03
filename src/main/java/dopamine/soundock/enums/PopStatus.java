@@ -5,5 +5,7 @@ public enum PopStatus {
     COMPLETED,
     CANCELED,
     CANCEL_REQUEST,
+    SETTLEMENT_REQUEST,
+    SETTLEMENT_COMPLETED,
     EXPIRED
 }

@@ -7,8 +7,13 @@ import dopamine.soundock.dto.request.UpdateInfoRequest;
 import dopamine.soundock.dto.request.UpdatePasswdRequest;
 import dopamine.soundock.dto.response.*;
 import dopamine.soundock.service.InquiryService;
+import dopamine.soundock.dto.request.*;
+import dopamine.soundock.dto.response.PaymentHistoryResponse;
+import dopamine.soundock.dto.response.PopHistoryResponse;
+import dopamine.soundock.dto.response.MyInfoResponse;
 import dopamine.soundock.service.MypageService;
 import dopamine.soundock.service.PopService;
+import dopamine.soundock.service.SettlementService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -39,6 +44,7 @@ public class MypageController {
     private final MypageService mypageService;
     private final PopService popService;
     private final InquiryService inquiryService;
+    private final SettlementService settlementService;
 
     /** 내 정보 조회 */
     @Operation(
@@ -128,6 +134,15 @@ public class MypageController {
         return ResponseEntity.ok(RestResponse.success("회원 탈퇴가 완료되었습니다."));
     }
 
+    @Operation(
+            summary = "재화(POP) 구매(충전) 내역 조회",
+            description = "로그인한 유저가 결제를 통해 재화를 충전한 내역 전체를 조회"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "404", description = "구매 내역이 존재하지 않음", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
     // 재화 구매 내역 조회
     @GetMapping("/pop-purchase")
     public ResponseEntity<RestResponse<List<PaymentHistoryResponse>>> getPaymentHistory() {
@@ -135,6 +150,15 @@ public class MypageController {
         return ResponseEntity.ok(RestResponse.success(paymentHistoryResponses));
     }
 
+    @Operation(
+            summary = "재화(POP) 사용 내역 조회",
+            description = "로그인한 유저가 재화를 사용한 내역(후원, 홍보 게시글 등록 등)을 조회"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "404", description = "사용 내역이 존재하지 않음", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
     // 재화 사용 내역 조회
     @GetMapping("/pop-usage")
     public ResponseEntity<RestResponse<List<PopHistoryResponse>>> getPopUsageHistory(){
@@ -142,13 +166,25 @@ public class MypageController {
         return ResponseEntity.ok(RestResponse.success(popHistoryResponses));
     }
 
+    @Operation(
+            summary = "재화(POP) 사용 취소 (홍보 게시글)",
+            description = "홍보(Spotlight) 게시글 등록에 사용한 재화를 취소하고 환불 받음<br>" +
+                    "**주의사항:** 게시글 등록 후 **10분 이내**에만 취소가 가능"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "취소 및 환불 완료", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "400", description = "취소 실패 (10분 초과, 본인 게시글 아님, 이미 만료됨)", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "404", description = "해당 게시글이나 사용 내역을 찾을 수 없음", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
     // 재화 사용 취소
-    @PostMapping("/pop-usage")
+    @PostMapping("/pop-usage/cancel")
     public ResponseEntity<RestResponse<Void>> cancelUsedPop(
             @Valid @RequestBody CancelUsedPopRequest cancelRequest
-    ){
+    ) {
         popService.cancelUsedPop(cancelRequest);
         return ResponseEntity.ok(RestResponse.success("재화 사용 취소가 완료되었습니다."));
+    }
     /**
      * 1:1 문의 내역 목록 조회
      */
@@ -191,5 +227,54 @@ public class MypageController {
     ) {
         InquiryDetailResponse response = inquiryService.getInquiry(userInquiryId, email);
         return ResponseEntity.ok(RestResponse.success(response));
+    }
+
+
+    @Operation(
+            summary = "정산 계좌 정보 등록",
+            description = "유저가 정산받을 계좌 정보를 등록하거나 수정"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "등록 완료", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 계좌 정보 형식", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+    // 정산 정보 등록
+    @PostMapping("/settlements")
+    public ResponseEntity<RestResponse<?>> registerSettlementInfo(
+            @Valid @RequestBody RegisterSettlementRequest settlementRequest){
+        settlementService.registerSettlementInfo(settlementRequest);
+        return ResponseEntity.ok(RestResponse.success("정산 정보 등록이 완료되었습니다."));
+    }
+
+    @Operation(
+            summary = "정산 신청하기",
+            description = "보유한 POP에 대해 현금화를 신청"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "신청 완료", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "400", description = "정산 가능한 POP 부족 또는 계좌 미등록", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+    // 정산 신청
+    @PostMapping("/settlements/request")
+    public ResponseEntity<RestResponse<?>> requestSettlement(){
+        settlementService.requestSettlement();
+        return ResponseEntity.ok(RestResponse.success( "정산 신청이 완료되었습니다."));
+    }
+
+    @Operation(
+            summary = "내 정산 신청 내역 조회",
+            description = "로그인한 유저의 과거 정산 신청 내역과 상태(처리중, 완료 등)를 조회"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+    // 정산 내역 조회
+    @GetMapping("/settlements/history")
+    public ResponseEntity<RestResponse<?>> getListSettlement(){
+        List<PopHistoryResponse> settlementResponse = settlementService.getListSettlement();
+        return ResponseEntity.ok(RestResponse.success(settlementResponse));
     }
 }
