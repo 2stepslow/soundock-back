@@ -105,8 +105,11 @@ public class AuthService {
         // 이메일 상태 체크 및 기존 데이터 정리
         boolean needsCleanup = validateEmailForSignup(userSignupRequest.getEmail());
         if (needsCleanup) {
-            userRepository.deleteByEmail(userSignupRequest.getEmail());
-            userRepository.flush();
+            User existingUser = userRepository.findByEmail(userSignupRequest.getEmail())
+                    .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+            existingUser.setEmail(userSignupRequest.getEmail() + "_deleted_" + existingUser.getId() + "_" + System.currentTimeMillis());
+
+            userRepository.saveAndFlush(existingUser);
         }
 
         // 닉네임 중복 체크
