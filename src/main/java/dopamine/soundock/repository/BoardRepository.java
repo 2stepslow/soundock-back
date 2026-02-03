@@ -5,7 +5,10 @@ import dopamine.soundock.entity.Category;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.CategoryType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
@@ -23,4 +26,9 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
     Optional<Board> findByBoardIdAndDeletedDateTimeIsNull(Integer boardId);
     // 카테고리의 삭제되지 않은 게시글 조회
     List<Board> findByDeletedDateTimeIsNullAndCategoryCategoryType(CategoryType categoryType);
+
+    // 쿼리 실행 후 영속성 컨텍스트를 비워 데이터 불일치 방지
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Board b SET b.views = b.views + 1 WHERE b.boardId = :id")
+    void incrementViews(@Param("id") Integer boardId);
 }

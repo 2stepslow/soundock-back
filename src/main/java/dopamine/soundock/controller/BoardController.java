@@ -4,16 +4,19 @@ import dopamine.soundock.dto.RestResponse;
 import dopamine.soundock.dto.request.BoardCreateRequest;
 import dopamine.soundock.dto.response.BoardResponse;
 import dopamine.soundock.enums.CategoryType;
+import dopamine.soundock.global.IPUtils;
 import dopamine.soundock.service.BoardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -56,9 +59,15 @@ public class BoardController {
     // 게시글 상세 조회
     @GetMapping("/{boardId}")
     public ResponseEntity<RestResponse<BoardResponse>> getDetailBoard(
-            @PathVariable(required = true) Integer boardId
+            @PathVariable(required = true) Integer boardId,
+            // 로그인 유저는 username -> email로, 비로그인 유저는 anonymousUser -> null로
+            @AuthenticationPrincipal(expression = "#this == 'anonymousUser' ? null : username") String email,
+            HttpServletRequest request
     ){
-        BoardResponse boardResponse = boardService.getDetailBoard(boardId);
+        // IP 뽑아오기
+        String clientIp = IPUtils.getClientIp(request);
+
+        BoardResponse boardResponse = boardService.getDetailBoard(boardId, email, clientIp);
         return ResponseEntity.ok(RestResponse.success(boardResponse));
     }
 

@@ -25,6 +25,7 @@ public class BoardService {
     private final BoardRepository boardRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final ViewService viewService;
 
     // 게시글 작성
     @Transactional
@@ -50,10 +51,15 @@ public class BoardService {
     }
 
     // 게시글 상세 조회
-    public BoardResponse getDetailBoard(Integer boardId) {
+    @Transactional
+    public BoardResponse getDetailBoard(Integer boardId, String email, String clientIp) {
         // boardId에 해당하는 삭제되지 않은 게시글인지 확인
         Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
+
+        if (viewService.checkView(boardId, email, clientIp)) {
+            boardRepository.incrementViews(boardId);
+        }
 
         BoardResponse boardResponse = BoardResponse.builder()
                 .userId(board.getUser().getId())
