@@ -28,6 +28,8 @@ public final class AppConstants {
         // 재화 정산 요청 가능일
         public static final long AVAILABLE_REQUEST_SETTLEMENT_DAYS = 3; // 3 days
 
+        // 조회수 중복 증가 방지 시간
+        public static final long VIEW_COOLDOWN_HOURS = 24; // 24 hours
     }
 
     /**
@@ -68,8 +70,8 @@ public final class AppConstants {
             "^[a-zA-Z0-9가-힣ㄱ-ㅎㅏ-ㅣ]{" + Validation.NICKNAME_MIN_LENGTH + ","
             + Validation.NICKNAME_MAX_LENGTH + "}$";
 
-        // 전화번호: 010으로 시작, 뒤에 8자리 숫자
-        public static final String PHONE_PATTERN = "^010[0-9]{8}$";
+        // 전화번호: 01X으로 시작, 뒤에 8자리 숫자
+        public static final String PHONE_PATTERN = "^01[0-9][0-9]{8}$";
 
         // 1:1 문의 제목: 공백 제외 최소 2자 이상
         public static final String INQUIRY_TITLE_PATTERN = "^(\\s*\\S\\s*){2,}$";
@@ -102,7 +104,7 @@ public final class AppConstants {
             "닉네임은 " + Validation.NICKNAME_MIN_LENGTH + "자 이상 "
             + Validation.NICKNAME_MAX_LENGTH + "자 이하의 한글, 영문, 숫자만 가능합니다.";
         public static final String PHONE_FORMAT_ERROR =
-            "휴대폰 번호는 010으로 시작하는 " + Validation.PHONE_TOTAL_LENGTH + "자리 숫자여야 합니다.";
+            "휴대폰 번호는 01X으로 시작하는 " + Validation.PHONE_TOTAL_LENGTH + "자리 숫자여야 합니다.";
         public static final String INQUIRY_TITLE_ERROR =
                 "제목은 공백 제외 최소 " + Validation.INQUIRY_TITLE_MIN_LENGTH + "자 이상이어야 합니다.";
         public static final String INQUIRY_CONTENT_ERROR =

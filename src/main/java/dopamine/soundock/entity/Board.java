@@ -67,5 +67,7 @@ public class Board {
     // Board 테이블의 category_id 필드를 연결하는거임
     private Category category;
 
-
+    public void incrementViews() {
+        this.views += 1;
+    }
 }

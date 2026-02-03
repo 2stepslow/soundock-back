@@ -203,7 +203,7 @@ public class MypageController {
             // 프론트엔드에서 아무런 값을 보내지 않았을 때를 대비한 기본 설정값
             // 1페이지당 10개, 생성일자 기준 최신순 정렬
             @Parameter(description = "페이징 및 정렬 파라미터 (예: page=0&size=10&sort=createdAt,desc)")
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<InquirySummaryResponse> responses = inquiryService.getMyInquiryList(email, pageable);
         return ResponseEntity.ok(RestResponse.success(responses));
