@@ -19,4 +19,5 @@ public class BoardResponse{
     private int likes;
     private LocalDateTime createdDateTime;
     private String fileUrl;
+    private boolean isliked;
 }
