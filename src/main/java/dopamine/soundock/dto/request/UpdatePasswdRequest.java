@@ -16,10 +16,6 @@ import lombok.Setter;
 @Schema(description = "비밀번호 수정 요청 정보")
 public class UpdatePasswdRequest {
 
-    @Schema(description = "현재 비밀번호")
-    @NotBlank(message = "현재 비밀번호를 입력해주세요.")
-    private String currentPassword;
-
     @Schema(description = "변경할 비밀번호 (대문자, 숫자, 특수문자 포함 10자 이상, 공백 불가")
     @NotBlank(message = "비밀번호는 필수 입력 항목입니다.")
     @Pattern(
