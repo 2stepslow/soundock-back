@@ -13,7 +13,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -126,4 +125,17 @@ public class BoardController {
         boardService.updateBoard(boardId, updaterequest);
         return ResponseEntity.ok(RestResponse.success("게시글 수정이 완료되었습니다."));
     }
+
+    @Operation(
+            summary = "로그인한 유저가 게시글 좋아요",
+            description = "로그인한 유저가 게시글에 좋아요와 좋아요 취소."
+    )
+
+    // 게시글 좋아요
+    @PostMapping("/{boardId}/like")
+    public ResponseEntity<RestResponse<?>> likeboard(@PathVariable Integer boardId){
+        boardService.likeBoard(boardId);
+        return ResponseEntity.ok(RestResponse.success("요청 성공"));
+    }
+
 }

@@ -4,10 +4,12 @@ import dopamine.soundock.dto.request.BoardCreateRequest;
 import dopamine.soundock.dto.response.BoardResponse;
 import dopamine.soundock.entity.Board;
 import dopamine.soundock.entity.Category;
+import dopamine.soundock.entity.LikeBoard;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.CategoryType;
 import dopamine.soundock.exceptions.AuthRejectedException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
+import dopamine.soundock.repository.BoardLikeRepository;
 import dopamine.soundock.repository.BoardRepository;
 import dopamine.soundock.repository.CategoryRepository;
 import dopamine.soundock.repository.UserRepository;
@@ -19,12 +21,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 @RequiredArgsConstructor
 @Service
 public class BoardService {
     private final BoardRepository boardRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final BoardLikeRepository boardLikeRepository;
     private final ViewService viewService;
 
     // 게시글 작성
@@ -57,6 +62,15 @@ public class BoardService {
         Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
 
+        Boolean isLiked = false;
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Optional<User> userOptional = userRepository.findByEmail(email);
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            Optional<LikeBoard> existingLike = boardLikeRepository.findByUserAndBoard(user, board);
+            isLiked = existingLike.isPresent();
         if (viewService.checkView(boardId, email, clientIp)) {
             boardRepository.incrementViews(boardId);
         }
@@ -69,11 +83,13 @@ public class BoardService {
                 .content(board.getContent())
                 .views(board.getViews())
                 .likes(board.getLikes())
+                .isliked(isLiked)
                 .createdDateTime(board.getCreatedDateTime())
                 .build();
 
         return boardResponse;
     }
+
 
     // 한 카테고리 내의 모든 게시글 조회
     public List<BoardResponse> getBoardsByCategory(CategoryType categoryType){
@@ -149,4 +165,30 @@ public class BoardService {
         board.setUpdatedDateTime(LocalDateTime.now());
         boardRepository.save(board);
     }
+
+    // 게시글 좋아요
+    @Transactional
+    public void likeBoard(Integer boardId){
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+
+        Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
+                .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
+
+        Optional<LikeBoard> existingLike = boardLikeRepository.findByUserAndBoard(user, board);
+
+        if (existingLike.isPresent()){
+            boardLikeRepository.delete(existingLike.get());
+            boardRepository.decreaseLikes(boardId);
+        } else {
+            LikeBoard likeboard = new LikeBoard();
+            likeboard.setUserId(user);
+            likeboard.setBoardId(board);
+            boardLikeRepository.save(likeboard);
+            boardRepository.increaseLikes(boardId);
+        }
+
+    }
+
 }
