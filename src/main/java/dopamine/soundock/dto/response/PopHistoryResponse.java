@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import dopamine.soundock.entity.PopHistory;
 import dopamine.soundock.enums.PopStatus;
 import dopamine.soundock.enums.PopTarget;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -19,21 +20,27 @@ public class PopHistoryResponse {
 
     private Integer popHistoryId;
 
+    @Schema(description = "생성 일시", example = "2024-02-03 14:30:00")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
     private LocalDateTime createdDatetime;
 
+    @Schema(description = "후원 일시(후원,재화 사용시 생성)", example = "2024-02-03 14:30:00")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
     private LocalDateTime requestedDatetime;
 
+    @Schema(description = "후원(재화) 사용 승인 일시", example = "2024-02-03 14:30:00")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
     private LocalDateTime approvedDatetime;
 
+    @Schema(description = "후원(재화) 사용 취소 일시", example = "2024-02-03 14:30:00")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
     private LocalDateTime cancelDatetime;
 
     private Integer changeAmount;
     private PopTarget popTarget;
     private PopStatus popStatus;
+
+    @Schema(description = "연관 정보(게시글 or 유저)")
     private RelatedInfo related;
 
     // PopHistory 정보를 바탕으로 게시글 또는 사용자에 대한 관련 정보를 생성
