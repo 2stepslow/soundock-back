@@ -66,8 +66,4 @@ public class Board {
     @JoinColumn(name = "category_id", nullable = false)
     // Board 테이블의 category_id 필드를 연결하는거임
     private Category category;
-
-    public void incrementViews() {
-        this.views += 1;
-    }
 }

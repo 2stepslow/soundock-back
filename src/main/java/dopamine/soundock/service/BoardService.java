@@ -51,14 +51,14 @@ public class BoardService {
     }
 
     // 게시글 상세 조회
+    @Transactional
     public BoardResponse getDetailBoard(Integer boardId, String email, String clientIp) {
         // boardId에 해당하는 삭제되지 않은 게시글인지 확인
         Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
 
         if (viewService.checkView(boardId, email, clientIp)) {
-            board.incrementViews();
-            boardRepository.save(board);
+            boardRepository.incrementViews(boardId);
         }
 
         BoardResponse boardResponse = BoardResponse.builder()

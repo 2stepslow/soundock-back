@@ -1,17 +1,16 @@
 package dopamine.soundock.service;
 
 import dopamine.soundock.global.constants.AppConstants;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
-import org.apache.el.parser.BooleanNode;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ViewService {
     private final RedisTemplate<String, String> redisTemplate;
 
@@ -22,10 +21,14 @@ public class ViewService {
      * true 면 +1 증가, false 면 0
      */
     public boolean checkView(int boardId, String email, String clientIp) {
+        if (email == null && (clientIp == null || clientIp.isEmpty())) {
+            throw new IllegalArgumentException("이메일 또는 Ip 값이 필요합니다.");
+        }
+
         // userId가 있다면 user:{userId}
         // userId가 없다면 ip:{clientIp}
         String identify = (email != null) ? "user:" + email : "ip:" + clientIp;
-        // 합쳐서 키로 만듬
+        // 합쳐서 키로 만듦
         String key = KEY_PREFIX + boardId + ":" + identify;
 
         // setIfAbsent : 키가 없을 때만 저장, opsForValue() : String(Key-Value) 조작 기능
