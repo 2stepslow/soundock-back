@@ -12,6 +12,8 @@ import dopamine.soundock.repository.BoardRepository;
 import dopamine.soundock.repository.CommentLikeRepository;
 import dopamine.soundock.repository.CommentRepository;
 import dopamine.soundock.repository.UserRepository;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -34,6 +36,7 @@ public class CommentService {
     private final BoardRepository boardRepository;
     private final UserRepository userRepository;
     private final CommentLikeRepository commentLikeRepository;
+    private final EntityManager entityManager;
 
     // 댓글 작성
     @Transactional
@@ -126,7 +129,7 @@ public class CommentService {
 
             // 유저가 좋아요 한 댓글을 찾을 수 없을 때
             if (likes.isEmpty()){
-                throw new IllegalArgumentException("유저 Id 또는 댓글 Id를 다시 확인해주세요.");
+                return new ArrayList<>();
             }
 
             // 유저가 좋아요한 댓글들의 Id만 추출해 Set으로 만듦
@@ -167,7 +170,7 @@ public class CommentService {
 
         // 댓글 작성자와 로그인 유저 일치하는지 확인
         if (!user.getId().equals(comment.getUser().getId())){
-            throw new IllegalArgumentException("해당 댓글 작성자와 일치하지 않아 수정이 불가합니다.");
+            throw new AuthRejectedException("해당 댓글 작성자와 일치하지 않아 수정이 불가합니다.");
         }
 
         if (updateRequest.getContent() != null){
@@ -179,7 +182,7 @@ public class CommentService {
 
     // 댓글 좋아요
     @Transactional
-    public boolean recommendComment(Integer commentId){
+    public CommentResponse recommendComment(Integer commentId){
         // 로그인한 유저인지 검증
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
@@ -210,6 +213,10 @@ public class CommentService {
             commentLikeRepository.deleteByCommentAndUser(comment, user);
             comment.decreaseLike();
         }
-        return !toggledLike;
+
+        return CommentResponse.builder()
+                .likeCount(comment.getLikeCount())
+                .toggledLike(!toggledLike)
+                .build();
     }
 }

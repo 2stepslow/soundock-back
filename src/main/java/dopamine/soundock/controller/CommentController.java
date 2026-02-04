@@ -88,10 +88,10 @@ public class CommentController {
 
     // 댓글 추천
     @PostMapping("/{commentId}/like")
-    public ResponseEntity<RestResponse<Boolean>> recommendComment(
+    public ResponseEntity<RestResponse<CommentResponse>> recommendComment(
             @PathVariable Integer commentId
     ){
-        boolean toggledComment = commentService.recommendComment(commentId);
-        return ResponseEntity.ok(RestResponse.success(toggledComment));
+        CommentResponse commentResponse = commentService.recommendComment(commentId);
+        return ResponseEntity.ok(RestResponse.success(commentResponse));
     }
 }

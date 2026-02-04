@@ -12,7 +12,7 @@ import java.util.List;
 @Repository
 @EnableJpaRepositories
 public interface CommentLikeRepository extends JpaRepository<CommentLike, Integer> {
-    // 유저가 작성한 댓글 유무 확인
+    // 유저가 댓글에 좋아요한 유무 확인
     boolean existsByCommentAndUser(Comment comment, User user);
 
     // 유저가 좋아요한 댓글 목록 조회

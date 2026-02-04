@@ -33,7 +33,7 @@ public class CommentResponse {
                 .content(comment.getContent())
                 .likeCount(comment.getLikeCount())
                 .createdDatetime(comment.getCreatedDateTime())
-                .createdDatetime(comment.getUpdatedDateTime())
+                .updatedDatetime(comment.getUpdatedDateTime())
                 .build();
     }
 
@@ -46,7 +46,7 @@ public class CommentResponse {
                 .likeCount(comment.getLikeCount())
                 .toggledLike(toggledLike)
                 .createdDatetime(comment.getCreatedDateTime())
-                .createdDatetime(comment.getUpdatedDateTime())
+                .updatedDatetime(comment.getUpdatedDateTime())
                 .build();
     }
 }

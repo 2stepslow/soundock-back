@@ -66,9 +66,8 @@ public class Comment {
         this.likeCount += 1;
     }
     public void decreaseLike(){
-        if (likeCount < 0) {
-            this.likeCount = 0;
+        if (likeCount > 0) {
+            this.likeCount -= 1;
         }
-        this.likeCount -= 1;
     }
 }
