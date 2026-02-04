@@ -2,17 +2,11 @@ package dopamine.soundock.service;
 
 import dopamine.soundock.dto.request.BoardCreateRequest;
 import dopamine.soundock.dto.response.BoardResponse;
-import dopamine.soundock.entity.Board;
-import dopamine.soundock.entity.Category;
-import dopamine.soundock.entity.LikeBoard;
-import dopamine.soundock.entity.User;
+import dopamine.soundock.entity.*;
 import dopamine.soundock.enums.CategoryType;
 import dopamine.soundock.exceptions.AuthRejectedException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
-import dopamine.soundock.repository.BoardLikeRepository;
-import dopamine.soundock.repository.BoardRepository;
-import dopamine.soundock.repository.CategoryRepository;
-import dopamine.soundock.repository.UserRepository;
+import dopamine.soundock.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -31,6 +25,7 @@ public class BoardService {
     private final CategoryRepository categoryRepository;
     private final BoardLikeRepository boardLikeRepository;
     private final ViewService viewService;
+    private final CommentRepository commentRepository;
 
     // 게시글 작성
     @Transactional
@@ -62,7 +57,7 @@ public class BoardService {
         Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
 
-        Boolean isLiked = false;
+        boolean isLiked = false;
 
         Optional<User> userOptional = userRepository.findByEmail(email);
 
@@ -71,33 +66,35 @@ public class BoardService {
             Optional<LikeBoard> existingLike = boardLikeRepository.findByUserAndBoard(user, board);
             isLiked = existingLike.isPresent();
         }
-        
-        if (viewService.checkView(boardId, email, clientIp)) {
-            boardRepository.incrementViews(boardId);
-        }
+            if (viewService.checkView(boardId, email, clientIp)) {
+                boardRepository.incrementViews(boardId);
+            }
 
-        BoardResponse boardResponse = BoardResponse.builder()
-                .userId(board.getUser().getId())
-                .boardId(board.getBoardId())
-                .title(board.getTitle())
-                .nickname(board.getUser().getNickname())
-                .content(board.getContent())
-                .views(board.getViews())
-                .likes(board.getLikes())
-                .isliked(isLiked)
-                .createdDateTime(board.getCreatedDateTime())
-                .build();
+            BoardResponse boardResponse = BoardResponse.builder()
+                    .userId(board.getUser().getId())
+                    .boardId(board.getBoardId())
+                    .title(board.getTitle())
+                    .nickname(board.getUser().getNickname())
+                    .content(board.getContent())
+                    .views(board.getViews())
+                    .likes(board.getLikes())
+                    .isLiked(isLiked)
+                    .createdDateTime(board.getCreatedDateTime())
+                    .build();
 
-        return boardResponse;
+            return boardResponse;
     }
 
 
     // 한 카테고리 내의 모든 게시글 조회
     public List<BoardResponse> getBoardsByCategory(CategoryType categoryType){
         List<Board> boards = boardRepository.findByDeletedDateTimeIsNullAndCategoryCategoryType(categoryType);
+        // 보드에서 얻은 게시글 아이디로 코멘트 레포에서 게시글 id만큼 찾아야함
+
         if (boards.isEmpty()){
             throw new ResourceNotFoundException("현재 카테고리에 작성된 게시글이 없습니다.");
         }
+
 
         // 게시글 목록 표시
         List<BoardResponse> boardResponses = new ArrayList<>();
@@ -109,6 +106,7 @@ public class BoardService {
                     .createdDateTime(board.getCreatedDateTime())
                     .views(board.getViews())
                     .likes(board.getLikes())
+                    .countComment(board.getCountComment())
                     .build();
 
             boardResponses.add(newResponse);
