@@ -2,9 +2,17 @@ package dopamine.soundock.service;
 
 import dopamine.soundock.dto.PasswordlessApiResponse;
 import dopamine.soundock.dto.response.PWLRegisterResponse;
+import dopamine.soundock.dto.response.PWLResultResponse;
 import dopamine.soundock.dto.response.PWLStatusResponse;
 import dopamine.soundock.dto.response.PWLTriggerResponse;
+import dopamine.soundock.entity.RefreshToken;
+import dopamine.soundock.entity.User;
 import dopamine.soundock.exceptions.CustomException;
+import dopamine.soundock.exceptions.ResourceNotFoundException;
+import dopamine.soundock.global.TokenProvider;
+import dopamine.soundock.global.constants.AppConstants;
+import dopamine.soundock.repository.RefreshTokenRepository;
+import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,12 +26,17 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PasswordlessService {
 
     private final RestTemplate restTemplate;
+    private final UserRepository userRepository;
+    private final TokenProvider tokenProvider;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Value("${pwl.serving.url}")
     private String servingApiUrl;
@@ -55,6 +68,7 @@ public class PasswordlessService {
                     null, // RequestEntity (요청 보낼 때 담을 헤더나 바디, 이 경우는 필요없으니 null)
                     responseType
             );
+            // JSON에서 자바 객체로 변환된 결과물을 return
             return response.getBody();
         } catch (Exception e) {
             // 통신 실패 시 예외 처리
@@ -94,6 +108,11 @@ public class PasswordlessService {
      * 패스워드리스 로그인 트리거 메서드
      */
     public PasswordlessApiResponse<PWLTriggerResponse> triggerLogin(String email, String ip) {
+        // 우리 사이트에 가입된 유저인지 확인
+        if (!userRepository.existsByEmail(email)) {
+            throw new CustomException("가입되지 않은 회원입니다.", HttpStatus.BAD_REQUEST);
+        }
+
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("userId", email);
         params.add("ip", ip);
@@ -106,4 +125,54 @@ public class PasswordlessService {
         );
     }
 
+    /**
+     * 패스워드리스 로그인 요청 결과 확인 메서드
+     */
+    public PasswordlessApiResponse<PWLResultResponse> checkResult(String email, String sessionId) {
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("userId", email);
+        params.add("sessionId", sessionId);
+
+        return sendRequest(
+                "/api/passwordless/result",
+                HttpMethod.GET,
+                params,
+                new ParameterizedTypeReference<PasswordlessApiResponse<PWLResultResponse>>() {}
+        );
+    }
+
+
+    /**
+     * 로그인 요청 결과 확인 및 JWT 발급 메서드 (최종 로그인 처리)
+     */
+    public PasswordlessApiResponse<PWLResultResponse> finalLoginResult(String email, String sessionId) {
+        // 서빙 API에 인증 결과 조회
+        PasswordlessApiResponse<PWLResultResponse> response = checkResult(email, sessionId);
+
+        // 인증이 "Y"인 경우에만 우리 사이트의 로그인 처리 진행
+        if ("Y".equals(response.getData().getAuth())) {
+            // 우리 서비스 JWT 토큰 생성
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 유저입니다."));
+
+            String accessToken = tokenProvider.generateAccessToken(user.getEmail(), user.getId(), user.getRole().name());
+            String refreshToken = tokenProvider.generateRefreshToken(user.getEmail());
+
+            // Refresh Token 을 DB에 추가
+            RefreshToken refresh = RefreshToken
+                    .builder()
+                    .token(refreshToken)
+                    .user(user)
+                    .expirationAt(LocalDateTime.now().plusSeconds(AppConstants.Time.REFRESH_TOKEN_VALIDITY_MS/1000))
+                    .build();
+
+            refreshTokenRepository.save(refresh);
+
+            // PWLResultResponse DTO에 토큰 추가
+            response.getData().setAccessToken(accessToken);
+            response.getData().setRefreshToken(refreshToken);
+        }
+
+        return response;
+    }
 }

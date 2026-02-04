@@ -2,7 +2,9 @@ package dopamine.soundock.controller;
 
 import dopamine.soundock.dto.PasswordlessApiResponse;
 import dopamine.soundock.dto.request.PWLLoginTriggerRequest;
+import dopamine.soundock.dto.request.PWLResultRequest;
 import dopamine.soundock.dto.response.PWLRegisterResponse;
+import dopamine.soundock.dto.response.PWLResultResponse;
 import dopamine.soundock.dto.response.PWLStatusResponse;
 import dopamine.soundock.dto.response.PWLTriggerResponse;
 import dopamine.soundock.global.IPUtils;
@@ -91,5 +93,25 @@ public class PasswordlessController {
 
         PasswordlessApiResponse<PWLTriggerResponse> response = passwordlessService.triggerLogin(email, clientIp);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 로그인 인증 결과 확인 및 최종 로그인
+     */
+    @Operation(
+            summary = "패스워드리스 인증 결과 확인 및 JWT 발급",
+            description = "사용자가 앱에서 승인하면 우리 서비스의 Access/Refresh Token을 발급합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "결과 확인 완료"),
+            @ApiResponse(responseCode = "500", description = "서빙 API 통신 오류")
+    })
+    @GetMapping("/result")
+    public ResponseEntity<PasswordlessApiResponse<PWLResultResponse>> getLoginResult(
+            @RequestParam("userId") String email,
+            @RequestParam("sessionId") String sessionId
+    ) {
+        PasswordlessApiResponse<PWLResultResponse> result = passwordlessService.finalLoginResult(email, sessionId);
+        return ResponseEntity.ok(result);
     }
 }

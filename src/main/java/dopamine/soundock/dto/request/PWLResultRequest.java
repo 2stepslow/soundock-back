@@ -10,10 +10,9 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Schema(description = "패스워드리스 로그인 트리거 요청 데이터")
-public class PWLLoginTriggerRequest {
+@Schema(description = "패스워드리스 로그인 결과 요청 데이터")
+public class PWLResultRequest {
 
     @Schema(description = "로그인을 요청한 사용자 아이디(이메일)")
     private String email;
-
 }

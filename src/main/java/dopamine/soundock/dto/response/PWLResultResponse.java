@@ -20,4 +20,10 @@ public class PWLResultResponse {
 
     @Schema(description = "인증 성공 시 발급되는 해시값 (인증 완료 시에만 존재)")
     private String hash;
+
+    @Schema(description = "로그인 인증 완료시 발급받은 우리 서비스 전용 AccessToken")
+    private String accessToken;
+
+    @Schema(description = "로그인 인증 완료시 발급받은 우리 서비스 전용 RefreshToken")
+    private String refreshToken;
 }
