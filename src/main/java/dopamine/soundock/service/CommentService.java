@@ -87,6 +87,11 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 댓글입니다."));
 
+        // 댓글 삭제 하려는 id가 해당 게시글에 작성된 것이 맞는지 확인
+        if(!comment.getBoard().getBoardId().equals(boardId)){
+            throw new IllegalArgumentException("해당 게시글에 작성된 댓글이 아닙니다.");
+        }
+
         // 이미 삭제된 댓글인지 확인
         if (comment.isDeleted()){
             throw new ResourceNotFoundException("이미 삭제된 댓글입니다.");

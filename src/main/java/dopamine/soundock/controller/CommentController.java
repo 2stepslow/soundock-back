@@ -82,7 +82,7 @@ public class CommentController {
     @PatchMapping("/{commentId}")
     public ResponseEntity<RestResponse<?>> updateComment(
             @PathVariable Integer commentId,
-            @RequestBody CommentCreateRequest updateRequest
+            @Valid @RequestBody CommentCreateRequest updateRequest
     ){
         CommentResponse commentResponse = commentService.updateComment(commentId, updateRequest);
         return ResponseEntity.ok(RestResponse.success("댓글 수정이 완료되었습니다.", commentResponse));
