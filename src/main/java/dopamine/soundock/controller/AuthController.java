@@ -250,6 +250,13 @@ public class AuthController {
     /**
      * 이메일 찾기 API
      */
+    @Operation(
+            summary = "이메일 찾기",
+            description = "사용자가 입력한 이메일 주소로 확인 메일을 발송하여 이메일을 찾는 API"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "이메일 메일 발송 성공"),
+    })
     @PostMapping("/find-email")
     public ResponseEntity<RestResponse<Void>> findEmail(@Valid @RequestBody SearchEmailRequest request) {
         authService.emailSearch(request.getEmail());

@@ -22,6 +22,7 @@ import dopamine.soundock.repository.VerificationTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,6 +35,7 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -46,6 +48,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenProvider tokenProvider;
     private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
+    private final StringRedisTemplate redisTemplate;
 
     @Value("${search.email.login}")
     private String loginUrl;
@@ -326,6 +329,13 @@ public class AuthService {
      * 이메일 찾기 메서드
      */
     public void emailSearch(String email) {
+        String key = AppConstants.Redis.RATE_LIMIT_PREFIX + email;
+
+        // Redis에서 키 존재 여부 확인 (존재하면 이메일 발송하지 않고 예외 처리)
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
+            throw new CustomException("1분 후 다시 시도해주세요.", HttpStatus.TOO_MANY_REQUESTS);
+        }
+
         boolean isRegistered = userRepository.existsByEmail(email);
 
         String subject = "[Soundock] 가입 확인 안내";
@@ -344,5 +354,8 @@ public class AuthService {
         }
 
         emailService.sendMailAsync(email, subject, templateName, context);
+
+        // 발송시 Redis에 키 저장 (1분뒤 자동삭제)
+        redisTemplate.opsForValue().set(key, "pushed", 1, TimeUnit.MINUTES);
     }
 }

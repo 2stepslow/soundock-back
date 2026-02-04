@@ -124,4 +124,12 @@ public final class AppConstants {
         public static final int cookieExpireSeconds = 180;
         public static final String LINKING_USER_EMAIL_COOKIE_NAME = "linking_user_email";
     }
+
+    /**
+     * Redis Key 관련
+     */
+    public static class Redis {
+        public static final String RATE_LIMIT_PREFIX = "rate:limit:email-search:"; // 이메일 찾기 발송 제한 키
+        public static final String KEY_PREFIX = "board:view:"; // 조회수 중복 제한 키
+    }
 }
