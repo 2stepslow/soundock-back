@@ -1,6 +1,7 @@
 package dopamine.soundock.controller;
 
 import dopamine.soundock.dto.PasswordlessApiResponse;
+import dopamine.soundock.dto.response.PWLRegisterResponse;
 import dopamine.soundock.dto.response.PWLStatusResponse;
 import dopamine.soundock.service.PasswordlessService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,7 +35,8 @@ public class PasswordlessController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
-            @ApiResponse(responseCode = "500", description = "서빙 API 통신 오류")
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자 (로그인 필요)"),
+            @ApiResponse(responseCode = "500", description = "서빙 API 통신 실패 또는 서버 내부 오류")
     })
     @GetMapping("/status")
     public ResponseEntity<PasswordlessApiResponse<PWLStatusResponse>> getUserStatus(
@@ -44,5 +46,19 @@ public class PasswordlessController {
         return ResponseEntity.ok(response);
     }
 
-    
+    /**
+     * 로그인한 사용자의 패스워드리스 등록
+     */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "가입 등록 성공"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자 (로그인 필요)"),
+            @ApiResponse(responseCode = "500", description = "서빙 API 통신 실패 또는 서버 내부 오류")
+    })
+    @PostMapping("/register")
+    public  ResponseEntity<PasswordlessApiResponse<PWLRegisterResponse>> userRegisterPWL(
+            @AuthenticationPrincipal(expression = "username") String email
+    ) {
+        PasswordlessApiResponse<PWLRegisterResponse> response = passwordlessService.registerUserPWL(email);
+        return ResponseEntity.ok(response);
+    }
 }
