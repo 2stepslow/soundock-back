@@ -1,6 +1,7 @@
 package dopamine.soundock.service;
 
 import dopamine.soundock.dto.request.CommentCreateRequest;
+import dopamine.soundock.dto.response.CommentListResponse;
 import dopamine.soundock.dto.response.CommentResponse;
 import dopamine.soundock.entity.Board;
 import dopamine.soundock.entity.Comment;
@@ -65,13 +66,15 @@ public class CommentService {
                 .build();
         // 댓글 저장
         commentRepository.save(comment);
-        // comment를 CommentResponse dto에 실어서 보내주기
-        return CommentResponse.from(comment);
+        // 게시글에 달린 댓글 수 조회
+        Integer countComment = commentRepository.countByIsDeletedIsFalseAndBoard(board);
+
+        return CommentResponse.of(comment, countComment);
     }
 
     // 댓글 삭제
     @Transactional
-    public void deleteComment(Integer boardId, Integer commentId){
+    public Integer deleteComment(Integer boardId, Integer commentId){
         Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
 
@@ -84,6 +87,11 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 댓글입니다."));
 
+        // 댓글 삭제 하려는 id가 해당 게시글에 작성된 것이 맞는지 확인
+        if(!comment.getBoard().getBoardId().equals(boardId)){
+            throw new IllegalArgumentException("해당 게시글에 작성된 댓글이 아닙니다.");
+        }
+
         // 이미 삭제된 댓글인지 확인
         if (comment.isDeleted()){
             throw new ResourceNotFoundException("이미 삭제된 댓글입니다.");
@@ -95,11 +103,12 @@ public class CommentService {
         comment.setDeleted(true);
         commentRepository.save(comment);
 
+        return commentRepository.countByIsDeletedIsFalseAndBoard(board);
     }
 
     // 댓글 조회
     @Transactional(readOnly = true)
-    public List<CommentResponse> getComment(Integer boardId){
+    public CommentListResponse getComment(Integer boardId){
         // 카테고리와 boardId에 해당하는 삭제되지 않은 게시글인지 확인
         Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
@@ -109,6 +118,8 @@ public class CommentService {
         if (results.isEmpty()){
             throw new ResourceNotFoundException("작성된 댓글이 없습니다.");
         }
+        Integer countComment = results.size();
+
         List<CommentResponse> responses = new ArrayList<>();
 
         // 로그인한 유저 여부 확인
@@ -144,12 +155,16 @@ public class CommentService {
                 responses.add(commentResponse);
             }
         }
-        return responses;
+
+        return CommentListResponse.builder()
+                .commentResponse(responses)
+                .countComment(countComment)
+                .build();
     }
 
     // 댓글 수정
     @Transactional
-    public void updateComment(Integer commentId, CommentCreateRequest updateRequest){
+    public CommentResponse updateComment(Integer commentId, CommentCreateRequest updateRequest){
         // 로그인한 유저인지 검증
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
@@ -173,6 +188,7 @@ public class CommentService {
         }
         commentRepository.save(comment);
         log.info("해당 댓글이 수정되었습니다. 댓글 id : {}", commentId);
+        return CommentResponse.from(comment);
     }
 
     // 댓글 좋아요

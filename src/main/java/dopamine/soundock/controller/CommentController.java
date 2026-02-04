@@ -2,6 +2,7 @@ package dopamine.soundock.controller;
 
 import dopamine.soundock.dto.RestResponse;
 import dopamine.soundock.dto.request.CommentCreateRequest;
+import dopamine.soundock.dto.response.CommentListResponse;
 import dopamine.soundock.dto.response.CommentResponse;
 import dopamine.soundock.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +36,7 @@ public class CommentController {
     @PostMapping
     public ResponseEntity<RestResponse<?>> createComment(
             @PathVariable(required = true) Integer boardId,
-            @RequestBody CommentCreateRequest createRequest
+            @Valid @RequestBody CommentCreateRequest createRequest
     ){
         CommentResponse commentResponse = commentService.createComment(boardId, createRequest);
         return ResponseEntity.ok(RestResponse.success("댓글이 등록되었습니다.", commentResponse));
@@ -55,8 +57,8 @@ public class CommentController {
             @PathVariable(required = true) Integer boardId,
             @PathVariable(required = true) Integer commentId
     ){
-        commentService.deleteComment(boardId, commentId);
-        return ResponseEntity.ok(RestResponse.success("댓글이 삭제되었습니다."));
+        Integer countComment = commentService.deleteComment(boardId, commentId);
+        return ResponseEntity.ok(RestResponse.success("댓글이 삭제되었습니다.", countComment));
     }
 
     @Operation(
@@ -72,7 +74,7 @@ public class CommentController {
     public ResponseEntity<RestResponse<?>> getComment(
             @PathVariable(required = true) Integer boardId
     ){
-        List<CommentResponse> responses = commentService.getComment(boardId);
+        CommentListResponse responses = commentService.getComment(boardId);
         return ResponseEntity.ok(RestResponse.success(responses));
     }
 
@@ -80,10 +82,10 @@ public class CommentController {
     @PatchMapping("/{commentId}")
     public ResponseEntity<RestResponse<?>> updateComment(
             @PathVariable Integer commentId,
-            @RequestBody CommentCreateRequest updateRequest
+            @Valid @RequestBody CommentCreateRequest updateRequest
     ){
-        commentService.updateComment(commentId, updateRequest);
-        return ResponseEntity.ok(RestResponse.success("댓글 수정이 완료되었습니다."));
+        CommentResponse commentResponse = commentService.updateComment(commentId, updateRequest);
+        return ResponseEntity.ok(RestResponse.success("댓글 수정이 완료되었습니다.", commentResponse));
     }
 
     // 댓글 추천

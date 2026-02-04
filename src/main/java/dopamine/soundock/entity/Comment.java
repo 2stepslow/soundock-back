@@ -43,7 +43,6 @@ public class Comment {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdDateTime;
 
-    @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedDateTime;
 
@@ -60,6 +59,7 @@ public class Comment {
 
     public void updateComment(CommentCreateRequest updateRequest){
         this.content = updateRequest.getContent();
+        this.updatedDateTime = LocalDateTime.now();
     }
 
     public void increaseLike(){

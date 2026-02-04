@@ -12,4 +12,6 @@ import java.util.List;
 @EnableJpaRepositories
 public interface CommentRepository extends JpaRepository<Comment, Integer> {
     List<Comment> findByIsDeletedIsFalseAndBoard(Board board);
+
+    Integer countByIsDeletedIsFalseAndBoard(Board board);
 }
