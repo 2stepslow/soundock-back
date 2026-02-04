@@ -74,4 +74,7 @@ public class User {
     @Column(name = "pop_balance")
     private Integer popBalance;
 
+    @OneToOne
+    @JoinColumn(name = "grade_id")
+    private UserGrade userGrade;
 }
