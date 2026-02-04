@@ -133,9 +133,9 @@ public class BoardController {
 
     // 게시글 좋아요
     @PostMapping("/{boardId}/like")
-    public ResponseEntity<RestResponse<?>> likeboard(@PathVariable Integer boardId){
-        boardService.likeBoard(boardId);
-        return ResponseEntity.ok(RestResponse.success("요청 성공"));
+    public ResponseEntity<RestResponse<BoardResponse>> likeBoard(@PathVariable Integer boardId){
+        BoardResponse boardResponse = boardService.likeBoard(boardId);
+        return ResponseEntity.ok(RestResponse.success(boardResponse));
     }
 
 }

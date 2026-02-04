@@ -5,6 +5,7 @@ import dopamine.soundock.dto.request.UpdateInfoRequest;
 import dopamine.soundock.dto.request.UpdatePasswdRequest;
 import dopamine.soundock.dto.response.MyInfoResponse;
 import dopamine.soundock.entity.User;
+import dopamine.soundock.entity.UserGrade;
 import dopamine.soundock.enums.UserStatus;
 import dopamine.soundock.exceptions.*;
 import dopamine.soundock.repository.*;
@@ -45,6 +46,8 @@ public class MypageService {
                 .nickname(user.getNickname())
                 .phoneNumber(user.getPhoneNumber())
                 .isYoutubeConnected(isConnected)
+                .popBalance(user.getPopBalance())
+                .userGrade(user.getUserGrade().getGrade())
                 .build();
     }
 

@@ -3,7 +3,6 @@ package dopamine.soundock.controller;
 import dopamine.soundock.dto.RestResponse;
 import dopamine.soundock.dto.request.CommentCreateRequest;
 import dopamine.soundock.dto.response.CommentResponse;
-import dopamine.soundock.enums.CategoryType;
 import dopamine.soundock.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -75,5 +74,24 @@ public class CommentController {
     ){
         List<CommentResponse> responses = commentService.getComment(boardId);
         return ResponseEntity.ok(RestResponse.success(responses));
+    }
+
+    // 댓글 수정
+    @PatchMapping("/{commentId}")
+    public ResponseEntity<RestResponse<?>> updateComment(
+            @PathVariable Integer commentId,
+            @RequestBody CommentCreateRequest updateRequest
+    ){
+        commentService.updateComment(commentId, updateRequest);
+        return ResponseEntity.ok(RestResponse.success("댓글 수정이 완료되었습니다."));
+    }
+
+    // 댓글 추천
+    @PostMapping("/{commentId}/like")
+    public ResponseEntity<RestResponse<CommentResponse>> recommendComment(
+            @PathVariable Integer commentId
+    ){
+        CommentResponse commentResponse = commentService.recommendComment(commentId);
+        return ResponseEntity.ok(RestResponse.success(commentResponse));
     }
 }

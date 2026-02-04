@@ -1,7 +1,8 @@
 package dopamine.soundock.entity;
 
+import dopamine.soundock.dto.request.CommentCreateRequest;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Min;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.DynamicInsert;
@@ -31,6 +32,7 @@ public class Comment {
 
     @Column(name = "like_count")
     @ColumnDefault("0")
+    @Min(0)
     private int likeCount;
 
 //    @Column(name = "parent_comment_id", nullable = false)
@@ -56,4 +58,16 @@ public class Comment {
     @JoinColumn(name = "board_id")
     private Board board;
 
+    public void updateComment(CommentCreateRequest updateRequest){
+        this.content = updateRequest.getContent();
+    }
+
+    public void increaseLike(){
+        this.likeCount += 1;
+    }
+    public void decreaseLike(){
+        if (likeCount > 0) {
+            this.likeCount -= 1;
+        }
+    }
 }

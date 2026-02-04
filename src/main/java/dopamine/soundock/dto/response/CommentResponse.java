@@ -1,5 +1,6 @@
 package dopamine.soundock.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import dopamine.soundock.entity.Comment;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,7 +16,14 @@ public class CommentResponse {
     private Integer userId;
     private String nickname;
     private String content;
-    private LocalDateTime createdDateTime;
+    private Integer likeCount;
+    private boolean toggledLike;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm", timezone = "Asia/Seoul")
+    private LocalDateTime createdDatetime;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm", timezone = "Asia/Seoul")
+    private LocalDateTime updatedDatetime;
 
     public static CommentResponse from(Comment comment){
         return CommentResponse.builder()
@@ -23,7 +31,22 @@ public class CommentResponse {
                 .userId(comment.getUser().getId())
                 .nickname(comment.getUser().getNickname())
                 .content(comment.getContent())
-                .createdDateTime(comment.getCreatedDateTime())
+                .likeCount(comment.getLikeCount())
+                .createdDatetime(comment.getCreatedDateTime())
+                .updatedDatetime(comment.getUpdatedDateTime())
+                .build();
+    }
+
+    public static CommentResponse fromForLoginUser(Comment comment, boolean toggledLike){
+        return CommentResponse.builder()
+                .commentId(comment.getCommentId())
+                .userId(comment.getUser().getId())
+                .nickname(comment.getUser().getNickname())
+                .content(comment.getContent())
+                .likeCount(comment.getLikeCount())
+                .toggledLike(toggledLike)
+                .createdDatetime(comment.getCreatedDateTime())
+                .updatedDatetime(comment.getUpdatedDateTime())
                 .build();
     }
 }

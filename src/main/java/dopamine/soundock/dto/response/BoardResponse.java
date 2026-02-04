@@ -1,5 +1,6 @@
 package dopamine.soundock.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -17,7 +18,9 @@ public class BoardResponse{
     private String nickname;
     private int views;
     private int likes;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm", timezone = "Asia/Seoul")
     private LocalDateTime createdDateTime;
     private String fileUrl;
-    private boolean isliked;
+    private boolean isLiked;
+    private int countComment;
 }
