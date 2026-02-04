@@ -1,8 +1,9 @@
 package dopamine.soundock.controller;
 
 import dopamine.soundock.dto.PasswordlessApiResponse;
+import dopamine.soundock.dto.request.PWLCancelRequest;
 import dopamine.soundock.dto.request.PWLLoginTriggerRequest;
-import dopamine.soundock.dto.request.PWLResultRequest;
+import dopamine.soundock.dto.request.PWLWithdrawRequest;
 import dopamine.soundock.dto.response.PWLRegisterResponse;
 import dopamine.soundock.dto.response.PWLResultResponse;
 import dopamine.soundock.dto.response.PWLStatusResponse;
@@ -79,7 +80,7 @@ public class PasswordlessController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "푸시 알림 전송 성공"),
-            @ApiResponse(responseCode = "500", description = "서빙 API 통신 오류")
+            @ApiResponse(responseCode = "500", description = "서빙 API 통신 실패 또는 서버 내부 오류")
     })
     @PostMapping("/login-trigger")
     public ResponseEntity<PasswordlessApiResponse<PWLTriggerResponse>> userLoginTrigger(
@@ -104,14 +105,46 @@ public class PasswordlessController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "결과 확인 완료"),
-            @ApiResponse(responseCode = "500", description = "서빙 API 통신 오류")
+            @ApiResponse(responseCode = "400", description = "인증 결과가 없음(파라미터가 제대로 안들어옴 or 세션이 만료됐거나 유저를 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서빙 API 통신 실패 또는 서버 내부 오류")
     })
     @GetMapping("/result")
     public ResponseEntity<PasswordlessApiResponse<PWLResultResponse>> getLoginResult(
             @RequestParam("userId") String email,
             @RequestParam("sessionId") String sessionId
     ) {
-        PasswordlessApiResponse<PWLResultResponse> result = passwordlessService.finalLoginResult(email, sessionId);
-        return ResponseEntity.ok(result);
+        PasswordlessApiResponse<PWLResultResponse> response = passwordlessService.finalLoginResult(email, sessionId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 진행 중인 인증 요청 취소
+     */
+    @Operation(
+            summary = "로그인 인증 취소",
+            description = "사용자가 웹에서 취소 버튼을 누를 경우, 진행 중인 푸시 인증 세션을 중단합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "인증 취소 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 (필수값 누락 또는 유효하지 않은 세션)"),
+            @ApiResponse(responseCode = "500", description = "서빙 API 통신 실패 또는 서버 내부 오류")
+    })
+    @PostMapping("/cancel")
+    public ResponseEntity<PasswordlessApiResponse<Void>> cancelLogin(
+            @Valid @RequestBody PWLCancelRequest request
+    ) {
+        PasswordlessApiResponse<Void> response = passwordlessService.cancelAuthentication(request.getEmail(), request.getSessionId());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 패스워드리스 사용자 탈퇴
+     */
+    @PostMapping("/withdrawal")
+    public ResponseEntity<PasswordlessApiResponse<Void>> userWithdrawal(
+            @AuthenticationPrincipal(expression = "username") String email
+    ) {
+        PasswordlessApiResponse<Void> response = passwordlessService.userWithdrawal(email);
+        return ResponseEntity.ok(response);
     }
 }

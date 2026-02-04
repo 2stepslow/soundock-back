@@ -149,6 +149,11 @@ public class PasswordlessService {
         // 서빙 API에 인증 결과 조회
         PasswordlessApiResponse<PWLResultResponse> response = checkResult(email, sessionId);
 
+        if (response == null || response.getData() == null) {
+            log.error("인증 결과 조회에 아무것도 없음");
+            throw new CustomException("인증 결과 조회에 실패했습니다.", HttpStatus.BAD_REQUEST);
+        }
+
         // 인증이 "Y"인 경우에만 우리 사이트의 로그인 처리 진행
         if ("Y".equals(response.getData().getAuth())) {
             // 우리 서비스 JWT 토큰 생성
@@ -174,5 +179,42 @@ public class PasswordlessService {
         }
 
         return response;
+    }
+
+    /**
+     * 패스워드리스 인증 요청 취소
+     */
+    public PasswordlessApiResponse<Void> cancelAuthentication(String email, String sessionId) {
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("userId", email);
+        params.add("sessionId", sessionId);
+
+        return sendRequest(
+                "/api/passwordless/cancel",
+                HttpMethod.POST,
+                params,
+                new ParameterizedTypeReference<PasswordlessApiResponse<Void>>() {}
+        );
+    }
+
+    /**
+     * 패스워드리스 탈퇴 메서드
+     */
+    public PasswordlessApiResponse<Void> userWithdrawal(String email) {
+        // 사용자가 패스워드리스에 가입되어있는지 확인
+        PasswordlessApiResponse<PWLStatusResponse> response = checkUserStatus(email);
+        if (!response.getData().isExist()) {
+            throw new CustomException("패스워드리스 서비스에 가입되어있지 않습니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("userId", email);
+
+        return sendRequest(
+                "/api/passwordless/withdrawal",
+                HttpMethod.POST,
+                params,
+                new ParameterizedTypeReference<PasswordlessApiResponse<Void>>() {}
+        );
     }
 }

@@ -11,11 +11,10 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Schema(description = "패스워드리스 로그인 트리거 요청 데이터")
-public class PWLLoginTriggerRequest {
+@Schema(description = "패스워드리스 탈퇴 요청 데이터")
+public class PWLWithdrawRequest {
 
-    @Schema(description = "로그인을 요청한 사용자 아이디(이메일)")
+    @Schema(description = "탈퇴할 사용자 아이디(이메일)")
     @NotBlank(message = "이메일은 필수 입력 항목입니다.")
     private String email;
-
 }

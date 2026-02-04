@@ -99,6 +99,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,"/uploads/music/**").hasAuthority("USER") // 음악 파일은 회원만 확인 가능
                         .requestMatchers("/api/passwordless/login-trigger").permitAll() // 패스워드리스 로그인 트리거 허용
                         .requestMatchers("/api/passwordless/result").permitAll() // 패스워드리스 로그인 결과 확인 허용
+                        .requestMatchers("/api/passwordless/cancel").permitAll() // 패스워드리스 인증 취소 허용
                         .requestMatchers(
                                 "/payment/*.html",
                                 "/swagger-ui/**",
