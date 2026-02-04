@@ -7,6 +7,7 @@ import dopamine.soundock.enums.CategoryType;
 import dopamine.soundock.exceptions.AuthRejectedException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.repository.*;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class BoardService {
     private final CategoryRepository categoryRepository;
     private final BoardLikeRepository boardLikeRepository;
     private final ViewService viewService;
+    private final EntityManager entityManager;
 
     // 게시글 작성
     @Transactional
@@ -166,7 +168,7 @@ public class BoardService {
 
     // 게시글 좋아요
     @Transactional
-    public void likeBoard(Integer boardId){
+    public BoardResponse likeBoard(Integer boardId){
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
@@ -176,16 +178,29 @@ public class BoardService {
 
         Optional<LikeBoard> existingLike = boardLikeRepository.findByUserAndBoard(user, board);
 
+        boolean isLiked = false;
+
         if (existingLike.isPresent()){
             boardLikeRepository.delete(existingLike.get());
             boardRepository.decreaseLikes(boardId);
+            isLiked = false;
         } else {
             LikeBoard likeboard = new LikeBoard();
             likeboard.setUser(user);
             likeboard.setBoard(board);
             boardLikeRepository.save(likeboard);
             boardRepository.increaseLikes(boardId);
+            isLiked = true;
         }
+
+        entityManager.refresh(board);
+
+        BoardResponse boardResponse = BoardResponse.builder()
+                .likes(board.getLikes())
+                .isLiked(isLiked)
+                .build();
+
+        return boardResponse;
 
     }
 
