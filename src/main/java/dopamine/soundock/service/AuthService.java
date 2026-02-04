@@ -21,6 +21,8 @@ import dopamine.soundock.repository.UserRepository;
 import dopamine.soundock.repository.VerificationTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,6 +35,7 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +48,13 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenProvider tokenProvider;
     private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
+    private final StringRedisTemplate redisTemplate;
+
+    @Value("${search.email.login}")
+    private String loginUrl;
+
+    @Value("${search.email.signup}")
+    private String signupUrl;
 
     /**
      * 이메일 중복체크 메서드
@@ -313,5 +323,39 @@ public class AuthService {
         String accessToken = tokenProvider.generateAccessToken(email, user.getId(), user.getRole().name());
 
         return new RefreshResponse(accessToken);
+    }
+
+    /**
+     * 이메일 찾기 메서드
+     */
+    public void emailSearch(String email) {
+        String key = AppConstants.Redis.RATE_LIMIT_PREFIX + email;
+
+        // Redis에서 키 존재 여부 확인 (존재하면 이메일 발송하지 않고 예외 처리)
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
+            throw new CustomException("1분 후 다시 시도해주세요.", HttpStatus.TOO_MANY_REQUESTS);
+        }
+
+        boolean isRegistered = userRepository.existsByEmail(email);
+
+        String subject = "[Soundock] 가입 확인 안내";
+        String templateName;
+
+        Context context = new Context();
+        context.setVariable("email", email);
+
+        if (isRegistered) {
+            // 가입 된 경우 (true)
+            templateName = "email/register-guide";
+            context.setVariable("loginUrl", loginUrl);
+        } else {
+            templateName = "email/not-register-guide";
+            context.setVariable("signupUrl", signupUrl);
+        }
+
+        emailService.sendMailAsync(email, subject, templateName, context);
+
+        // 발송시 Redis에 키 저장 (1분뒤 자동삭제)
+        redisTemplate.opsForValue().set(key, "pushed", 1, TimeUnit.MINUTES);
     }
 }
