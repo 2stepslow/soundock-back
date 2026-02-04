@@ -3,7 +3,6 @@ package dopamine.soundock.controller;
 import dopamine.soundock.dto.RestResponse;
 import dopamine.soundock.dto.request.CommentCreateRequest;
 import dopamine.soundock.dto.response.CommentResponse;
-import dopamine.soundock.enums.CategoryType;
 import dopamine.soundock.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;

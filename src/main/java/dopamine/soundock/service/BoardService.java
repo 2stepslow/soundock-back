@@ -25,7 +25,6 @@ public class BoardService {
     private final CategoryRepository categoryRepository;
     private final BoardLikeRepository boardLikeRepository;
     private final ViewService viewService;
-    private final CommentRepository commentRepository;
 
     // 게시글 작성
     @Transactional
