@@ -11,6 +11,6 @@ import lombok.*;
 @Getter
 public class CommentCreateRequest {
     @NotBlank(message = "공백을 제외한 1글자 이상 입력해주세요.")
-    @Size(max = AppConstants.Validation.COMMENT_MAX_LENGTH, message = AppConstants.ErrorMessage.COMMENT_LENGTH_ERROR)
+    @Size(min = 1, max = AppConstants.Validation.COMMENT_MAX_LENGTH, message = AppConstants.ErrorMessage.COMMENT_LENGTH_ERROR)
     private String content;
 }

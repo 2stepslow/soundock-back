@@ -6,7 +6,6 @@ import jakarta.validation.constraints.Min;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.DynamicInsert;
-import org.hibernate.annotations.Formula;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -44,7 +43,6 @@ public class Comment {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdDateTime;
 
-    @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedDateTime;
 
@@ -59,11 +57,9 @@ public class Comment {
     @JoinColumn(name = "board_id")
     private Board board;
 
-    @Formula("(SELECT COUNT(c.comment_id) FROM comments c WHERE c.board_id = board_id AND c.is_deleted = FALSE)")
-    private Integer countComment;
-
     public void updateComment(CommentCreateRequest updateRequest){
         this.content = updateRequest.getContent();
+        this.updatedDateTime = LocalDateTime.now();
     }
 
     public void increaseLike(){

@@ -86,7 +86,7 @@ public class BoardController {
             @PathVariable(required = true) CategoryType categoryType
     ){
         // subCategory와 일치하는 게시글 목록 조회
-        List<BoardResponse> boardResponses = boardService.getBoardsByCategory(keyword, categoryType);
+        List<BoardResponse> boardResponses = boardService.getBoardsByCategory(categoryType);
         return ResponseEntity.ok(RestResponse.success(boardResponses));
         }
 
