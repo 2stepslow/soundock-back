@@ -5,6 +5,7 @@ import dopamine.soundock.entity.Comment;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import org.hibernate.annotations.Formula;
 
 import java.time.LocalDateTime;
 
@@ -18,6 +19,7 @@ public class CommentResponse {
     private String content;
     private Integer likeCount;
     private boolean toggledLike;
+    private Integer countComment;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm", timezone = "Asia/Seoul")
     private LocalDateTime createdDatetime;
@@ -32,6 +34,7 @@ public class CommentResponse {
                 .nickname(comment.getUser().getNickname())
                 .content(comment.getContent())
                 .likeCount(comment.getLikeCount())
+                .countComment(comment.getCountComment())
                 .createdDatetime(comment.getCreatedDateTime())
                 .updatedDatetime(comment.getUpdatedDateTime())
                 .build();

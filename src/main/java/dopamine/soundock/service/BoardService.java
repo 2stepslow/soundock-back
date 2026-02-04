@@ -9,6 +9,7 @@ import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.repository.*;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -80,6 +81,7 @@ public class BoardService {
                     .views(board.getViews())
                     .likes(board.getLikes())
                     .isLiked(isLiked)
+                    .countComment(board.getCountComment())
                     .createdDateTime(board.getCreatedDateTime())
                     .build();
 

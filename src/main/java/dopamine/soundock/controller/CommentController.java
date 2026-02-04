@@ -2,6 +2,7 @@ package dopamine.soundock.controller;
 
 import dopamine.soundock.dto.RestResponse;
 import dopamine.soundock.dto.request.CommentCreateRequest;
+import dopamine.soundock.dto.response.CommentCountResponse;
 import dopamine.soundock.dto.response.CommentResponse;
 import dopamine.soundock.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,8 +37,8 @@ public class CommentController {
             @PathVariable(required = true) Integer boardId,
             @RequestBody CommentCreateRequest createRequest
     ){
-        CommentResponse commentResponse = commentService.createComment(boardId, createRequest);
-        return ResponseEntity.ok(RestResponse.success("댓글이 등록되었습니다.", commentResponse));
+        CommentCountResponse commentCountResponse = commentService.createComment(boardId, createRequest);
+        return ResponseEntity.ok(RestResponse.success("댓글이 등록되었습니다.", commentCountResponse));
     }
 
     @Operation(
@@ -55,8 +56,8 @@ public class CommentController {
             @PathVariable(required = true) Integer boardId,
             @PathVariable(required = true) Integer commentId
     ){
-        commentService.deleteComment(boardId, commentId);
-        return ResponseEntity.ok(RestResponse.success("댓글이 삭제되었습니다."));
+        Integer countComment = commentService.deleteComment(boardId, commentId);
+        return ResponseEntity.ok(RestResponse.success("댓글이 삭제되었습니다.", countComment));
     }
 
     @Operation(

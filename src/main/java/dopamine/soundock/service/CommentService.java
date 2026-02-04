@@ -1,6 +1,7 @@
 package dopamine.soundock.service;
 
 import dopamine.soundock.dto.request.CommentCreateRequest;
+import dopamine.soundock.dto.response.CommentCountResponse;
 import dopamine.soundock.dto.response.CommentResponse;
 import dopamine.soundock.entity.Board;
 import dopamine.soundock.entity.Comment;
@@ -38,7 +39,7 @@ public class CommentService {
 
     // 댓글 작성
     @Transactional
-    public CommentResponse createComment(
+    public CommentCountResponse createComment(
             Integer boardId,
             CommentCreateRequest createRequest
     ){
@@ -66,12 +67,13 @@ public class CommentService {
         // 댓글 저장
         commentRepository.save(comment);
         // comment를 CommentResponse dto에 실어서 보내주기
-        return CommentResponse.from(comment);
+        List<Comment> countComment = commentRepository.findByIsDeletedIsFalseAndBoard(board);
+        return new CommentCountResponse(CommentResponse.from(comment), countComment.size());
     }
 
     // 댓글 삭제
     @Transactional
-    public void deleteComment(Integer boardId, Integer commentId){
+    public Integer deleteComment(Integer boardId, Integer commentId){
         Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
 
@@ -94,7 +96,8 @@ public class CommentService {
         // soft delete 실시
         comment.setDeleted(true);
         commentRepository.save(comment);
-
+        List<Comment> countComment = commentRepository.findByIsDeletedIsFalseAndBoard(board);
+        return countComment.size();
     }
 
     // 댓글 조회
