@@ -12,8 +12,6 @@ import dopamine.soundock.repository.BoardRepository;
 import dopamine.soundock.repository.CommentLikeRepository;
 import dopamine.soundock.repository.CommentRepository;
 import dopamine.soundock.repository.UserRepository;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -23,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -36,7 +35,6 @@ public class CommentService {
     private final BoardRepository boardRepository;
     private final UserRepository userRepository;
     private final CommentLikeRepository commentLikeRepository;
-    private final EntityManager entityManager;
 
     // 댓글 작성
     @Transactional
@@ -118,6 +116,8 @@ public class CommentService {
         boolean isLoggedIn = auth != null && auth.isAuthenticated()
                 && !"anonymousUser".equals(auth.getPrincipal());
 
+        Set<Integer> toggledLikeIds = new HashSet<>();
+
         // 로그인한 유저는 자신의 좋아요 여부 표시
         if (isLoggedIn){
             String email = auth.getName();
@@ -127,13 +127,8 @@ public class CommentService {
             // 유저가 좋아요한 댓글들 찾기
             List<CommentLike> likes = commentLikeRepository.findAllByUserAndCommentIn(user, results);
 
-            // 유저가 좋아요 한 댓글을 찾을 수 없을 때
-            if (likes.isEmpty()){
-                return new ArrayList<>();
-            }
-
             // 유저가 좋아요한 댓글들의 Id만 추출해 Set으로 만듦
-            Set<Integer> toggledLikeIds = likes.stream()
+            toggledLikeIds = likes.stream()
                     .map(like -> like.getComment().getCommentId())
                     .collect(Collectors.toSet());
 

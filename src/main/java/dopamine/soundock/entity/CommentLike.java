@@ -4,7 +4,13 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "comment_likes")
+@Table(name = "comment_likes",
+        uniqueConstraints = {
+        @UniqueConstraint(
+                columnNames = {"user_id", "comment_id"}
+        )
+    }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,10 +23,10 @@ public class CommentLike {
     private Integer commentLikeId;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "comment_id", nullable = false, unique = true)
+    @JoinColumn(name = "comment_id", nullable = false)
     private Comment comment;
 }
