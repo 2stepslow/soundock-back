@@ -3,6 +3,7 @@ package dopamine.soundock.service;
 import dopamine.soundock.dto.PasswordlessApiResponse;
 import dopamine.soundock.dto.response.PWLRegisterResponse;
 import dopamine.soundock.dto.response.PWLStatusResponse;
+import dopamine.soundock.dto.response.PWLTriggerResponse;
 import dopamine.soundock.exceptions.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -87,6 +88,22 @@ public class PasswordlessService {
                 HttpMethod.POST,
                 params,
                 new ParameterizedTypeReference<PasswordlessApiResponse<PWLRegisterResponse>>() {});
+    }
+
+    /**
+     * 패스워드리스 로그인 트리거 메서드
+     */
+    public PasswordlessApiResponse<PWLTriggerResponse> triggerLogin(String email, String ip) {
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("userId", email);
+        params.add("ip", ip);
+
+        return sendRequest(
+                "/api/passwordless/login-trigger",
+                HttpMethod.POST,
+                params,
+                new ParameterizedTypeReference<PasswordlessApiResponse<PWLTriggerResponse>>() {}
+        );
     }
 
 }

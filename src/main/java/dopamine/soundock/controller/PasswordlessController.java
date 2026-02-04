@@ -1,21 +1,23 @@
 package dopamine.soundock.controller;
 
 import dopamine.soundock.dto.PasswordlessApiResponse;
+import dopamine.soundock.dto.request.PWLLoginTriggerRequest;
 import dopamine.soundock.dto.response.PWLRegisterResponse;
 import dopamine.soundock.dto.response.PWLStatusResponse;
+import dopamine.soundock.dto.response.PWLTriggerResponse;
+import dopamine.soundock.global.IPUtils;
 import dopamine.soundock.service.PasswordlessService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -49,6 +51,10 @@ public class PasswordlessController {
     /**
      * 로그인한 사용자의 패스워드리스 등록
      */
+    @Operation(
+            summary = "로그인한 유저의 패스워드리스 등록",
+            description = "사용자의 모바일 앱으로 QR 코드를 통해 패스워드리스 등록"
+    )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "가입 등록 성공"),
             @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자 (로그인 필요)"),
@@ -59,6 +65,31 @@ public class PasswordlessController {
             @AuthenticationPrincipal(expression = "username") String email
     ) {
         PasswordlessApiResponse<PWLRegisterResponse> response = passwordlessService.registerUserPWL(email);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 로그인 트리거 API
+     */
+    @Operation(
+            summary = "로그인 인증 요청 (Trigger)",
+            description = "사용자의 모바일 앱으로 로그인 승인 푸시 알림을 전송합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "푸시 알림 전송 성공"),
+            @ApiResponse(responseCode = "500", description = "서빙 API 통신 오류")
+    })
+    @PostMapping("/login-trigger")
+    public ResponseEntity<PasswordlessApiResponse<PWLTriggerResponse>> userLoginTrigger(
+            @Valid @RequestBody PWLLoginTriggerRequest pwlRequest,
+            HttpServletRequest request
+    ) {
+        // 사용자의 IP 추출 (로드밸런서 or 프록시 환경을 대비한 IP유틸리티 클래스 이용)
+        String clientIp = IPUtils.getClientIp(request);
+
+        String email = pwlRequest.getEmail();
+
+        PasswordlessApiResponse<PWLTriggerResponse> response = passwordlessService.triggerLogin(email, clientIp);
         return ResponseEntity.ok(response);
     }
 }
