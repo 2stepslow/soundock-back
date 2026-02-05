@@ -52,7 +52,7 @@ public class PasswordlessController {
     }
 
     /**
-     * 로그인한 사용자의 패스워드리스 등록
+     * 사용자의 패스워드리스 등록
      */
     @Operation(
             summary = "로그인한 유저의 패스워드리스 등록",

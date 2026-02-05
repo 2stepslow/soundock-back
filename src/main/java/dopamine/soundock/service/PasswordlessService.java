@@ -203,6 +203,12 @@ public class PasswordlessService {
             throw new CustomException("인증 결과 조회에 실패했습니다.", HttpStatus.BAD_REQUEST);
         }
 
+        // 사용자가 인증을 취소한 경우
+        if ("N".equals(response.getData().getAuth())) {
+            cancelAuthentication(email, sessionId);
+            throw new CustomException("패스워드리스 인증이 취소되었습니다.", HttpStatus.BAD_REQUEST);
+        }
+
         // 인증이 "Y"인 경우에만 우리 사이트의 로그인 처리 진행
         if ("Y".equals(response.getData().getAuth())) {
             // 우리 서비스 JWT 토큰 생성
