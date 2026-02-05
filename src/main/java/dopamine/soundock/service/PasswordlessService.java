@@ -7,6 +7,7 @@ import dopamine.soundock.dto.response.PWLStatusResponse;
 import dopamine.soundock.dto.response.PWLTriggerResponse;
 import dopamine.soundock.entity.RefreshToken;
 import dopamine.soundock.entity.User;
+import dopamine.soundock.enums.UserStatus;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.global.TokenProvider;
@@ -21,8 +22,12 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -70,10 +75,21 @@ public class PasswordlessService {
             );
             // JSON에서 자바 객체로 변환된 결과물을 return
             return response.getBody();
+        } catch (HttpClientErrorException e) {
+            // 클라이언트 요청 오류(잘못된 요청)
+            log.error("클라이언트 요청 오류 (4xx): {}, 오류 메시지: {} ", e.getStatusCode(), e.getMessage());
+            throw new CustomException("잘못된 요청 입니다.", HttpStatus.BAD_REQUEST);
+        } catch (HttpServerErrorException e) {
+            // 외부 서버 오류 (외부 서버 내의 오류)
+            log.error("외부 서버 오류 (5xx): {}, 오류 메시지: {} ", e.getStatusCode(), e.getMessage());
+            throw new CustomException("외부 서비스 일시적 오류. 잠시 후 다시 시도해주세요.", HttpStatus.SERVICE_UNAVAILABLE);
+        } catch (ResourceAccessException e) {
+            // 네트워크 연결 문제
+            log.error("네트워크 연결 오류, 오류 메시지: {}", e.getMessage());
+            throw new CustomException("서버와 통신 할수 없습니다.", HttpStatus.GATEWAY_TIMEOUT);
         } catch (Exception e) {
-            // 통신 실패 시 예외 처리
-            log.error("에러 메시지: {}", e.getMessage());
-            throw new CustomException("서빙 API 통신 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+            log.error("알 수 없는 오류, 오류 메시지: {}", e.getMessage());
+            throw new CustomException("시스템 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
     /**
@@ -94,6 +110,11 @@ public class PasswordlessService {
      * 패스워드리스 등록 메서드
      */
     public PasswordlessApiResponse<PWLRegisterResponse> registerUserPWL(String email) {
+        // 사용자가 패스워드리스에 가입되어있는지 확인
+        PasswordlessApiResponse<PWLStatusResponse> response = checkUserStatus(email);
+        if (response.getData().isExist()) {
+            throw new CustomException("이미 패스워드리스 서비스를 사용 중입니다.", HttpStatus.BAD_REQUEST);
+        }
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("userId", email);
 
@@ -108,10 +129,28 @@ public class PasswordlessService {
      * 패스워드리스 로그인 트리거 메서드
      */
     public PasswordlessApiResponse<PWLTriggerResponse> triggerLogin(String email, String ip) {
-        // 우리 사이트에 가입된 유저인지 확인
-        if (!userRepository.existsByEmail(email)) {
-            throw new CustomException("가입되지 않은 회원입니다.", HttpStatus.BAD_REQUEST);
+        // 유저 정보 찾기 + 우리 서비스에 가입된 회원인지 확인
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 유저입니다."));
+
+        // 상태 검증
+        if(!user.getStatus().equals(UserStatus.ACTIVE)) {
+            throw new CustomException("사용할 수 없는 아이디 입니다. 관리자에게 문의해주세요.", HttpStatus.FORBIDDEN);
         }
+
+        // 사용자가 패스워드리스에 가입되어있는지 확인
+        PasswordlessApiResponse<PWLStatusResponse> response = checkUserStatus(email);
+
+        // 상태 체크 response 값이 없거나 data 값이 비어있는 경우 (NullPointerException 대비)
+        if (response == null || response.getData() == null) {
+            throw new CustomException("패스워드리스 가입 상태 조회에 실패했습니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        if (!response.getData().isExist()) {
+            throw new CustomException("패스워드리스 서비스에 가입되어있지 않습니다.", HttpStatus.BAD_REQUEST);
+        }
+
+
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("userId", email);
@@ -145,7 +184,17 @@ public class PasswordlessService {
     /**
      * 로그인 요청 결과 확인 및 JWT 발급 메서드 (최종 로그인 처리)
      */
+    @Transactional
     public PasswordlessApiResponse<PWLResultResponse> finalLoginResult(String email, String sessionId) {
+        // 유저 정보 찾기
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 유저입니다."));
+
+        // 상태 검증
+        if(!user.getStatus().equals(UserStatus.ACTIVE)) {
+            throw new CustomException("사용할 수 없는 아이디 입니다. 관리자에게 문의해주세요.", HttpStatus.FORBIDDEN);
+        }
+
         // 서빙 API에 인증 결과 조회
         PasswordlessApiResponse<PWLResultResponse> response = checkResult(email, sessionId);
 
@@ -157,11 +206,11 @@ public class PasswordlessService {
         // 인증이 "Y"인 경우에만 우리 사이트의 로그인 처리 진행
         if ("Y".equals(response.getData().getAuth())) {
             // 우리 서비스 JWT 토큰 생성
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 유저입니다."));
-
             String accessToken = tokenProvider.generateAccessToken(user.getEmail(), user.getId(), user.getRole().name());
             String refreshToken = tokenProvider.generateRefreshToken(user.getEmail());
+
+            // Refresh Token을 DB에 추가 하기 전 기존 리프레시 토큰 삭제 (폴링 방식에서의 동시성 이슈 고려)
+            refreshTokenRepository.deleteByUserId(user.getId());
 
             // Refresh Token 을 DB에 추가
             RefreshToken refresh = RefreshToken
@@ -203,6 +252,12 @@ public class PasswordlessService {
     public PasswordlessApiResponse<Void> userWithdrawal(String email) {
         // 사용자가 패스워드리스에 가입되어있는지 확인
         PasswordlessApiResponse<PWLStatusResponse> response = checkUserStatus(email);
+
+        // 상태 체크 response 값이 없거나 data 값이 비어있는 경우 (NullPointerException 대비)
+        if (response == null || response.getData() == null) {
+            throw new CustomException("패스워드리스 가입 상태 조회에 실패했습니다.", HttpStatus.BAD_REQUEST);
+        }
+
         if (!response.getData().isExist()) {
             throw new CustomException("패스워드리스 서비스에 가입되어있지 않습니다.", HttpStatus.BAD_REQUEST);
         }

@@ -3,12 +3,10 @@ package dopamine.soundock.controller;
 import dopamine.soundock.dto.PasswordlessApiResponse;
 import dopamine.soundock.dto.request.PWLCancelRequest;
 import dopamine.soundock.dto.request.PWLLoginTriggerRequest;
-import dopamine.soundock.dto.request.PWLWithdrawRequest;
 import dopamine.soundock.dto.response.PWLRegisterResponse;
 import dopamine.soundock.dto.response.PWLResultResponse;
 import dopamine.soundock.dto.response.PWLStatusResponse;
 import dopamine.soundock.dto.response.PWLTriggerResponse;
-import dopamine.soundock.global.IPUtils;
 import dopamine.soundock.service.PasswordlessService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -20,10 +18,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
+@Validated
 @Slf4j
 @RequestMapping("/api/passwordless")
 @Tag(name = "패스워드리스", description = "패스워드리스 인증 관련 API")
@@ -87,8 +87,8 @@ public class PasswordlessController {
             @Valid @RequestBody PWLLoginTriggerRequest pwlRequest,
             HttpServletRequest request
     ) {
-        // 사용자의 IP 추출 (로드밸런서 or 프록시 환경을 대비한 IP유틸리티 클래스 이용)
-        String clientIp = IPUtils.getClientIp(request);
+        // 사용자의 IP 추출 (로드밸런서 or 프록시 환경을 대비한 application.properties 설정)
+        String clientIp = request.getRemoteAddr();
 
         String email = pwlRequest.getEmail();
 
@@ -105,7 +105,7 @@ public class PasswordlessController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "결과 확인 완료"),
-            @ApiResponse(responseCode = "400", description = "인증 결과가 없음(파라미터가 제대로 안들어옴 or 세션이 만료됐거나 유저를 찾을 수 없음"),
+            @ApiResponse(responseCode = "400", description = "인증 결과가 없음(파라미터가 제대로 안들어옴 or 세션이 만료됐거나 유저를 찾을 수 없음)"),
             @ApiResponse(responseCode = "500", description = "서빙 API 통신 실패 또는 서버 내부 오류")
     })
     @GetMapping("/result")
@@ -140,6 +140,15 @@ public class PasswordlessController {
     /**
      * 패스워드리스 사용자 탈퇴
      */
+    @Operation(
+            summary = "회원 탈퇴",
+            description = "패스워드리스 인증 기반 사용자의 탈퇴를 처리"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "탈퇴 성공"),
+            @ApiResponse(responseCode = "400", description = "인증되지 않은 사용자"),
+            @ApiResponse(responseCode = "500", description = "서빙 API 통신 실패 또는 서버 내부 오류")
+    })
     @PostMapping("/withdrawal")
     public ResponseEntity<PasswordlessApiResponse<Void>> userWithdrawal(
             @AuthenticationPrincipal(expression = "username") String email
