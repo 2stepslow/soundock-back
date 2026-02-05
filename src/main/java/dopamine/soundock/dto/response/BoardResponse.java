@@ -23,4 +23,5 @@ public class BoardResponse{
     private String fileUrl;
     private boolean isLiked;
     private int countComment;
+    private String downloadUrl;
 }
