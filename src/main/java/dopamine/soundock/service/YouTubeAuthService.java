@@ -65,10 +65,20 @@ public class YouTubeAuthService {
         Oauth oauth = oauthRepository.findByUser(user)
                 .orElseThrow(() -> new CustomException("구글 연동 정보가 없습니다.", HttpStatus.NOT_FOUND));
 
-        // 토큰 만료 여부 확인 (여유시간 3분 추가)
-        if (oauth.getExpiresAt().minusMinutes(3).isBefore(LocalDateTime.now())) {
-            return refreshAccessToken(oauth);
+        // 1. 토큰 만료 여부 확인 (여유시간 3분 추가)
+        if (oauth.getExpiresAt().minusMinutes(3).isAfter(LocalDateTime.now())) {
+            return oauth.getAccessToken();
         }
+
+        // 2. 만료되었다면 갱신 시도
+        String refreshedToken = refreshAccessToken(oauth);
+
+        // 3. 갱신 결과 확인
+        if (refreshedToken == null) {
+            // refreshAccessToken에서 null이 왔다면 리프레시 토큰이 없거나 무효한 경우
+            throw new CustomException("유튜브 연동이 해제되었습니다. 다시 인증해주세요.", HttpStatus.UNAUTHORIZED);
+        }
+
         return oauth.getAccessToken();
     }
 
@@ -76,7 +86,7 @@ public class YouTubeAuthService {
     @Transactional
     public String refreshAccessToken(Oauth oauth) {
         if (oauth.getRefreshToken() == null) {
-            throw new CustomException("Refresh Token이 없습니다. 다시 로그인해주세요.", HttpStatus.UNAUTHORIZED);
+            return null;
         }
 
         try {

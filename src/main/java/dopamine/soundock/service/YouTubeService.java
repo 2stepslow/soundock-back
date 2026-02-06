@@ -3,10 +3,14 @@ package dopamine.soundock.service;
 import dopamine.soundock.dto.request.PlaylistRegisterRequest;
 import dopamine.soundock.dto.response.YouTubeApiResponse;
 import dopamine.soundock.dto.response.YouTubePlaylistResponse;
+import dopamine.soundock.dto.response.YouTubeVideoListResponse;
+import dopamine.soundock.dto.response.YoutubeThumbnailsDTO;
 import dopamine.soundock.entity.Playlist;
+import dopamine.soundock.entity.PlaylistItem;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
+import dopamine.soundock.repository.PlaylistItemRepository;
 import dopamine.soundock.repository.PlaylistRepository;
 import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +19,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -32,9 +37,11 @@ public class YouTubeService {
     private final YouTubeAuthService youTubeAuthService;
     private final RestTemplate restTemplate;
     private final PlaylistRepository playlistRepository;
+    private final PlaylistItemRepository playlistItemRepository;
+    private final RestClient restClient;
 
     /**
-     * 구글 연동 체크 메시드
+     * 구글 연동 체크 메서드
      */
     private void checkYouTubeLinkage(User user) {
         if (!youTubeAuthService.validateAndCleanupOAuth(user)) {
@@ -139,7 +146,7 @@ public class YouTubeService {
     /**
      * 썸네일 URL 추출
      */
-    private String extractThumbnailUrl(YouTubeApiResponse.Thumbnails thumbnails) {
+    private String extractThumbnailUrl(YoutubeThumbnailsDTO.Thumbnails thumbnails) {
         if (thumbnails == null) {
             return null;
         }
@@ -188,7 +195,9 @@ public class YouTubeService {
                 .itemCount(request.getItemCount())
                 .build();
 
-        playlistRepository.save(playlist);
+        Playlist savePlaylist = playlistRepository.save(playlist);
+
+        syncPlaylistItem(savePlaylist.getPlaylistId(), email);
     }
 
 
@@ -229,5 +238,80 @@ public class YouTubeService {
         }
 
         playlistRepository.delete(playlist);
+    }
+
+    /**
+     * 특정 플레이리스트의 곡 목록을 유튜브 API에서 가져와 DB에 저장
+     */
+    @Transactional
+    public void syncPlaylistItem(Integer playlistId, String email) {
+        // DB 에서 플레이리스트 정보 조회
+        Playlist playlist = playlistRepository.findByPlaylistId(playlistId)
+                .orElseThrow(() -> new ResourceNotFoundException("플레이리스트를 찾을 수 없습니다."));
+
+        // 유효한 액세스 토큰 가져오기
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+        String accessToken = youTubeAuthService.getValidAccessToken(user);
+
+        // 유튜브 API 호출을 통해 곡 목록 가져오기
+        List<PlaylistItem> remoteVideos = fetchVideosFromYouTube(accessToken, playlist);
+
+        // 기존 DB에 해당 플레이리스트의 곡들이 있다면 삭제 (교체하기 위해)
+        playlistItemRepository.deleteByPlaylist(playlist);
+
+        // 새로운 곡 목록 저장
+        playlistItemRepository.saveAll(remoteVideos);
+
+        // 플레이리스트의 총 곡 수 업데이트
+        playlist.updateItemCount(remoteVideos.size());
+    }
+
+    /**
+     * 플레이리스트 곡 가져오는 유튜브 API 호출 및 DTO 변환 메서드
+     */
+    private List<PlaylistItem> fetchVideosFromYouTube(String accessToken, Playlist playlist) {
+        String url = "https://www.googleapis.com/youtube/v3/playlistItems";
+
+        URI uri = UriComponentsBuilder.fromUriString(url)
+                .queryParam("part", "snippet")
+                .queryParam("playlistId", playlist.getYoutubeListId())
+                .queryParam("maxResults", 50)
+                .build()
+                .toUri();
+
+        try {
+            // RestClient 호출
+            YouTubeVideoListResponse response = restClient.get()
+                    .uri(uri)
+                    .headers(headers -> headers.setBearerAuth(accessToken))
+                    .retrieve()
+                    // 4xx, 5xx 에러 발생 시 예외
+                    .onStatus(HttpStatusCode::isError, (request, res) -> {
+                        log.error("YouTube API 에러 발생: {} {}", res.getStatusCode(), res.getStatusText());
+                        throw new CustomException("유튜브 곡 목록을 불러오는 중 오류가 발생했습니다.", HttpStatus.valueOf(res.getStatusCode().value()));
+                    })
+                    .body(YouTubeVideoListResponse.class);
+
+            if (response == null || response.getItems() == null) {
+                return new ArrayList<>();
+            }
+
+            // 응답 받은 DTO를 PlaylistItem 엔티티로 변환
+            return response.getItems().stream()
+                    .filter(item -> item.getSnippet() != null && item.getSnippet().getResourceId() != null)
+                    .map(item -> PlaylistItem.builder()
+                            .playlist(playlist)
+                            .videoId(item.getSnippet().getResourceId().getVideoId())
+                            .title(item.getSnippet().getTitle())
+                            .thumbnailUrl(extractThumbnailUrl(item.getSnippet().getThumbnails()))
+                            .position(item.getSnippet().getPosition())
+                            .build())
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("유튜브 API 호출 실패", e);
+            throw new CustomException("YouTube 서비스 연결에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -15,36 +16,32 @@ import java.time.LocalDateTime;
 @DynamicInsert
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "playlists")
-public class Playlist {
+@Table(name = "playlist_items")
+public class PlaylistItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "playlist_id")
-    private Integer playlistId;
+    @Column(name = "item_id")
+    private Integer itemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "playlist_id", nullable = false)
+    private Playlist playlist;
 
-    @Column(name = "youtubelist_id", nullable = false)
-    private String youtubeListId;
+    @Column(name = "video_id", nullable = false)
+    private String videoId;
 
     @Column(name = "title", nullable = false)
     private String title;
 
-    @Column(name = "thumbnail_url", columnDefinition = "TEXT")
+    @Column(name = "thumbnail_url")
     private String thumbnailUrl;
 
-    @Column(name = "item_count", nullable = false)
-    private Integer itemCount;
+    @Column(name = "position", nullable = false)
+    private Integer position;
 
     @CreatedDate
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    // 플레이리스트 업데이트 시 사용
-    public void updateItemCount(int count) {
-        this.itemCount = count;
-    }
 }

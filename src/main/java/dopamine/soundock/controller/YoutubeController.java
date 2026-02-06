@@ -52,7 +52,9 @@ public class YoutubeController {
         return ResponseEntity.ok(RestResponse.success("플레이리스트 조회가 완료 되었습니다.", playlists));
     }
 
-    // 플레이리스트 등록
+    /**
+     * 플레이리스트 등록
+     */
     @Operation(
             summary = "유튜브 플레이리스트 등록",
             description = "유튜브에서 조회한 플레이리스트 중 하나를 선택하여 우리 서비스의 DB에 저장"
