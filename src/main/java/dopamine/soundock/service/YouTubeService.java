@@ -1,10 +1,7 @@
 package dopamine.soundock.service;
 
 import dopamine.soundock.dto.request.PlaylistRegisterRequest;
-import dopamine.soundock.dto.response.YouTubeApiResponse;
-import dopamine.soundock.dto.response.YouTubePlaylistResponse;
-import dopamine.soundock.dto.response.YouTubeVideoListResponse;
-import dopamine.soundock.dto.response.YoutubeThumbnailsDTO;
+import dopamine.soundock.dto.response.*;
 import dopamine.soundock.entity.Playlist;
 import dopamine.soundock.entity.PlaylistItem;
 import dopamine.soundock.entity.User;
@@ -313,5 +310,19 @@ public class YouTubeService {
             log.error("유튜브 API 호출 실패", e);
             throw new CustomException("YouTube 서비스 연결에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<PlaylistItemResponse> getPlaylistItems(Integer playlistId, String email) {
+        // 유저 및 권한 체크 (기존 로직 동일)
+        Playlist playlist = playlistRepository.findByPlaylistId(playlistId)
+                .orElseThrow(() -> new ResourceNotFoundException("해당 플레이리스트를 찾을 수 없습니다."));
+
+        // 레포지토리를 통해 직접 조회
+        List<PlaylistItem> items = playlistItemRepository.findAllByPlaylist(playlist);
+
+        return items.stream()
+                .map(PlaylistItemResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 }

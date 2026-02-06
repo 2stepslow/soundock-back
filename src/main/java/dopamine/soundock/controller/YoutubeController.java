@@ -2,6 +2,7 @@ package dopamine.soundock.controller;
 
 import dopamine.soundock.dto.RestResponse;
 import dopamine.soundock.dto.request.PlaylistRegisterRequest;
+import dopamine.soundock.dto.response.PlaylistItemResponse;
 import dopamine.soundock.dto.response.YouTubePlaylistResponse;
 import dopamine.soundock.service.YouTubeAuthService;
 import dopamine.soundock.service.YouTubeService;
@@ -98,5 +99,18 @@ public class YoutubeController {
     ) {
         youTubeService.deleteMyPlaylist(playlistId, email);
         return ResponseEntity.ok(RestResponse.success("플레이리스트가 목록에서 삭제되었습니다."));
+    }
+
+    /**
+     * 플레이리스트 내 상세 곡 목록 조회 API
+     */
+    @Operation(summary = "플레이리스트 상세 곡 목록 조회", description = "특정 플레이리스트 ID에 포함된 모든 곡 정보를 조회")
+    @GetMapping("/playlist/{playlistId}/items")
+    public ResponseEntity<RestResponse<List<PlaylistItemResponse>>> getPlaylistItems(
+            @PathVariable Integer playlistId,
+            @AuthenticationPrincipal(expression = "username") String email
+    ) {
+        List<PlaylistItemResponse> items = youTubeService.getPlaylistItems(playlistId, email);
+        return ResponseEntity.ok(RestResponse.success("곡 목록 조회에 성공했습니다.", items));
     }
 }

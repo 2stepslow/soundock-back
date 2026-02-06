@@ -9,6 +9,9 @@ import lombok.Getter;
 @Builder
 @Schema(description = "유튜브 플레이리스트 응답 정보")
 public class YouTubePlaylistResponse {
+    @Schema(description = "플레이리스트 PK ID")
+    private Integer playlistId;
+
     @Schema(description = "플레이리스트 고유 ID")
     private String youtubeListId;
 
@@ -23,6 +26,7 @@ public class YouTubePlaylistResponse {
 
     public static YouTubePlaylistResponse fromEntity(Playlist playlist) {
         return YouTubePlaylistResponse.builder()
+                .playlistId(playlist.getPlaylistId())
                 .youtubeListId(playlist.getYoutubeListId())
                 .title(playlist.getTitle())
                 .thumbnailUrl(playlist.getThumbnailUrl())
