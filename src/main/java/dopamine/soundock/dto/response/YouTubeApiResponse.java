@@ -1,6 +1,5 @@
 package dopamine.soundock.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.util.List;
@@ -20,28 +19,12 @@ public class YouTubeApiResponse {
     @Data
     public static class Snippet {
         private String title;
-        private Thumbnails thumbnails;
+        private YoutubeThumbnailsDTO.Thumbnails thumbnails;
     }
 
     @Data
     public static class ContentDetails {
         private Integer itemCount;
-    }
-
-    @Data
-    public static class Thumbnails {
-        @JsonProperty("default")
-        private Thumbnail defaultThumbnail;
-
-        private Thumbnail medium;
-        private Thumbnail high;
-    }
-
-    @Data
-    public static class Thumbnail {
-        private String url;
-        private Integer width;
-        private Integer height;
     }
 
     @Data
