@@ -234,6 +234,10 @@ public class AuthService {
         User user = userRepository.findByEmailAndIsDeletedFalse(loginRequest.getEmail())
             .orElseThrow(() -> new LoginFailedException("가입되지 않은 계정입니다."));
 
+        if (user.isPasswordless()) {
+            throw new LoginFailedException("패스워드리스 서비스를 사용 중입니다. 패스워드리스를 통해 로그인 해주세요");
+        }
+
         // 2. 비밀번호 검증
         if(!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             throw new LoginFailedException("비밀번호가 일치하지 않습니다.");

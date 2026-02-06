@@ -110,11 +110,14 @@ public class PasswordlessService {
      * 패스워드리스 등록 메서드
      */
     public PasswordlessApiResponse<PWLRegisterResponse> registerUserPWL(String email) {
-        // 사용자가 패스워드리스에 가입되어있는지 확인
-        PasswordlessApiResponse<PWLStatusResponse> response = checkUserStatus(email);
-        if (response.getData().isExist()) {
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 유저입니다."));
+
+        // 유저가 이미 패스워드리스 사용중인 상태인지 확인
+        if (user.isPasswordless()) {
             throw new CustomException("이미 패스워드리스 서비스를 사용 중입니다.", HttpStatus.BAD_REQUEST);
         }
+
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("userId", email);
 
@@ -123,6 +126,40 @@ public class PasswordlessService {
                 HttpMethod.POST,
                 params,
                 new ParameterizedTypeReference<PasswordlessApiResponse<PWLRegisterResponse>>() {});
+    }
+
+    /**
+     * 패스워드리스 등록 확인 API
+     */
+    @Transactional
+    public PasswordlessApiResponse<PWLStatusResponse> updateUserPWL(String email) {
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 유저입니다."));
+
+        // 유저가 이미 패스워드리스 사용중인 상태인지 확인
+        if (user.isPasswordless()) {
+            PasswordlessApiResponse<PWLStatusResponse> response = new PasswordlessApiResponse<>();
+            response.setData(new PWLStatusResponse(true));
+            return response;
+        }
+
+        // 사용중이 아니라면 유저 상태 조회
+        PasswordlessApiResponse<PWLStatusResponse> response = checkUserStatus(email);
+
+        // 상태 체크 response 값이 없거나 data 값이 비어있는 경우 (NullPointerException 대비)
+        if (response == null || response.getData() == null) {
+            throw new CustomException("패스워드리스 가입 상태 조회에 실패했습니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        // 유저가 패스워드리스 등록에 성공했다면
+        if (response.getData().isExist()) {
+            // 유저 상태 true로 변경
+            user.setPasswordless(true);
+
+            userRepository.save(user);
+        }
+
+        return response;
     }
 
     /**
@@ -138,18 +175,10 @@ public class PasswordlessService {
             throw new CustomException("사용할 수 없는 아이디 입니다. 관리자에게 문의해주세요.", HttpStatus.FORBIDDEN);
         }
 
-        // 사용자가 패스워드리스에 가입되어있는지 확인
-        PasswordlessApiResponse<PWLStatusResponse> response = checkUserStatus(email);
-
-        // 상태 체크 response 값이 없거나 data 값이 비어있는 경우 (NullPointerException 대비)
-        if (response == null || response.getData() == null) {
-            throw new CustomException("패스워드리스 가입 상태 조회에 실패했습니다.", HttpStatus.BAD_REQUEST);
+        // 유저가 패스워드리스 사용중인 상태인지 확인
+        if (!user.isPasswordless()) {
+            throw new CustomException("패스워드리스가 등록 되어있지 않습니다.", HttpStatus.BAD_REQUEST);
         }
-
-        if (!response.getData().isExist()) {
-            throw new CustomException("패스워드리스 서비스에 가입되어있지 않습니다.", HttpStatus.BAD_REQUEST);
-        }
-
 
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
@@ -255,27 +284,31 @@ public class PasswordlessService {
     /**
      * 패스워드리스 탈퇴 메서드
      */
+    @Transactional
     public PasswordlessApiResponse<Void> userWithdrawal(String email) {
-        // 사용자가 패스워드리스에 가입되어있는지 확인
-        PasswordlessApiResponse<PWLStatusResponse> response = checkUserStatus(email);
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 유저입니다."));
 
-        // 상태 체크 response 값이 없거나 data 값이 비어있는 경우 (NullPointerException 대비)
-        if (response == null || response.getData() == null) {
-            throw new CustomException("패스워드리스 가입 상태 조회에 실패했습니다.", HttpStatus.BAD_REQUEST);
-        }
-
-        if (!response.getData().isExist()) {
-            throw new CustomException("패스워드리스 서비스에 가입되어있지 않습니다.", HttpStatus.BAD_REQUEST);
+        // 유저가 패스워드리스 사용중인 상태인지 확인
+        if (!user.isPasswordless()) {
+            throw new CustomException("패스워드리스가 등록 되어있지 않습니다.", HttpStatus.BAD_REQUEST);
         }
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("userId", email);
 
-        return sendRequest(
+        PasswordlessApiResponse<Void> response =  sendRequest(
                 "/api/passwordless/withdrawal",
                 HttpMethod.POST,
                 params,
                 new ParameterizedTypeReference<PasswordlessApiResponse<Void>>() {}
         );
+
+        if (response != null) {
+            user.setPasswordless(false);
+            userRepository.save(user);
+        }
+
+        return response;
     }
 }
