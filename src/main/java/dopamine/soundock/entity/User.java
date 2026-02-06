@@ -77,4 +77,7 @@ public class User {
     @OneToOne
     @JoinColumn(name = "grade_id")
     private UserGrade userGrade;
+
+    @Column(name = "is_passwordless", nullable = false)
+    private boolean isPasswordless;
 }

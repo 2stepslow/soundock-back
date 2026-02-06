@@ -234,6 +234,10 @@ public class AuthService {
         User user = userRepository.findByEmailAndIsDeletedFalse(loginRequest.getEmail())
             .orElseThrow(() -> new LoginFailedException("가입되지 않은 계정입니다."));
 
+        if (user.isPasswordless()) {
+            throw new LoginFailedException("패스워드리스 서비스를 사용 중입니다. 패스워드리스를 통해 로그인 해주세요");
+        }
+
         // 2. 비밀번호 검증
         if(!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             throw new LoginFailedException("비밀번호가 일치하지 않습니다.");
@@ -241,7 +245,7 @@ public class AuthService {
 
         // 3. 상태 검증
         if(!user.getStatus().equals(UserStatus.ACTIVE)) {
-            throw new CustomException("이메일 인증이 완료되지 않았습니다. 메일을 확인해주세요.", HttpStatus.FORBIDDEN);
+            throw new CustomException("사용할 수 없는 아이디 입니다. 관리자에게 문의해주세요.", HttpStatus.FORBIDDEN);
         }
 
         // 로그인 성공 -> 토큰 발급
