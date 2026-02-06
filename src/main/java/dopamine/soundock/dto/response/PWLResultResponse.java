@@ -1,5 +1,6 @@
 package dopamine.soundock.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,6 +25,7 @@ public class PWLResultResponse {
     @Schema(description = "로그인 인증 완료시 발급받은 우리 서비스 전용 AccessToken")
     private String accessToken;
 
-    @Schema(description = "로그인 인증 완료시 발급받은 우리 서비스 전용 RefreshToken")
+    @JsonIgnore // JSON 변환 시 제외
+    @Schema(hidden = true)
     private String refreshToken;
 }

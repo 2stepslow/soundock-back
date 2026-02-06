@@ -25,10 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDateTime;
@@ -38,7 +35,7 @@ import java.time.LocalDateTime;
 @Slf4j
 public class PasswordlessService {
 
-    private final RestTemplate restTemplate;
+    private final RestClient restClient;
     private final UserRepository userRepository;
     private final TokenProvider tokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -58,23 +55,14 @@ public class PasswordlessService {
             // 그래서 익명 클래스({})를 생성하여 제네릭 정보를 강제로 보존하는 기법을 사용
             ParameterizedTypeReference<PasswordlessApiResponse<T>> responseType
     ) {
-        // URL 빌드
-        String url = UriComponentsBuilder.fromUriString(servingApiUrl)
-                .path(path)
-                .queryParams(params)
-                .build()
-                .toUriString();
-
         try {
-            // 서빙 API 호출 및 응답 매핑
-            ResponseEntity<PasswordlessApiResponse<T>> response = restTemplate.exchange(
-                    url, // 요청을 보낼 주소 (상대방의 API 주소)
-                    method, // HTTP 방식
-                    null, // RequestEntity (요청 보낼 때 담을 헤더나 바디, 이 경우는 필요없으니 null)
-                    responseType
-            );
-            // JSON에서 자바 객체로 변환된 결과물을 return
-            return response.getBody();
+            return restClient.method(method)
+                    .uri(servingApiUrl + path,uriBuilder -> uriBuilder
+                            .queryParams(params)
+                            .build())
+                    .retrieve()
+                    .body(responseType);
+
         } catch (HttpClientErrorException e) {
             // 클라이언트 요청 오류(잘못된 요청)
             log.error("클라이언트 요청 오류 (4xx): {}, 오류 메시지: {} ", e.getStatusCode(), e.getMessage());
@@ -92,6 +80,7 @@ public class PasswordlessService {
             throw new CustomException("시스템 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     /**
      * 패스워드리스 가입 확인 메서드
      */

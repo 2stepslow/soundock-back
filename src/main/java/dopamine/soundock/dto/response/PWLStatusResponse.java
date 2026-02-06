@@ -16,6 +16,6 @@ import lombok.Setter;
 @Schema(description = "사용자 패스워드리스 등록 여부 응답")
 public class PWLStatusResponse {
 
-    @Schema(description = "등록 여부 (true: 등록됨, false: 미등록)")
+    @Schema(description = "등록 여부 (true: 가입됨, false: 미가입)", example = "true")
     private boolean exist;
 }
