@@ -97,7 +97,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String jwtToken = tokenProvider.generateAccessToken(targetEmail, userId, role);
 
         // 5. 프론트엔드(React)로 성공 페이지 리다이렉트 할 변수 선언
-        String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth-redirect")
+        String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/mypage")
                 .queryParam("token", jwtToken)
                 .queryParam("success", "true")
                 .build().toUriString();

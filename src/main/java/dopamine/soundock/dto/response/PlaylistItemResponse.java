@@ -19,7 +19,7 @@ public class PlaylistItemResponse {
     @Schema(description = "곡 썸네일 URL")
     private String thumbnailUrl;
 
-    // Entity를 DTO로 변환하는 정적 메서드
+    // Entity를 DTO로 변환하는 메서드
     public static PlaylistItemResponse fromEntity(PlaylistItem item) {
         return PlaylistItemResponse.builder()
                 .videoId(item.getVideoId())

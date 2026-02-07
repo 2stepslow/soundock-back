@@ -32,7 +32,7 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException {
         // 1. 사용자를 다시 보낼 리액트(프론트엔드) 주소를 설정
         // 결과가 '실패'라는 것과, 어떤 에러인지(?error=...) 주소창에 적어서 보냄
-        String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth-redirect")
+        String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/mypage")
                 .queryParam("error", exception.getLocalizedMessage())
                 .build().toUriString();
 

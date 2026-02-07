@@ -6,6 +6,7 @@ import dopamine.soundock.entity.Oauth;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.repository.OauthRepository;
+import dopamine.soundock.repository.PlaylistRepository;
 import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ public class YouTubeAuthService {
     private final OauthRepository oauthRepository;
     private final UserRepository userRepository;
     private final OauthService oauthService;
+    private final PlaylistRepository playlistRepository;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -128,6 +130,8 @@ public class YouTubeAuthService {
         } catch (HttpClientErrorException ex) {
             if (ex.getResponseBodyAsString().contains("invalid_grant")) {
                 log.info("사용자가 구글 연동을 취소함. 유저: {}", oauth.getUser().getEmail());
+                // 구글 연동정보 및 등록한 플레이리스트 삭제 (곡은 CASCADE로 같이 삭제 됨)
+                playlistRepository.deleteByUser(oauth.getUser());
                 oauthService.deleteConnection(oauth.getUser());
                 return null;
             }
