@@ -17,7 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 @RequestMapping("/api/boards")
@@ -40,12 +42,14 @@ public class BoardController {
     @PostMapping("/category/{categoryType}")
     public ResponseEntity<RestResponse<?>> createNewBoard(
             @PathVariable(required = true) CategoryType categoryType,
-            @Valid @RequestBody BoardCreateRequest createRequest
-    ){
-        int newBoardId = boardService.createBoard(categoryType, createRequest);
+            @Valid @RequestPart BoardCreateRequest createRequest,
+            @RequestPart(required = false) List<MultipartFile> files
+    ) throws IOException {
+        int newBoardId = boardService.createBoard(categoryType, createRequest, files);
         URI location = URI.create("/getDetailBoard/" + newBoardId);
         return ResponseEntity.created(location).body(RestResponse.success("게시글 등록이 완료되었습니다."));
     }
+
     @Operation(
             summary = "특정 카테고리 내 게시글 상세 조회",
             description = "categoryType 내 boarId와 일치하는 게시글의 상세한 내용을 조회."
@@ -82,7 +86,6 @@ public class BoardController {
     // 게시판 카테고리별 목록 조회
     @GetMapping("/category/{categoryType}")
     public ResponseEntity<RestResponse<?>> getBoards(
-            @RequestParam String keyword,
             @PathVariable(required = true) CategoryType categoryType
     ){
         // subCategory와 일치하는 게시글 목록 조회
@@ -119,12 +122,15 @@ public class BoardController {
     })
     // 게시글 수정
     @PatchMapping("/{boardId}")
-    public ResponseEntity<RestResponse<?>> updateBoard(
-            @PathVariable(required = true) Integer boardId,
-            @Valid @RequestBody BoardCreateRequest updaterequest
-    ){
-        boardService.updateBoard(boardId, updaterequest);
-        return ResponseEntity.ok(RestResponse.success("게시글 수정이 완료되었습니다."));
+    public ResponseEntity<?> updateBoard(
+            @PathVariable Integer boardId,
+            @RequestPart("data") BoardCreateRequest updateRequest,
+            @RequestPart(value = "files", required = false) List<MultipartFile> newFiles,
+            @RequestParam(value = "deleteIds", required = false) List<Integer> deleteAttachmentIds,
+            @RequestParam(value = "imageOrder", required = false) List<String> imageOrder) throws IOException {
+
+        boardService.updateBoard(boardId, updateRequest, newFiles, deleteAttachmentIds, imageOrder);
+        return ResponseEntity.ok("게시글 수정 완료");
     }
 
     @Operation(

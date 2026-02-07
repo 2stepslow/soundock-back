@@ -54,8 +54,8 @@ public class Board {
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted;
 
-    @Column(name = "file_url", nullable = true)
-    private String fileUrl;
+    @Column(name = "link_url", nullable = true)
+    private String linkUrl;
 
     @Column(name = "is_featured", nullable = false)
     private boolean isFeatured;

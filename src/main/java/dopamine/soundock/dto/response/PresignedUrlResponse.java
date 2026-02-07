@@ -1,14 +1,14 @@
 package dopamine.soundock.dto.response;
 
-
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@Data
+@Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PresignedUrlResponse {
-    private String uploadUrl;
-    private String downloadUrl;
-    private String fileKey;
-    private String fileUrl;
+    private String url;
 }
