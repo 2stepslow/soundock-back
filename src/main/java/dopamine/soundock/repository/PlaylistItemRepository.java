@@ -14,5 +14,5 @@ public interface PlaylistItemRepository extends JpaRepository<PlaylistItem, Inte
     @Modifying
     void deleteByPlaylist(Playlist playlist);
 
-    List<PlaylistItem> findAllByPlaylist(Playlist playlist);
+    List<PlaylistItem> findAllByPlaylistOrderByPositionAsc(Playlist playlist);
 }
