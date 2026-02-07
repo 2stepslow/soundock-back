@@ -64,10 +64,10 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         );
 
         // 2. 이 구글 정보를 누구의 계정에 저장할지 결정
-        // 먼저, 우리가 인증 시작할 때 '쿠키'에 적어둔 "연동 시도한 유저 이메일"이 있는지 확인
+        // 우리가 인증 시작할 때 '쿠키'에 적어둔 "연동 시도한 유저 이메일"이 있는지 확인
         String targetEmail = CookieUtils.getCookie(request, AppConstants.OAuth2.LINKING_USER_EMAIL_COOKIE_NAME)
                 .map(Cookie::getValue)
-                .orElse(oAuth2User.getAttribute("email")); // 쿠키 없으면 구글 이메일 사용
+                .orElseThrow(() -> new CustomException("연동할 계정 정보를 찾을 수 없습니다. 브라우저의 쿠키 설정을 확인하거나 다시 시도해 주세요.", HttpStatus.BAD_REQUEST));
         User user = userRepository.findByEmail(targetEmail)
                 .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND));
         // JWT 액세스토큰 생성에 사용할 사용자ID + 권한
@@ -97,7 +97,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String jwtToken = tokenProvider.generateAccessToken(targetEmail, userId, role);
 
         // 5. 프론트엔드(React)로 성공 페이지 리다이렉트 할 변수 선언
-        String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth-redirect")
+        String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/mypage")
                 .queryParam("token", jwtToken)
                 .queryParam("success", "true")
                 .build().toUriString();

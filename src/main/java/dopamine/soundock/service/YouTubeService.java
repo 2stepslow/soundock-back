@@ -1,10 +1,7 @@
 package dopamine.soundock.service;
 
 import dopamine.soundock.dto.request.PlaylistRegisterRequest;
-import dopamine.soundock.dto.response.YouTubeApiResponse;
-import dopamine.soundock.dto.response.YouTubePlaylistResponse;
-import dopamine.soundock.dto.response.YouTubeVideoListResponse;
-import dopamine.soundock.dto.response.YoutubeThumbnailsDTO;
+import dopamine.soundock.dto.response.*;
 import dopamine.soundock.entity.Playlist;
 import dopamine.soundock.entity.PlaylistItem;
 import dopamine.soundock.entity.User;
@@ -229,7 +226,7 @@ public class YouTubeService {
 
         checkYouTubeLinkage(user);
 
-        Playlist playlist = playlistRepository.findByPlaylistId(playlistId)
+        Playlist playlist = playlistRepository.findByPlaylistIdAndUser(playlistId, user)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 플레이리스트를 찾을 수 없습니다."));
 
         // 해당 플레이리스트의 검증(현재 로그인한 유저가 플레이리스트 등록 유저와 같은지 확인)
@@ -245,13 +242,14 @@ public class YouTubeService {
      */
     @Transactional
     public void syncPlaylistItem(Integer playlistId, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+
         // DB 에서 플레이리스트 정보 조회
-        Playlist playlist = playlistRepository.findByPlaylistId(playlistId)
+        Playlist playlist = playlistRepository.findByPlaylistIdAndUser(playlistId, user)
                 .orElseThrow(() -> new ResourceNotFoundException("플레이리스트를 찾을 수 없습니다."));
 
         // 유효한 액세스 토큰 가져오기
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
         String accessToken = youTubeAuthService.getValidAccessToken(user);
 
         // 유튜브 API 호출을 통해 곡 목록 가져오기
@@ -313,5 +311,22 @@ public class YouTubeService {
             log.error("유튜브 API 호출 실패", e);
             throw new CustomException("YouTube 서비스 연결에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<PlaylistItemResponse> getPlaylistItems(Integer playlistId, String email) {
+        // 유저 및 권한 체크
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+
+        Playlist playlist = playlistRepository.findByPlaylistIdAndUser(playlistId, user)
+                .orElseThrow(() -> new ResourceNotFoundException("해당 플레이리스트를 찾을 수 없습니다."));
+
+        // 레포지토리를 통해 직접 조회
+        List<PlaylistItem> items = playlistItemRepository.findAllByPlaylistOrderByPositionAsc(playlist);
+
+        return items.stream()
+                .map(PlaylistItemResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 }

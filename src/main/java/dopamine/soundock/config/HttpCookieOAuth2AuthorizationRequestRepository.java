@@ -5,6 +5,7 @@ import dopamine.soundock.global.CookieUtils;
 import dopamine.soundock.global.constants.AppConstants;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 // OAuth2 인증 요청 정보를 브라우저 쿠키에 저장하고 관리하는 클래스
 @Component
+@Slf4j
 public class HttpCookieOAuth2AuthorizationRequestRepository implements AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
     /**
      * [조회] 브라우저 쿠키에 저장된 OAuth2 인증 요청 정보를 다시 읽어옴
@@ -39,16 +41,32 @@ public class HttpCookieOAuth2AuthorizationRequestRepository implements Authoriza
             CookieUtils.deleteCookie(request, response, AppConstants.OAuth2.LINKING_USER_EMAIL_COOKIE_NAME);
             return;
         }
-        // 1. OAuth2 인증 요청 정보를 쿠키에 저장
-        CookieUtils.addCookie(response, AppConstants.OAuth2.OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME,
-                CookieUtils.serialize(authorizationRequest), AppConstants.OAuth2.cookieExpireSeconds);
 
-        // 2. [계정 연동 핵심 로직] 현재 우리 사이트에 로그인된 유저가 있다면 그 이메일을 쿠키에 기록
-        // 나중에 구글 인증이 끝나고 돌아왔을 때, 이 쿠키를 보고 "누구의 계정에 유튜브를 연결할지" 판단
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
-            String currentEmail = ((UserDetails) authentication.getPrincipal()).getUsername();
-            CookieUtils.addCookie(response, AppConstants.OAuth2.LINKING_USER_EMAIL_COOKIE_NAME, currentEmail, AppConstants.OAuth2.cookieExpireSeconds);
+        // OAuth2 인증 요청 정보를 '문자열'로 직렬화하여 쿠키에 저장
+        // 객체를 그대로 넣으면 안 되고, 반드시 serialize를 거쳐야 브라우저가 이해가능 하다
+        String serializedRequest = CookieUtils.serialize(authorizationRequest);
+        CookieUtils.addCookie(response,
+                AppConstants.OAuth2.OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME,
+                serializedRequest,
+                AppConstants.OAuth2.cookieExpireSeconds);
+
+        log.info("OAuth2 인증 요청 쿠키 저장 완료 (Serialized)");
+
+        // 누구의 계정에 연결할지 식별자(Email) 저장
+        // 우선순위: 1순위(URL 파라미터), 2순위(현재 로그인된 세션 정보)
+        String targetEmail = request.getParameter("email");
+
+        if (targetEmail == null || targetEmail.isBlank()) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
+                targetEmail = ((UserDetails) authentication.getPrincipal()).getUsername();
+            }
+        }
+
+        if (targetEmail != null && !targetEmail.isBlank()) {
+            CookieUtils.addCookie(response, AppConstants.OAuth2.LINKING_USER_EMAIL_COOKIE_NAME,
+                    targetEmail, AppConstants.OAuth2.cookieExpireSeconds);
+            log.info("연동 대상 이메일 쿠키 저장: {}", targetEmail);
         }
 
         // 3. 인증 완료 후 프론트엔드(React)의 어느 페이지로 돌아갈지(redirect_uri)를 쿠키에 저장
