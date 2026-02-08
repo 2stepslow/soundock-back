@@ -64,7 +64,7 @@ public class SettlementService {
             throw new ResourceNotFoundException("현재 정산 가능한 내역이 없습니다.");
         }
 
-        Integer totalSettleAmount = 0;
+        int totalSettleAmount = 0;
         // 정산하는 popHistory의 Id 담을 배열 생성
         List<Integer> settlementsIds = new ArrayList<>();
 
@@ -81,6 +81,7 @@ public class SettlementService {
         return AvailableSettlementResponse.builder()
                 .totalCount(availableSettlements.size())
                 .totalAmount(totalSettleAmount)
+                .popHistoryResponses(new ArrayList<>())
                 .build();
     }
 
@@ -105,7 +106,7 @@ public class SettlementService {
                     .popHistoryResponses(new ArrayList<>())
                     .build();
         }
-        Integer totalAmount = 0;
+        int totalAmount = 0;
         for (PopHistory popHistory : availableSettlements){
             totalAmount += popHistory.getChangeAmount();
         }
@@ -134,7 +135,7 @@ public class SettlementService {
 
         // 정산 요청 중, 정산 완료 기록 표시
         // popStatus = 'SETTLEMENT REQUEST' or 'SETTLEMENT COMPLETED'
-        // approvedDatetime IS NOT NULL
+        // canceledDatetime IS NULL
         List<PopStatus> statuses = List.of(PopStatus.SETTLEMENT_REQUEST, PopStatus.SETTLEMENT_COMPLETED);
         List<PopHistory> settlementPop = popHistoryRepository.findMySettlementList(user.getId(), statuses);
 
