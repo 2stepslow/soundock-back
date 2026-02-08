@@ -259,9 +259,25 @@ public class MypageController {
     // 정산 신청
     @PostMapping("/settlements/request")
     public ResponseEntity<RestResponse<?>> requestSettlement(){
-        settlementService.requestSettlement();
-        return ResponseEntity.ok(RestResponse.success( "정산 신청이 완료되었습니다."));
+        AvailableSettlementResponse availableSettlementResponse = settlementService.requestSettlement();
+        return ResponseEntity.ok(RestResponse.success("정산 신청이 완료되었습니다.", availableSettlementResponse));
     }
+
+    @Operation(
+            summary = "내 정산 신청 가능 내역 조회",
+            description = "로그인한 유저의 현재 정산 가능 신청 내역과 상태(처리중, 완료 등)를 조회"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+    // 정산 가능 내역 조회
+    @GetMapping("/settlements/history/available")
+    public ResponseEntity<RestResponse<?>> getListAvailableSettlement(){
+        AvailableSettlementResponse availableSettlementResponse = settlementService.getListAvailableSettlement();
+        return ResponseEntity.ok(RestResponse.success(availableSettlementResponse));
+    }
+
 
     @Operation(
             summary = "내 정산 신청 내역 조회",

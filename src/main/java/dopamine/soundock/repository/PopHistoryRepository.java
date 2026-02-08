@@ -4,9 +4,8 @@ import dopamine.soundock.entity.PopHistory;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.PopStatus;
 import dopamine.soundock.enums.PopTarget;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.repository.query.Param;
 
@@ -33,23 +32,50 @@ public interface PopHistoryRepository extends JpaRepository<PopHistory, Integer>
     // popTarget이 FEATURED_BOARD, boardId와 일치하는 내역 조회
     Optional<PopHistory> findByPopTargetAndBoardBoardId(PopTarget popTarget, Integer boardId);
 
-    @Query("SELECT p FROM PopHistory p " +
+
+    String SETTLEMENT_QUERY = "SELECT p FROM PopHistory p " +
             "WHERE p.user.id = :userId " +
             "AND p.popTarget = :popTarget " +
             "AND p.popStatus = :popStatus " +
             "AND p.requestedDatetime IS NULL " +
             "AND p.approvedDatetime IS NULL " +
             "AND p.createdDatetime <= :availableDay " +
-            "ORDER BY p.createdDatetime DESC ")
+            "ORDER BY p.createdDatetime DESC ";
+
+    // 단순 정산 가능 내역 조회 시 사용
+    @Query(SETTLEMENT_QUERY)
     List<PopHistory> findAvailableSettlement(
             @Param("userId") Integer userId,
             @Param("popTarget") PopTarget popTarget,
             @Param("popStatus") PopStatus popStatus,
             @Param("availableDay") LocalDateTime availableDay);
 
+    // 정산 가능 내역 조회 후 pop 기록 업데이트 시 사용, 락 설정
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query(SETTLEMENT_QUERY)
+    List<PopHistory> findAvailableSettlementForUpdate(
+            @Param("userId") Integer userId,
+            @Param("popTarget") PopTarget popTarget,
+            @Param("popStatus") PopStatus popStatus,
+            @Param("availableDay") LocalDateTime availableDay);
+
+    // 정산 취소하지 않은 정산 요청 중이거나 정산 완료된 내역 조회
     @Query("SELECT p FROM PopHistory p " +
-    "WHERE p.user.id = :userId " +
-    "AND p.popStatus IN ('SETTLEMENT_REQUEST', 'SETTLEMENT_COMPLETED') " +
-    "AND p.canceledDatetime IS NULL ")
-    List<PopHistory> findMySettlementList(@Param("userId") Integer userId);
+            "WHERE p.user.id = :userId " +
+            "AND p.popStatus IN :status " +
+            "AND p.canceledDatetime IS NULL ")
+    List<PopHistory> findMySettlementList(
+            @Param("userId") Integer userId,
+            @Param("status") List<PopStatus> popStatuses);
+
+    // 정산 요청 내역 일괄 업데이트 메서드
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE PopHistory p SET p.popStatus = :popStatus, " +
+            "p.requestedDatetime = :now " +
+            "WHERE p.popHistoryId IN :ids")
+    void updateSettlementPopHistory(
+            @Param("popStatus") PopStatus popStatus,
+            @Param("now") LocalDateTime now,
+            @Param("ids") List<Integer> ids);
 }
+
