@@ -1,6 +1,7 @@
 package dopamine.soundock.service;
 
 import dopamine.soundock.dto.request.RegisterSettlementRequest;
+import dopamine.soundock.dto.response.AvailableSettlementResponse;
 import dopamine.soundock.dto.response.PopHistoryResponse;
 import dopamine.soundock.entity.PopHistory;
 import dopamine.soundock.entity.User;
@@ -46,7 +47,7 @@ public class SettlementService {
 
     // 정산 신청
     @Transactional
-    public void requestSettlement(){
+    public AvailableSettlementResponse requestSettlement(){
         // 로그인한 유저 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
@@ -55,23 +56,76 @@ public class SettlementService {
         // popStatus = COMPLETED, target = RECEIVED인 정산 요청, 승인 기록이 없는 popHistory 내역 조회
         // 후원 받은 날짜(createdDatetime)로부터 3일이 지나야 정산 신청 가능
         LocalDateTime availableDay = LocalDateTime.now().minusDays(AppConstants.Time.AVAILABLE_REQUEST_SETTLEMENT_DAYS);
-        List<PopHistory> availableSettlements = popHistoryRepository.findAvailableSettlement(
+        List<PopHistory> availableSettlements = popHistoryRepository.findAvailableSettlementForUpdate(
                 user.getId(), PopTarget.RECEIVED, PopStatus.COMPLETED, availableDay);
 
         // popHistory 내역이 없을 경우 예외
         if (availableSettlements.isEmpty()){
             throw new ResourceNotFoundException("현재 정산 가능한 내역이 없습니다.");
         }
+
+        Integer totalSettleAmount = 0;
+        // 정산하는 popHistory의 Id 담을 배열 생성
+        List<Integer> settlementsIds = new ArrayList<>();
+
+        LocalDateTime now = LocalDateTime.now();
         // 정산 신청한 popHistory 내역들 상태 업데이트
-        int totalSettleAmount = 0;
         for (PopHistory popHistory : availableSettlements){
-            popHistory.requestSettlementPop();
             totalSettleAmount = totalSettleAmount + popHistory.getChangeAmount();
+            settlementsIds.add(popHistory.getPopHistoryId());
         }
+        // 한 번에 popHistory의 상태 업데이트
+        popHistoryRepository.updateSettlementPopHistory(PopStatus.SETTLEMENT_REQUEST, now, settlementsIds);
+
         log.info("총 정산 요청된 건수는 : {}건, 총 정산 금액은 : {} 원 입니다.", availableSettlements.size() , totalSettleAmount);
+        return AvailableSettlementResponse.builder()
+                .totalCount(availableSettlements.size())
+                .totalAmount(totalSettleAmount)
+                .build();
+    }
+
+    // 정산 가능 내역 조회
+    @Transactional(readOnly = true)
+    public AvailableSettlementResponse getListAvailableSettlement(){
+        // 로그인한 유저 확인
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+
+        // 정산 가능한 popHistory 조회
+        LocalDateTime availableDay = LocalDateTime.now().minusDays(AppConstants.Time.AVAILABLE_REQUEST_SETTLEMENT_DAYS);
+        List<PopHistory> availableSettlements = popHistoryRepository.findAvailableSettlement(
+                user.getId(), PopTarget.RECEIVED, PopStatus.COMPLETED, availableDay);
+
+        // 정산 가능 내역이 없을 때 빈 배열 반환
+        if (availableSettlements.isEmpty()){
+            return AvailableSettlementResponse.builder()
+                    .totalAmount(0)
+                    .totalCount(0)
+                    .popHistoryResponses(new ArrayList<>())
+                    .build();
+        }
+        Integer totalAmount = 0;
+        for (PopHistory popHistory : availableSettlements){
+            totalAmount += popHistory.getChangeAmount();
+        }
+
+        // 정산 가능한 내역 pop dto 전환
+        List<PopHistoryResponse> responses = new ArrayList<>();
+        for (PopHistory popHistory : availableSettlements){
+            PopHistoryResponse response = PopHistoryResponse.fromSettlement(popHistory);
+            responses.add(response);
+        }
+
+        return AvailableSettlementResponse.builder()
+                .totalAmount(totalAmount)
+                .totalCount(availableSettlements.size())
+                .popHistoryResponses(responses)
+                .build();
     }
 
     // 정산 내역 조회
+    @Transactional(readOnly = true)
     public List<PopHistoryResponse> getListSettlement(){
         // 로그인한 유저 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -81,25 +135,17 @@ public class SettlementService {
         // 정산 요청 중, 정산 완료 기록 표시
         // popStatus = 'SETTLEMENT REQUEST' or 'SETTLEMENT COMPLETED'
         // approvedDatetime IS NOT NULL
-        List<PopHistory> settlementPop = popHistoryRepository.findMySettlementList(user.getId());
+        List<PopStatus> statuses = List.of(PopStatus.SETTLEMENT_REQUEST, PopStatus.SETTLEMENT_COMPLETED);
+        List<PopHistory> settlementPop = popHistoryRepository.findMySettlementList(user.getId(), statuses);
 
         if (settlementPop.isEmpty()){
-            throw new ResourceNotFoundException("정산을 요청하거나 완료된 정산 내역이 없습니다.");
+            return new ArrayList<>();
         }
 
         List<PopHistoryResponse> settlementResponse = new ArrayList<>();
 
         for (PopHistory popHistory : settlementPop){
-            PopHistoryResponse popHistoryResponse = PopHistoryResponse.builder()
-                    .userId(popHistory.getUser().getId())
-                    .popHistoryId(popHistory.getPopHistoryId())
-                    .popStatus(popHistory.getPopStatus())
-                    .popTarget(popHistory.getPopTarget())
-                    .changeAmount(popHistory.getChangeAmount())
-                    .requestedDatetime(popHistory.getRequestedDatetime())
-                    .approvedDatetime(popHistory.getApprovedDatetime())
-                    .build();
-
+            PopHistoryResponse popHistoryResponse = PopHistoryResponse.fromSettlement(popHistory);
             settlementResponse.add(popHistoryResponse);
         }
         return settlementResponse;
