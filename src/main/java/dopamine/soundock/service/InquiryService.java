@@ -17,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -63,12 +65,20 @@ public class InquiryService {
      * 1:1 문의 목록 조회
      */
     @Transactional(readOnly = true)
-    public Page<InquirySummaryResponse> getMyInquiryList(String email, Pageable pageable) {
+    public Page<InquirySummaryResponse> getMyInquiryList(String email, LocalDateTime start, LocalDateTime end, Pageable pageable) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
 
-        // 1. DB에서 페이징된 엔티티 조회
-        Page<UserInquiry> inquiries = userInquiryRepository.findAllByUser(user, pageable);
+        Page<UserInquiry> inquiries;
+
+        // 1-1. 시작일과 종료일이 모두 파라미터로 넘어온 경우 기간 검색 수행
+        if (start != null && end != null) {
+            inquiries = userInquiryRepository.findAllByUserAndCreatedAtBetween(user, start, end, pageable);
+        } else {
+            // 1-2. 날짜가 없으면 전체 내역 조회
+            inquiries = userInquiryRepository.findAllByUser(user, pageable);
+        }
+
 
         // 2. 엔티티를 DTO로 변환하여 반환
         return inquiries.map(InquirySummaryResponse::from);
