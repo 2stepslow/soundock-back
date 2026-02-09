@@ -1,5 +1,6 @@
 package dopamine.soundock.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import dopamine.soundock.enums.InquiryType;
 import dopamine.soundock.global.constants.AppConstants;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -45,4 +46,8 @@ public class InquiryCreateRequest {
     @Schema(description = "S3 업로드 후 받은 파일 고유 Key (파일 미첨부 시 null, 향후 삭제/수정 시 필요)",
             example = "inquiries/uuid-file.png")
     private String fileKey;
+
+    @Schema(description = "S3 업로드 결과로 받은 이미지 여부 (true/false)", example = "true")
+    @JsonProperty("isImage")
+    private Boolean isImage;
 }

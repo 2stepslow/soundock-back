@@ -1,12 +1,10 @@
 package dopamine.soundock.service;
 
 import dopamine.soundock.dto.request.InquiryCreateRequest;
-import dopamine.soundock.dto.response.FileUploadResponse;
 import dopamine.soundock.dto.response.InquiryDetailResponse;
 import dopamine.soundock.dto.response.InquirySummaryResponse;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.entity.UserInquiry;
-import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.repository.UserInquiryRepository;
 import dopamine.soundock.repository.UserRepository;
@@ -14,12 +12,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 
 @Service
@@ -45,6 +40,7 @@ public class InquiryService {
                 // 프론트에서 주는 URL + Key
                 .fileUrl(request.getFileUrl())
                 .fileKey(request.getFileKey())
+                .isImage(request.getIsImage())
                 .user(user)
                 .build();
 
