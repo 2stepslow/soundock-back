@@ -2,13 +2,10 @@ package dopamine.soundock.service;
 
 import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import dopamine.soundock.dto.response.FileUploadResponse;
-import dopamine.soundock.enums.CategoryType;
-import dopamine.soundock.exceptions.InvalidFileException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
@@ -59,7 +56,7 @@ public class S3Service {
 
 
     // 단일 파일 업로드
-    private FileUploadResponse uploadFile(MultipartFile file) throws IOException {
+    public FileUploadResponse uploadFile(MultipartFile file) throws IOException {
 
         // 파일 키 생성
         String fileKey = generateFileKey(file.getOriginalFilename());

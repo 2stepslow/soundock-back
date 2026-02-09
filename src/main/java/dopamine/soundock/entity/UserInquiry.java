@@ -30,7 +30,7 @@ public class UserInquiry {
     @Column(name = "title", nullable = false)
     private String title;
 
-    @Column(name = "content", nullable = false)
+    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
 
     @Column(name = "inquiry_type", nullable = false)
@@ -40,6 +40,12 @@ public class UserInquiry {
 
     @Column(name = "file_url")
     private String fileUrl;
+
+    @Column(name = "file_key")
+    private String fileKey;
+
+    @Column(name = "is_image")
+    private Boolean isImage;
 
     @Column(name = "created_at", nullable = false)
     @CreatedDate

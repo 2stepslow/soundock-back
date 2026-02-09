@@ -1,5 +1,6 @@
 package dopamine.soundock.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import dopamine.soundock.enums.InquiryType;
 import dopamine.soundock.global.constants.AppConstants;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -38,6 +39,15 @@ public class InquiryCreateRequest {
     )
     private String content;
 
-    @Schema(description = "1:1 문의 관련 첨부파일")
-    private MultipartFile attachment;
+    @Schema(description = "S3 업로드 후 받은 파일 접근 URL (파일 미첨부 시 null)",
+            example = "https://my-bucket.s3.amazonaws.com/inquiries/uuid-file.png")
+    private String fileUrl;
+
+    @Schema(description = "S3 업로드 후 받은 파일 고유 Key (파일 미첨부 시 null, 향후 삭제/수정 시 필요)",
+            example = "inquiries/uuid-file.png")
+    private String fileKey;
+
+    @Schema(description = "S3 업로드 결과로 받은 이미지 여부 (true/false)", example = "true")
+    @JsonProperty("isImage")
+    private Boolean isImage;
 }

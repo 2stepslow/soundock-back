@@ -27,11 +27,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 
@@ -200,12 +204,19 @@ public class MypageController {
     @GetMapping("/inquiry")
     public ResponseEntity<RestResponse<Page<InquirySummaryResponse>>> getMyInquiry(
             @AuthenticationPrincipal(expression = "username") String email,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             // 프론트엔드에서 아무런 값을 보내지 않았을 때를 대비한 기본 설정값
             // 1페이지당 10개, 생성일자 기준 최신순 정렬
             @Parameter(description = "페이징 및 정렬 파라미터 (예: page=0&size=10&sort=createdAt,desc)")
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<InquirySummaryResponse> responses = inquiryService.getMyInquiryList(email, pageable);
+        // LocalDate를 검색에 적합한 LocalDateTime으로 변환
+        // 시작일은 해당 날짜의 00:00:00, 종료일은 해당 날짜의 23:59:59.999... 로 설정
+        LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
+        LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
+
+        Page<InquirySummaryResponse> responses = inquiryService.getMyInquiryList(email, startDateTime, endDateTime, pageable);
         return ResponseEntity.ok(RestResponse.success(responses));
     }
 

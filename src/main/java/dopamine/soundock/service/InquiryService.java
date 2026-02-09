@@ -5,7 +5,6 @@ import dopamine.soundock.dto.response.InquiryDetailResponse;
 import dopamine.soundock.dto.response.InquirySummaryResponse;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.entity.UserInquiry;
-import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.repository.UserInquiryRepository;
 import dopamine.soundock.repository.UserRepository;
@@ -13,16 +12,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class InquiryService {
     private final UserInquiryRepository userInquiryRepository;
-    private final FileService fileService;
     private final UserRepository userRepository;
 
     /**
@@ -33,29 +32,19 @@ public class InquiryService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
 
-        // 파일 검증 (파일이 없다면 그대로 그냥 통과)
-        fileService.validateFile(request.getAttachment());
 
-        // 파일 업로드 (파일이 없다면 null 반환)
-        String fileUrl = fileService.uploadToLocal(request.getAttachment(), "inquiries");
-        try {
-            // DB 저장
-            UserInquiry userInquiry = UserInquiry.builder()
-                    .title(request.getTitle())
-                    .content(request.getContent())
-                    .inquiryType(request.getInquiryType())
-                    .fileUrl(fileUrl)
-                    .user(user)
-                    .build();
+        UserInquiry userInquiry = UserInquiry.builder()
+                .title(request.getTitle())
+                .content(request.getContent())
+                .inquiryType(request.getInquiryType())
+                // 프론트에서 주는 URL + Key
+                .fileUrl(request.getFileUrl())
+                .fileKey(request.getFileKey())
+                .isImage(request.getIsImage())
+                .user(user)
+                .build();
 
-            userInquiryRepository.save(userInquiry);
-        } catch (Exception e) {
-            // DB 저장 실패 시 이미 저장된 파일 삭제
-            if (fileUrl != null) {
-                fileService.deleteFile(fileUrl);
-            }
-            throw new CustomException("문의 저장 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        userInquiryRepository.save(userInquiry);
 
     }
 
@@ -63,12 +52,20 @@ public class InquiryService {
      * 1:1 문의 목록 조회
      */
     @Transactional(readOnly = true)
-    public Page<InquirySummaryResponse> getMyInquiryList(String email, Pageable pageable) {
+    public Page<InquirySummaryResponse> getMyInquiryList(String email, LocalDateTime start, LocalDateTime end, Pageable pageable) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
 
-        // 1. DB에서 페이징된 엔티티 조회
-        Page<UserInquiry> inquiries = userInquiryRepository.findAllByUser(user, pageable);
+        Page<UserInquiry> inquiries;
+
+        // 1-1. 시작일과 종료일이 모두 파라미터로 넘어온 경우 기간 검색 수행
+        if (start != null && end != null) {
+            inquiries = userInquiryRepository.findAllByUserAndCreatedAtBetween(user, start, end, pageable);
+        } else {
+            // 1-2. 날짜가 없으면 전체 내역 조회
+            inquiries = userInquiryRepository.findAllByUser(user, pageable);
+        }
+
 
         // 2. 엔티티를 DTO로 변환하여 반환
         return inquiries.map(InquirySummaryResponse::from);

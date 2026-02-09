@@ -23,6 +23,7 @@ public class InquiryDetailResponse {
 
     // 첨부파일 정보
     private String fileUrl;
+    private Boolean isImage;
 
     // 관리자 답변 정보
     private String adminComment;
@@ -40,6 +41,7 @@ public class InquiryDetailResponse {
                 .inquiryStatus(inquiry.getInquiryStatus().name())
                 .createdAt(inquiry.getCreatedAt())
                 .fileUrl(inquiry.getFileUrl())
+                .isImage(inquiry.getIsImage())
                 .adminComment(inquiry.getAdminComment())
                 .commentStatus(inquiry.getCommentStatus() != null ? inquiry.getCommentStatus().name() : "PENDING")
                 .commentCreatedAt(inquiry.getCommentCreatedAt())
