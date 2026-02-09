@@ -22,17 +22,4 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addConverter(categoryTypeConverter);
     }
 
-    @Value("${file.upload.base-path}")
-    private String basePath;
-
-    /**
-     * 파일을 서버 로컬 폴더에 업로드하기 위해 필요한 웹 설정
-     */
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String absolutePath = new File(basePath).getAbsolutePath() + "/";
-
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + absolutePath);
-    }
 }

@@ -41,6 +41,9 @@ public class UserInquiry {
     @Column(name = "file_url")
     private String fileUrl;
 
+    @Column(name = "file_key")
+    private String fileKey;
+
     @Column(name = "created_at", nullable = false)
     @CreatedDate
     private LocalDateTime createdAt;
