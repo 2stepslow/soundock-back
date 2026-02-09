@@ -3,12 +3,15 @@ package dopamine.soundock.entity;
 import dopamine.soundock.enums.CategoryType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Formula;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -70,4 +73,8 @@ public class Board {
 
     @Formula("(SELECT COUNT(c.comment_id) FROM comments c WHERE c.board_id = board_id AND c.is_deleted = FALSE)")
     private int countComment;
+
+    @OneToMany(mappedBy = "board", fetch = FetchType.LAZY)
+    @BatchSize(size = 5)
+    private List<BoardAttachments> attachments = new ArrayList<>();
 }
