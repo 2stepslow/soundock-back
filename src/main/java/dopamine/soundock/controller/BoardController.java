@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -91,7 +92,7 @@ public class BoardController {
             Integer page
     ){
         // subCategory와 일치하는 게시글 목록 조회
-        PageImpl<BoardResponse> boardResponses = boardService.getBoardsByCategory(categoryType, page);
+        Page<BoardResponse> boardResponses = boardService.getBoardsByCategory(categoryType, page);
         return ResponseEntity.ok(RestResponse.success(boardResponses));
         }
 

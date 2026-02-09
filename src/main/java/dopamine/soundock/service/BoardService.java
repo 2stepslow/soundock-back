@@ -12,6 +12,7 @@ import dopamine.soundock.repository.*;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -155,21 +156,19 @@ public class BoardService {
     }
 
     // 한 카테고리 내의 모든 게시글 조회
-    public PageImpl<BoardResponse> getBoardsByCategory(CategoryType categoryType, Integer page) {
+    public Page<BoardResponse> getBoardsByCategory(CategoryType categoryType, Integer page) {
 
-        Integer pageSize = 10;
-        String categoryToString = categoryType.name();
-        if(List.of("SHOWCASE", "PLAYLISTS", "SPOTLIGHT").contains(categoryToString))
-        { pageSize = 12;}
-        else if (List.of("COMMUNITY", "REVIEWS", "NOTICE").contains(categoryToString))
-        { pageSize = 15; }
-
+        int pageSize = switch (categoryType) {
+            case SHOWCASE, PLAYLISTS, SPOTLIGHT -> 12;
+            case COMMUNITY, REVIEWS, NOTICE -> 15;
+            default -> 10;
+        };
         Pageable pageable = PageRequest.of(page, pageSize, Sort.by("createdDateTime").descending());
 
 
 
         Page<Board> boards = boardRepository.findByDeletedDateTimeIsNullAndCategoryCategoryType(categoryType, pageable);
-        if (boards.isEmpty()) {
+        if (boards.getTotalElements() == 0) {
             throw new ResourceNotFoundException("현재 카테고리에 작성된 게시글이 없습니다.");
         }
 

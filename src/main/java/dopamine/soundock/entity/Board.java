@@ -76,5 +76,6 @@ public class Board {
 
     @OneToMany(mappedBy = "board", fetch = FetchType.LAZY)
     @BatchSize(size = 5)
+    @OrderBy("sequence ASC")
     private List<BoardAttachments> attachments = new ArrayList<>();
 }
