@@ -1,6 +1,8 @@
 package dopamine.soundock.global.constants;
 
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class AppConstants {
     /**
@@ -132,4 +134,14 @@ public final class AppConstants {
         public static final String RATE_LIMIT_PREFIX = "rate:limit:email-search:"; // 이메일 찾기 발송 제한 키
         public static final String KEY_PREFIX = "board:view:"; // 조회수 중복 제한 키
     }
+
+
+
+    /**
+     * 유튜브 URL 확인
+     */
+    public static final String YOUTUBE_REGEX =
+            "(?:https?://)?(?:www\\.)?(?:youtube\\.com/watch\\?v=|youtu\\.be/)([a-zA-Z0-9_-]{11})";
+
+
 }

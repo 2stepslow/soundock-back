@@ -3,6 +3,7 @@ package dopamine.soundock.service;
 
 import dopamine.soundock.enums.CategoryType;
 import dopamine.soundock.exceptions.InvalidFileException;
+import dopamine.soundock.global.constants.AppConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -79,21 +80,19 @@ public class Validatorservice {
 
 
     // === 헬퍼 메서드 ===
-    // 유튜브 URL이 있는지 확인
-    private boolean hasYoutubeUrl(String youtubeUrl) {
+
+
+
+    private static final Pattern YOUTUBE_PATTERN =
+            Pattern.compile(AppConstants.YOUTUBE_REGEX);
+
+    public boolean hasYoutubeUrl(String youtubeUrl) {
         return youtubeUrl != null && !youtubeUrl.trim().isEmpty();
     }
 
-    private static final Pattern YOUTUBE_PATTERN = Pattern.compile(
-            "(?:https?://)?(?:www\\.)?(?:youtube\\.com/watch\\?v=|youtu\\.be/)([a-zA-Z0-9_-]{11})"
-    );
-
-    public boolean isValidYoutubeUrl(String url) {
-        if (url == null || url.isEmpty()) {
-            return false;
-        }
-        Matcher matcher = YOUTUBE_PATTERN.matcher(url);
-        return matcher.find();
+    public boolean isValidYoutubeUrl(String youtubeUrl) {
+        if (!hasYoutubeUrl(youtubeUrl)) return false;
+        return YOUTUBE_PATTERN.matcher(youtubeUrl.trim()).find();
     }
 
     // 비어있지 않은 파일들만 필터링
