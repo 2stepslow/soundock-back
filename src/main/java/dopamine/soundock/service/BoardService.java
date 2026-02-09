@@ -11,6 +11,8 @@ import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.repository.*;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -154,9 +156,19 @@ public class BoardService {
     }
 
     // 한 카테고리 내의 모든 게시글 조회
-    public List<BoardResponse> getBoardsByCategory(CategoryType categoryType) {
-        List<Board> boards = boardRepository.findByDeletedDateTimeIsNullAndCategoryCategoryType(categoryType);
-        if (boards.isEmpty()) {
+    public Page<BoardResponse> getBoardsByCategory(CategoryType categoryType, Integer page) {
+
+        int pageSize = switch (categoryType) {
+            case SHOWCASE, PLAYLISTS, SPOTLIGHT -> 12;
+            case COMMUNITY, REVIEWS, NOTICE -> 15;
+            default -> 10;
+        };
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by("createdDateTime").descending());
+
+
+
+        Page<Board> boards = boardRepository.findByDeletedDateTimeIsNullAndCategoryCategoryType(categoryType, pageable);
+        if (boards.getTotalElements() == 0) {
             throw new ResourceNotFoundException("현재 카테고리에 작성된 게시글이 없습니다.");
         }
 
@@ -164,7 +176,7 @@ public class BoardService {
         List<BoardResponse> boardResponses = new ArrayList<>();
         for (Board board : boards) {
             // 각 게시글의 첨부파일을 sequence 순으로 조회하여 첫 번째를 배너로 사용
-            List<BoardAttachments> attachments = boardAttachmentsRepository.findByBoardOrderBySequenceAsc(board);
+            List<BoardAttachments> attachments = board.getAttachments();
             String imageUrl = null;
             if (!attachments.isEmpty()) {
                 imageUrl = attachments.get(0).getFileUrl();
@@ -187,7 +199,11 @@ public class BoardService {
                     .build();
             boardResponses.add(newResponse);
         }
-        return boardResponses;
+        return new PageImpl<>(
+                boardResponses,
+                pageable,
+                boards.getTotalElements()
+        );
     }
 
     // 게시글 삭제

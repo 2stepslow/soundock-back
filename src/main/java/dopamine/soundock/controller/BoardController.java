@@ -13,6 +13,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -85,10 +87,12 @@ public class BoardController {
     // 게시판 카테고리별 목록 조회
     @GetMapping("/category/{categoryType}")
     public ResponseEntity<RestResponse<?>> getBoards(
-            @PathVariable(required = true) CategoryType categoryType
+            @PathVariable(required = true) CategoryType categoryType,
+            @RequestParam(required = false, defaultValue = "0")
+            Integer page
     ){
         // subCategory와 일치하는 게시글 목록 조회
-        List<BoardResponse> boardResponses = boardService.getBoardsByCategory(categoryType);
+        Page<BoardResponse> boardResponses = boardService.getBoardsByCategory(categoryType, page);
         return ResponseEntity.ok(RestResponse.success(boardResponses));
         }
 

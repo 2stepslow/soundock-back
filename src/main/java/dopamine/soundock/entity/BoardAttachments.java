@@ -21,7 +21,7 @@ public class BoardAttachments {
     private Integer boardAttachmentId;
 
     @NotNull
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "board_id", nullable = false)
     private Board board;
 
