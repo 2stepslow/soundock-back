@@ -77,6 +77,7 @@ public class Board {
     @OneToMany(mappedBy = "board", fetch = FetchType.LAZY)
     @BatchSize(size = 5)
     @OrderBy("sequence ASC")
+    @Builder.Default
     private List<BoardAttachments> attachments = new ArrayList<>();
 
     // playlist 작성시 저장

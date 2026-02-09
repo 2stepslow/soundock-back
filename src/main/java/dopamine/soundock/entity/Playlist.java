@@ -47,6 +47,7 @@ public class Playlist {
 
     @OneToMany(mappedBy = "playlist", fetch = FetchType.LAZY)
     @OrderBy("position ASC")
+    @Builder.Default
     private List<PlaylistItem> items = new ArrayList<>();
 
     // 플레이리스트 업데이트 시 사용
