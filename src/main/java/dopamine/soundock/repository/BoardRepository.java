@@ -4,6 +4,7 @@ import dopamine.soundock.entity.Board;
 import dopamine.soundock.enums.CategoryType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -37,4 +38,9 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Board b SET b.views = b.views + 1 WHERE b.boardId = :id")
     void incrementViews(@Param("id") Integer boardId);
+
+    @EntityGraph(attributePaths = {"playlist", "playlist.items"})
+    @Query("SELECT b FROM Board b WHERE b.boardId = :boardId AND b.deletedDateTime IS NULL")
+    Optional<Board> findByIdWithPlaylist(@Param("boardId") Integer boardId);
+
 }

@@ -122,14 +122,14 @@ public class S3Service {
     }
 
     // Presigned URL 생성 (다운로드용)
-    public String generatePresignedUrl(String fileKey) {
+    public String generatePresignedUrl(String fileUrl) {
         Date expiration = new Date();
         long expTimeMillis = expiration.getTime();
         expTimeMillis += 1000L * 60 * 10; // 5분
         expiration.setTime(expTimeMillis);
 
         GeneratePresignedUrlRequest generatePresignedUrlRequest =
-                new GeneratePresignedUrlRequest(bucket, fileKey)
+                new GeneratePresignedUrlRequest(bucket, fileUrl)
                         .withMethod(HttpMethod.GET)
                         .withExpiration(expiration);
 

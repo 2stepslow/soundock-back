@@ -148,15 +148,16 @@ public class YouTubeService {
             return null;
         }
 
-        // medium 우선
+        // high 우선
+        if (thumbnails.getHigh() != null && thumbnails.getHigh().getUrl() != null) {
+            return thumbnails.getHigh().getUrl();
+        }
+
+        // high 없으면 medium
         if (thumbnails.getMedium() != null && thumbnails.getMedium().getUrl() != null) {
             return thumbnails.getMedium().getUrl();
         }
 
-        // medium이 없으면 high
-        if (thumbnails.getHigh() != null && thumbnails.getHigh().getUrl() != null) {
-            return thumbnails.getHigh().getUrl();
-        }
 
         // 둘 다 없으면 default
         if (thumbnails.getDefaultThumbnail() != null && thumbnails.getDefaultThumbnail().getUrl() != null) {

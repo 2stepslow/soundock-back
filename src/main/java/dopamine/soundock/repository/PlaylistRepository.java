@@ -21,6 +21,8 @@ public interface PlaylistRepository extends JpaRepository<Playlist, Integer> {
     // 삭제할 플레이리스트가 DB에 존재하는지 확인
     Optional<Playlist> findByPlaylistIdAndUser(Integer playlistId, User user);
 
+
+
     @Modifying
     @Transactional
     void deleteByUser(User user);

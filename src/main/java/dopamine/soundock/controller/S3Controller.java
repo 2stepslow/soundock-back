@@ -38,9 +38,9 @@ public class S3Controller {
     // Presigned URL 생성 (다운로드용)
     @GetMapping("/presigned-url")
     public ResponseEntity<PresignedUrlResponse> getPresignedUrl(
-            @RequestParam String fileKey) {
+            @RequestParam String fileUrl) {
         try {
-            String presignedUrl = s3Service.generatePresignedUrl(fileKey);
+            String presignedUrl = s3Service.generatePresignedUrl(fileUrl);
             return ResponseEntity.ok(new PresignedUrlResponse(presignedUrl));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
