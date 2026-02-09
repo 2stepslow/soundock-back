@@ -3,16 +3,19 @@ package dopamine.soundock.service;
 import dopamine.soundock.dto.request.BoardCreateRequest;
 import dopamine.soundock.dto.response.BoardResponse;
 import dopamine.soundock.dto.response.FileUploadResponse;
+import dopamine.soundock.dto.response.PlaylistItemResponse;
 import dopamine.soundock.entity.*;
 import dopamine.soundock.enums.CategoryType;
 import dopamine.soundock.enums.FileType;
 import dopamine.soundock.exceptions.AuthRejectedException;
+import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.repository.*;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -34,6 +38,7 @@ public class BoardService {
     private final S3Service s3Service;
     private final EntityManager entityManager;
     private final Validatorservice attachmentValidator;
+    private final PlaylistRepository playlistRepository;
 
     // 게시글 작성
     @Transactional
@@ -70,9 +75,23 @@ public class BoardService {
                 newBoard.setLinkUrl(createRequest.getYoutubeUrl());
                 boardRepository.save(newBoard);
             }
+        } else if (categoryType == CategoryType.PLAYLISTS) {
+            if (createRequest.getPlaylistId() == null) {
+                throw new IllegalArgumentException("플레이리스트를 선택해주세요.");
+            }
 
-//            PLAYLISTS는 mypage에서 저장된 리스트 불러오는 로직 추가
-        } else if (categoryType != CategoryType.PLAYLISTS && files != null && !files.isEmpty()) {
+            Playlist playlist = playlistRepository.findById(createRequest.getPlaylistId())
+                    .orElseThrow(() -> new ResourceNotFoundException("플레이리스트를 찾을 수 없습니다."));
+
+            if (!playlist.getUser().getId().equals(user.getId())) {
+                throw new CustomException("자신의 플레이리스트만 게시할 수 있습니다.", HttpStatus.FORBIDDEN);
+            }
+
+            newBoard.setPlaylist(playlist);
+            boardRepository.save(newBoard);
+
+
+        } else if (files != null && !files.isEmpty()) {
             List<FileUploadResponse> uploadedFiles = s3Service.uploadFiles(files);
 
             // 파일 순서대로 DB에 sequence 부여하며 저장
@@ -98,7 +117,7 @@ public class BoardService {
     @Transactional
     public BoardResponse getDetailBoard(Integer boardId, String email, String clientIp) {
         // boardId에 해당하는 삭제되지 않은 게시글인지 확인
-        Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
+        Board board = boardRepository.findByIdWithPlaylist(boardId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
 
         boolean isLiked = false;
@@ -121,7 +140,7 @@ public class BoardService {
         List<Integer> imageIds = new ArrayList<>();
         String attachmentUrl = null;
 
-        // type이 FILE일 경우 다운로드용 키 내려줌
+        // type이 FILE일 경우 다운로드용 Url 내려줌
         for (BoardAttachments attachment : attachments) {
             switch (attachment.getFileType()) {
                 case IMAGE:
@@ -129,10 +148,25 @@ public class BoardService {
                     imageIds.add(attachment.getBoardAttachmentId());
                     break;
                 case FILE:
-                    attachmentUrl = attachment.getFileKey();
+                    attachmentUrl = attachment.getFileUrl();
                     break;
             }
         }
+
+        String playlistTitle = null;
+        List<PlaylistItemResponse> playlistItems = null;
+
+        if (board.getCategory().getCategoryType() == CategoryType.PLAYLISTS && board.getPlaylist() != null) {
+
+            Playlist playlist = board.getPlaylist();
+            playlistTitle = playlist.getTitle();
+
+            playlistItems = playlist.getItems().stream()
+                    .map(PlaylistItemResponse::fromEntity)
+                    .collect(Collectors.toList());
+        }
+
+
 
         BoardResponse boardResponse = BoardResponse.builder()
                 .userId(board.getUser().getId())
@@ -150,6 +184,8 @@ public class BoardService {
                 .linkUrl(board.getLinkUrl())
                 .createdDateTime(board.getCreatedDateTime())
                 .categoryType(board.getCategory().getCategoryType())
+                .playlistTitle(playlistTitle)
+                .playlistItems(playlistItems)
                 .build();
 
         return boardResponse;
@@ -180,6 +216,12 @@ public class BoardService {
             String imageUrl = null;
             if (!attachments.isEmpty()) {
                 imageUrl = attachments.get(0).getFileUrl();
+            }
+
+            // PLAYLIST 썸네일 넣어주기
+            if (board.getPlaylist() != null
+                    && board.getPlaylist().getThumbnailUrl() != null) {
+                imageUrl = board.getPlaylist().getThumbnailUrl();
             }
 
             // Board.linkUrl이 있으면 우선 사용 (SHOWCASE 썸네일,자동재생용)
@@ -250,6 +292,7 @@ public class BoardService {
             throw new AuthRejectedException("게시글 작성자와 로그인 정보가 일치하지 않습니다.");
         }
 
+
         // 게시글 본문 수정
         if (updateRequest.getTitle() != null) {
             board.setTitle(updateRequest.getTitle());
@@ -257,6 +300,18 @@ public class BoardService {
         if (updateRequest.getContent() != null) {
             board.setContent(updateRequest.getContent());
         }
+        if (updateRequest.getPlaylistId() != null) {
+            Playlist playlist = playlistRepository.findById(updateRequest.getPlaylistId())
+                    .orElseThrow(() -> new ResourceNotFoundException("플레이리스트를 찾을 수 없습니다."));
+
+            // 플레이리스트 소유자 확인
+            if (!playlist.getUser().getId().equals(user.getId())) {
+                throw new CustomException("자신의 플레이리스트만 게시할 수 있습니다.", HttpStatus.FORBIDDEN);
+            }
+
+            board.setPlaylist(playlist);
+        }
+
 
         // 1. 삭제 처리: 삭제 요청된 첨부파일 처리
         if (deleteAttachmentIds != null && !deleteAttachmentIds.isEmpty()) {

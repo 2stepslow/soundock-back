@@ -2,6 +2,7 @@ package dopamine.soundock.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import dopamine.soundock.entity.Category;
+import dopamine.soundock.entity.PlaylistItem;
 import dopamine.soundock.enums.CategoryType;
 import lombok.*;
 
@@ -21,15 +22,22 @@ public class BoardResponse{
     private String nickname;
     private int views;
     private int likes;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm", timezone = "Asia/Seoul")
     private LocalDateTime createdDateTime;
     private boolean isLiked;
     private int countComment;
     private CategoryType categoryType;
     private String linkUrl;
+
+
+    // s3 이미지/파일url, id
     private String imageUrl;
     private List<String> imageUrls;
     private List<Integer> imageIds;
     private String attachmentUrl;
+
+    // playlist
+    private Integer playlistId;
+    private String playlistTitle;
+    private List<PlaylistItemResponse> playlistItems;
 
 }

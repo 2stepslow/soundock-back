@@ -19,6 +19,8 @@ public class BoardCreateRequest {
 
     private String youtubeUrl;
 
+    private Integer playlistId;
+
     // 삭제할 기존 이미지 ID 리스트
     private List<Integer> deleteAttachmentIds;
 

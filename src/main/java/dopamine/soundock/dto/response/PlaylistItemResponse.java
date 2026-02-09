@@ -19,12 +19,17 @@ public class PlaylistItemResponse {
     @Schema(description = "곡 썸네일 URL")
     private String thumbnailUrl;
 
+    @Schema(description = "곡 순서")
+    private Integer position;
+
+
     // Entity를 DTO로 변환하는 메서드
     public static PlaylistItemResponse fromEntity(PlaylistItem item) {
         return PlaylistItemResponse.builder()
                 .videoId(item.getVideoId())
                 .title(item.getTitle())
                 .thumbnailUrl(item.getThumbnailUrl())
+                .position(item.getPosition())
                 .build();
     }
 }
