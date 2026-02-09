@@ -57,4 +57,13 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(RestResponse.fail(e.getParameterName() + " 값은 필수 입력사항 입니다."));
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<RestResponse<Void>> handleIllegalArgument(IllegalArgumentException e) {
+        log.warn("[IllegalArgument] message: {}", e.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(RestResponse.fail(e.getMessage()));
+    }
 }

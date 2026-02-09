@@ -86,3 +86,7 @@ gradle-app.setting
 
 # Cache of project
 .gradletasknamecache
+
+# Mac OS
+.DS_Store
+**/.DS_Store

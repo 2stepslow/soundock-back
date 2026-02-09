@@ -35,9 +35,13 @@ public class SettlementService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
-        // 로그인한 유저와 정산 정보의 유저 아이디와 일치하는지 검증
-        if (!settlementRequest.getUserId().equals(user.getId())){
-            throw new IllegalArgumentException("수혜자 본인에 대해서만 정산 정보 등록이 가능합니다.");
+        // 로그인한 유저와 정산 정보의 유저 이메일과 일치하는지 검증
+        if (!settlementRequest.getEmail().equals(user.getEmail())){
+            throw new IllegalArgumentException("회원 email과 일치하지 않습니다. 수혜자 본인에 대해서만 정산 정보 등록이 가능합니다.");
+        }
+        // 회원 가입 시 입력한 이름과 일치하는지 검증
+        if (!settlementRequest.getName().equals(user.getName())){
+            throw new IllegalArgumentException("회원 이름과 일치하지 않습니다. 수혜자 본인에 대해서만 정산 정보 등록이 가능합니다.");
         }
         // 회원 가입 시 입력한 전화번호와 일치하는지 검증
         if (!settlementRequest.getPhoneNumber().equals(user.getPhoneNumber())){

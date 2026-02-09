@@ -21,7 +21,7 @@ public class TokenProvider {
     private static final long REFRESH_TOKEN_VALIDITY = AppConstants.Time.REFRESH_TOKEN_VALIDITY_MS;
 
     // 서버가 가진 비밀 레시피
-    public  TokenProvider(@Value("${spring.jwt.secret}") String secretKey) {
+    public  TokenProvider(@Value("${JWT_SECRET_KEY}") String secretKey) {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 

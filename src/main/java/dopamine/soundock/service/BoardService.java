@@ -14,7 +14,6 @@ import dopamine.soundock.repository.*;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -215,7 +214,7 @@ public class BoardService {
             List<BoardAttachments> attachments = board.getAttachments();
             String imageUrl = null;
             if (!attachments.isEmpty()) {
-                imageUrl = attachments.get(0).getFileUrl();
+                imageUrl = attachments.getFirst().getFileUrl();
             }
 
             // PLAYLIST 썸네일 넣어주기
