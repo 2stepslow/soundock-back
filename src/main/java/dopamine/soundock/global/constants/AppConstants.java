@@ -81,8 +81,8 @@ public final class AppConstants {
         // 1:1 문의 내용: 공백 제외 최소 10자 이상
         public static final String INQUIRY_CONTENT_PATTERN = "^(\\s*\\S\\s*){10,}$";
 
-        // 파일명: 특수문자 + 공백 포함 금지(".", "-", "_" 만 허용)
-        public static final String FILE_NAME_REGEX = "^[a-zA-Z0-9가-힣._-]+$";
+        // 사용자 실명 :
+        public static final String REAL_NAME_PATTERN = "^[가-힣a-zA-Z]{2,20}$";
 
         // 계좌번호: 502로 시작, 1로 끝나는 총 11자리 숫자
         public static final String ACCOUNT_PATTERN = "^502[0-9]{7}1$";
@@ -115,6 +115,8 @@ public final class AppConstants {
             "계좌 번호는 502로 시작하며 1로 끝나는 " + Validation.ACCOUNT_TOTAL_LENGTH + "자리 숫자여야 합니다.";
         public static final String NAME_PATTERN_ERROR =
                 "이름은 한글, 영문만 입력 가능합니다.";
+        public static final String REAL_NAME_PATTERN_ERROR =
+                "이름은 한글 또는 영문으로 2~20자 내외로 입력해 주세요. (특수문자, 숫자 제외)";
     }
 
     /**

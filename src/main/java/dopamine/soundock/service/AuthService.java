@@ -142,6 +142,7 @@ public class AuthService {
                 .builder()
                 .email(userSignupRequest.getEmail())
                 .password(encodedPassword)
+                .name(userSignupRequest.getName())
                 .nickname(userSignupRequest.getNickname())
                 .phoneNumber(userSignupRequest.getPhoneNumber())
                 .role(UserRole.USER)
