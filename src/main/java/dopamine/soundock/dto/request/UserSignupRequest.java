@@ -30,6 +30,14 @@ public class UserSignupRequest {
     )
     private String password;
 
+    @Schema(description = "사용자의 실명 (숫자, 특수문자 금지)")
+    @NotBlank(message = "사용자 이름은 필수 입력 항목입니다.")
+    @Pattern(
+            regexp = AppConstants.ValidationPattern.REAL_NAME_PATTERN,
+            message = AppConstants.ErrorMessage.REAL_NAME_PATTERN_ERROR
+    )
+    private String name;
+
     @Schema(description = "커뮤니티 활동 닉네임 (한글/영문/숫자 10자 이내")
     @NotBlank(message = "닉네임은 필수 입력 항목입니다.")
     @Pattern(

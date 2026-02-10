@@ -242,6 +242,7 @@ public class BoardService {
                     .likes(board.getLikes())
                     .countComment(board.getCountComment())
                     .imageUrl(imageUrl)
+                    .categoryType(board.getCategory().getCategoryType())
                     .build();
             boardResponses.add(newResponse);
         }

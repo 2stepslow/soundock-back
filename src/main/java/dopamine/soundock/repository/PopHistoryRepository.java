@@ -20,7 +20,7 @@ public interface PopHistoryRepository extends JpaRepository<PopHistory, Integer>
     List<PopHistory> findByUserAndPopTargetOrderByCreatedDatetimeDesc(User user, PopTarget popTarget);
     // 사용자 재화 사용 내역 조회
     @EntityGraph(attributePaths = {"board", "relatedUser"})
-    List<PopHistory> findByUserAndRequestedDatetimeIsNotNullAndPopTargetIn(User user, List<PopTarget> targets);
+    List<PopHistory> findByUserAndRequestedDatetimeIsNotNullAndPopTargetInOrderByRequestedDatetimeDesc(User user, List<PopTarget> targets);
 
     // 후원 내역 조회(후원자, 수혜자 모두 사용)
     @EntityGraph(attributePaths = {"board", "relatedUser"})

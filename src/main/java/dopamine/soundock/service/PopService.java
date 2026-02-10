@@ -80,11 +80,9 @@ public class PopService {
         // requested_at이 채워져있으면 사용한다고 요청이 들어온 상태
         // target이 DONATION, FEATURED BOARD인 경우만 보여주기 위한 리스트
         List<PopTarget> targets = List.of(PopTarget.DONATION, PopTarget.FEATURED_BOARD);
-        List<PopHistory> results = popHistoryRepository.findByUserAndRequestedDatetimeIsNotNullAndPopTargetIn(user, targets);
+        List<PopHistory> results = popHistoryRepository.findByUserAndRequestedDatetimeIsNotNullAndPopTargetInOrderByRequestedDatetimeDesc(user, targets);
 
-        if (results.isEmpty()) {
-            throw new ResourceNotFoundException("사용 내역이 없습니다.");
-        }
+        // 재화 사용 내역 조회시 내역이 없으면 예외 처리 대신 빈값 전달(throw new Resource~Exception 제거 코드 제거)
 
         List<PopHistoryResponse> responses = new ArrayList<>();
 
@@ -96,10 +94,12 @@ public class PopService {
             PopHistoryResponse popHistoryResponse = PopHistoryResponse.builder()
                     .userId(user.getId())
                     .createdDatetime(popHistory.getCreatedDatetime())
+                    .popStatus(popHistory.getPopStatus())
                     .requestedDatetime(popHistory.getRequestedDatetime())
                     .approvedDatetime(popHistory.getApprovedDatetime())
                     .cancelDatetime(popHistory.getCanceledDatetime())
-                    .changeAmount(popHistory.getChangeAmount())
+                    // Math.abs 사용으로 DB는 그대로 "- 저장" 하고 프론트에 주는 DTO 값만 양수(절대값)로 수정 후 전달
+                    .changeAmount(Math.abs(popHistory.getChangeAmount()))
                     .popTarget(popHistory.getPopTarget())
                     .related(related)
                     .build();
