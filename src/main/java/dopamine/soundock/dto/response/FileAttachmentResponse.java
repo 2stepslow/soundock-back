@@ -9,6 +9,7 @@ import lombok.Getter;
 @Builder
 public class FileAttachmentResponse {
 
+    private Integer attachmentId;
     private String filekey;
     private String originalFilename;
 }

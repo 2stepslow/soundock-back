@@ -126,7 +126,7 @@ public class S3Service {
     public String generatePresignedUrl(String fileKey) {
         Date expiration = new Date();
         long expTimeMillis = expiration.getTime();
-        expTimeMillis += 1000L * 60 * 10; // 5분
+        expTimeMillis += 1000L * 60 * 10; // 10분
         expiration.setTime(expTimeMillis);
 
         GeneratePresignedUrlRequest generatePresignedUrlRequest =
