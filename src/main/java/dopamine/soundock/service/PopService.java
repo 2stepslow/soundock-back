@@ -86,16 +86,16 @@ public class PopService {
 
         // 재화 사용 내역 조회시 내역이 없으면 예외 처리 대신 빈값 전달(throw new Resource~Exception 제거 코드 제거)
 
-        // 2. 최신 내역만 담을 Map (LinkedHashMap은 정렬 순서를 보존합니다)
+        // 2. 최신 내역만 담을 Map (LinkedHashMap은 정렬 순서를 보존)
         Map<String, PopHistory> filteredMap = new LinkedHashMap<>();
 
         for (PopHistory popHistory : results) {
-            // 홍보는 boardId, 후원은 transactionId를 그룹화 키로 사용
+            // 홍보는 boardId, 후원은 transactionId를 키로 사용(같은 값 구분)
             String key = (popHistory.getPopTarget() == PopTarget.FEATURED_BOARD)
                     ? "BOARD_" + popHistory.getBoard().getBoardId()
                     : "TX_" + popHistory.getTransactionId();
 
-            // 최신순으로 정렬되어 있으므로, 처음 발견된 키가 가장 최신 상태의 데이터입니다.
+            // 최신순으로 정렬되어 있으므로, 처음 발견된 키가 가장 최신 상태의 데이터
             if (!filteredMap.containsKey(key)) {
                 filteredMap.put(key, popHistory);
             }
