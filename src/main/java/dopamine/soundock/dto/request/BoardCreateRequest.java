@@ -17,9 +17,10 @@ public class BoardCreateRequest {
     @NotEmpty(message = "최소 1글자 이상 입력해주세요.")
     private String content;
 
-    private String youtubeUrl;
+    private String YoutubeUrl;
 
     private Integer playlistId;
+
 
     // 삭제할 기존 이미지 ID 리스트
     private List<Integer> deleteAttachmentIds;

@@ -151,6 +151,7 @@ public class BoardService {
                     break;
                 case FILE:
                     fileAttachment = FileAttachmentResponse.builder()
+                            .attachmentId(att.getBoardAttachmentId())
                             .filekey(att.getFileKey())
                             .originalFilename(att.getOriginalFilename())
                             .build();
@@ -305,6 +306,11 @@ public class BoardService {
         if (updateRequest.getContent() != null) {
             board.setContent(updateRequest.getContent());
         }
+
+        if (updateRequest.getYoutubeUrl() != null) {
+            board.setLinkUrl(updateRequest.getYoutubeUrl());
+        }
+
         if (updateRequest.getPlaylistId() != null) {
             Playlist playlist = playlistRepository.findById(updateRequest.getPlaylistId())
                     .orElseThrow(() -> new ResourceNotFoundException("플레이리스트를 찾을 수 없습니다."));
