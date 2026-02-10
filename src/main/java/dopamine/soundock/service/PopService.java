@@ -22,7 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -80,19 +82,35 @@ public class PopService {
         // requested_at이 채워져있으면 사용한다고 요청이 들어온 상태
         // target이 DONATION, FEATURED BOARD인 경우만 보여주기 위한 리스트
         List<PopTarget> targets = List.of(PopTarget.DONATION, PopTarget.FEATURED_BOARD);
-        List<PopHistory> results = popHistoryRepository.findByUserAndRequestedDatetimeIsNotNullAndPopTargetInOrderByRequestedDatetimeDesc(user, targets);
+        List<PopHistory> results = popHistoryRepository.findByUserAndRequestedDatetimeIsNotNullAndPopTargetInOrderByRequestedDatetimeDescPopHistoryIdDesc(user, targets);
 
         // 재화 사용 내역 조회시 내역이 없으면 예외 처리 대신 빈값 전달(throw new Resource~Exception 제거 코드 제거)
 
-        List<PopHistoryResponse> responses = new ArrayList<>();
+        // 2. 최신 내역만 담을 Map (LinkedHashMap은 정렬 순서를 보존합니다)
+        Map<String, PopHistory> filteredMap = new LinkedHashMap<>();
 
         for (PopHistory popHistory : results) {
+            // 홍보는 boardId, 후원은 transactionId를 그룹화 키로 사용
+            String key = (popHistory.getPopTarget() == PopTarget.FEATURED_BOARD)
+                    ? "BOARD_" + popHistory.getBoard().getBoardId()
+                    : "TX_" + popHistory.getTransactionId();
+
+            // 최신순으로 정렬되어 있으므로, 처음 발견된 키가 가장 최신 상태의 데이터입니다.
+            if (!filteredMap.containsKey(key)) {
+                filteredMap.put(key, popHistory);
+            }
+        }
+
+        List<PopHistoryResponse> responses = new ArrayList<>();
+
+        for (PopHistory popHistory : filteredMap.values()) {
             PopHistoryResponse.RelatedInfo related = PopHistoryResponse.createRelatedInfo(popHistory);
 
             // 재화 사용 내역 popHistory dto로 전환
             // 사용일시, 사용수량, 사용내용(target), 사용대상(boardId, related_user)
             PopHistoryResponse popHistoryResponse = PopHistoryResponse.builder()
                     .userId(user.getId())
+                    .popHistoryId(popHistory.getPopHistoryId())
                     .createdDatetime(popHistory.getCreatedDatetime())
                     .popStatus(popHistory.getPopStatus())
                     .requestedDatetime(popHistory.getRequestedDatetime())
@@ -153,10 +171,12 @@ public class PopService {
                 .changeAmount(usedPop.getChangeAmount())
                 .popStatus(PopStatus.CANCELED)
                 .popTarget(PopTarget.FEATURED_BOARD)
+                .requestedDatetime(usedPop.getRequestedDatetime())
                 .createdDatetime(now)
                 .canceledDatetime(now)
                 .board(board)
                 .user(user)
+                .transactionId(usedPop.getTransactionId())
                 .build();
 
         popHistoryRepository.save(popHistory);
