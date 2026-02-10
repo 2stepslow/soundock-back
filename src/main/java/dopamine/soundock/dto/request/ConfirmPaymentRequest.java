@@ -14,16 +14,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Schema(description = "결제 최종 승인 요청 (토스 인증 정보)")
 public class ConfirmPaymentRequest {
-    @Schema(description = "주문 ID", example = "uuid-format...")
+    @Schema(description = "prepare 단계에서 발급받은 주문 ID", example = "550e8400-e29b-41d4-a716-446655440000")
     @NotBlank
     private String orderId; // 생성한 주문 id
 
-    @Schema(description = "결제 키 (토스에서 발급)", example = "tviva...")
+    @Schema(description = "토스 결제창 인증 성공 후 받은 PaymentKey", example = "tviva202402011234567890")
     @NotBlank
     private String paymentKey; // toss에서 받은 paymentKey;
 
-    @Schema(description = "결제 금액", example = "10000")
+    @Schema(description = "토스 인증 결과로 받은 결제 금액 (변조 확인용)", example = "10000")
     @NotNull
     @Positive
     private Integer amount; // 결제 금액
