@@ -44,8 +44,7 @@ public class PaymentService {
 
          // 결제 시도자가 로그인한 유저인지 검증
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        // 테스트용
-//      String email = "xkfkr13@gmail.com";
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
@@ -68,8 +67,7 @@ public class PaymentService {
 
         // 결제 시도자가 로그인한 유저인지 검증
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        // 테스트용
-//      String email = "xkfkr13@gmail.com" ;
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
@@ -132,8 +130,7 @@ public class PaymentService {
 
         // 결제 내역 조회자가 로그인한 유저인지 검증
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        // 테스트용
-//      String email = "xkfkr13@gmail.com" ;
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
@@ -168,8 +165,7 @@ public class PaymentService {
 
         // 결제 내역 조회자가 로그인한 유저인지 검증
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        // 테스트용
-//      String email = "xkfkr13@gmail.com" ;
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
@@ -201,8 +197,7 @@ public class PaymentService {
     ){
         // 결제 취소 시도자가 로그인한 유저인지 검증
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        // 테스트용
-//      String email = "xkfkr13@gmail.com" ;
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 

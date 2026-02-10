@@ -16,6 +16,11 @@ import java.time.LocalDateTime;
 @Setter
 @Schema(description = "결제 내역 및 재화(POP) 변동 내역 응답")
 public class PaymentHistoryResponse {
+    private Integer popHistoryId;
+
+    private String orderId;
+
+    private String paymentKey;
     @Schema(
             description = "결제(충전) 승인 일시",
             example = "2026-02-10 15:30:00",
