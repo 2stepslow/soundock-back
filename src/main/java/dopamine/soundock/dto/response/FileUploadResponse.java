@@ -14,4 +14,5 @@ public class FileUploadResponse {
     private String fileUrl;       // S3 공개 URL (조회 시 사용)
     private String contentType;   // MIME 타입 (image/jpg 등)
     private Boolean isImage;      // 이미지 파일 확인
+    private String originalFilename;
 }

@@ -41,4 +41,7 @@ public class BoardAttachments {
     @Column(name = "sequence", nullable = true)
     private Integer sequence;
 
+    @Column(name = "original_filename", nullable = true)
+    private String originalFilename;
+
 }
