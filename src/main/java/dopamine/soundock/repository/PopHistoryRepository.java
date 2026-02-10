@@ -8,6 +8,7 @@ import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,7 +40,7 @@ public interface PopHistoryRepository extends JpaRepository<PopHistory, Integer>
             "AND p.popStatus = :popStatus " +
             "AND p.requestedDatetime IS NULL " +
             "AND p.approvedDatetime IS NULL " +
-            "AND p.createdDatetime <= :availableDay " +
+            "AND p.createdDatetime >= :availableDay " +
             "ORDER BY p.createdDatetime DESC ";
 
     // 단순 정산 가능 내역 조회 시 사용
@@ -77,5 +78,23 @@ public interface PopHistoryRepository extends JpaRepository<PopHistory, Integer>
             @Param("popStatus") PopStatus popStatus,
             @Param("now") LocalDateTime now,
             @Param("ids") List<Integer> ids);
+
+
+    // DONATION : 3일 경과 시 PENDING -> COMPLETED 변경
+    @Modifying
+    @Transactional
+    @Query("UPDATE PopHistory p SET p.popStatus = 'COMPLETED' " +
+            "WHERE p.popStatus = 'PENDING' AND p.popTarget = 'DONATION' " +
+            "AND p.createdDatetime <= :updateTime")
+    int updateDonationStatus(LocalDateTime updateTime);
+
+
+    // FEATURED_BOARD : 10분 경과 시 PENDING -> COMPLETED 변경
+    @Modifying
+    @Transactional
+    @Query("UPDATE PopHistory p SET p.popStatus = 'COMPLETED' " +
+            "WHERE p.popStatus = 'PENDING' AND p.popTarget = 'FEATURED_BOARD' " +
+            "AND p.createdDatetime <= :updateTime")
+    int updateBoardStatus(LocalDateTime updateTime);
 }
 
