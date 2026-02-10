@@ -83,18 +83,27 @@ public interface PopHistoryRepository extends JpaRepository<PopHistory, Integer>
     // DONATION : 3일 경과 시 PENDING -> COMPLETED 변경
     @Modifying
     @Transactional
-    @Query("UPDATE PopHistory p SET p.popStatus = 'COMPLETED' " +
+    @Query("UPDATE PopHistory p SET p.popStatus = 'COMPLETED', p.approvedDatetime = :now " +
             "WHERE p.popStatus = 'PENDING' AND p.popTarget = 'DONATION' " +
             "AND p.createdDatetime <= :updateTime")
-    int updateDonationStatus(LocalDateTime updateTime);
+    int updateDonation(LocalDateTime now, LocalDateTime updateTime);
 
 
     // FEATURED_BOARD : 10분 경과 시 PENDING -> COMPLETED 변경
     @Modifying
     @Transactional
-    @Query("UPDATE PopHistory p SET p.popStatus = 'COMPLETED' " +
+    @Query("UPDATE PopHistory p SET p.popStatus = 'COMPLETED', p.approvedDatetime = :now " +
             "WHERE p.popStatus = 'PENDING' AND p.popTarget = 'FEATURED_BOARD' " +
             "AND p.createdDatetime <= :updateTime")
-    int updateBoardStatus(LocalDateTime updateTime);
+    int updateBoard(LocalDateTime now, LocalDateTime updateTime);
+
+
+    // RECEIVED : 3일 경과 시 PENDING -> COMPLETED 변경 (얘는 정산 신청 후 승인 받았을때 approvedDatetime 업데이트함)
+    @Modifying
+    @Transactional
+    @Query("UPDATE PopHistory p SET p.popStatus = 'COMPLETED' " +
+            "WHERE p.popStatus = 'PENDING' AND p.popTarget = 'RECEIVED' " +
+            "AND p.createdDatetime <= :updateTime")
+    int updateReceived(LocalDateTime updateTime);
 }
 
