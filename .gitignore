@@ -8,7 +8,7 @@ build/
 ### .env ###
 .env.*
 .env.*.local
-.env
+src/main/resources/.env
 .env.local
 .env.development
 .env.production

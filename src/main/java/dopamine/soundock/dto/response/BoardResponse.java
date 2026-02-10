@@ -33,7 +33,7 @@ public class BoardResponse{
     private String imageUrl;
     private List<String> imageUrls;
     private List<Integer> imageIds;
-    private String attachmentUrl;
+    private FileAttachmentResponse attachment;
 
     // playlist
     private Integer playlistId;

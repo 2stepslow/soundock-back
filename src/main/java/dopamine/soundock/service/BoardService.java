@@ -2,6 +2,7 @@ package dopamine.soundock.service;
 
 import dopamine.soundock.dto.request.BoardCreateRequest;
 import dopamine.soundock.dto.response.BoardResponse;
+import dopamine.soundock.dto.response.FileAttachmentResponse;
 import dopamine.soundock.dto.response.FileUploadResponse;
 import dopamine.soundock.dto.response.PlaylistItemResponse;
 import dopamine.soundock.entity.*;
@@ -103,6 +104,7 @@ public class BoardService {
                         .fileUrl(fileResponse.getFileUrl())
                         .fileKey(fileResponse.getFileKey())
                         .fileType(fileType)
+                        .originalFilename(fileResponse.getOriginalFilename())
                         .sequence(i)
                         .build();
                 boardAttachmentsRepository.save(attachment);
@@ -137,18 +139,21 @@ public class BoardService {
         // FileType별로 분리, imageIds 는 게시글 수정시 사용
         List<String> imageUrls = new ArrayList<>();
         List<Integer> imageIds = new ArrayList<>();
-        String attachmentUrl = null;
+        FileAttachmentResponse fileAttachment = null;
 
-        // type이 FILE일 경우 다운로드용 Url 내려줌
-        for (BoardAttachments attachment : attachments) {
-            switch (attachment.getFileType()) {
+
+        // type이 FILE일 경우 다운로드용 key와 원문제목 내려줌
+        for (BoardAttachments att : attachments) {
+            switch (att.getFileType()) {
                 case IMAGE:
-                    imageUrls.add(attachment.getFileUrl());
-                    imageIds.add(attachment.getBoardAttachmentId());
+                    imageUrls.add(att.getFileUrl());
+                    imageIds.add(att.getBoardAttachmentId());
                     break;
                 case FILE:
-                    attachmentUrl = attachment.getFileUrl();
-                    break;
+                    fileAttachment = FileAttachmentResponse.builder()
+                            .filekey(att.getFileKey())
+                            .originalFilename(att.getOriginalFilename())
+                            .build();
             }
         }
 
@@ -179,7 +184,7 @@ public class BoardService {
                 .countComment(board.getCountComment())
                 .imageUrls(imageUrls)
                 .imageIds(imageIds)
-                .attachmentUrl(attachmentUrl)
+                .attachment(fileAttachment)
                 .linkUrl(board.getLinkUrl())
                 .createdDateTime(board.getCreatedDateTime())
                 .categoryType(board.getCategory().getCategoryType())
