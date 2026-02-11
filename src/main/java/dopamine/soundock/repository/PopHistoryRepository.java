@@ -81,29 +81,25 @@ public interface PopHistoryRepository extends JpaRepository<PopHistory, Integer>
 
 
     // DONATION : 3일 경과 시 PENDING -> COMPLETED 변경
-    @Modifying
-    @Transactional
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE PopHistory p SET p.popStatus = 'COMPLETED', p.approvedDatetime = :now " +
             "WHERE p.popStatus = 'PENDING' AND p.popTarget = 'DONATION' " +
             "AND p.createdDatetime <= :updateTime")
-    int updateDonation(LocalDateTime now, LocalDateTime updateTime);
+    int updateDonation(@Param("now")LocalDateTime now, @Param("updateTime")LocalDateTime updateTime);
 
 
     // FEATURED_BOARD : 10분 경과 시 PENDING -> COMPLETED 변경
-    @Modifying
-    @Transactional
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE PopHistory p SET p.popStatus = 'COMPLETED', p.approvedDatetime = :now " +
             "WHERE p.popStatus = 'PENDING' AND p.popTarget = 'FEATURED_BOARD' " +
             "AND p.createdDatetime <= :updateTime")
-    int updateBoard(LocalDateTime now, LocalDateTime updateTime);
+    int updateBoard(@Param("now") LocalDateTime now, @Param("updateTime") LocalDateTime updateTime);
 
 
-    // RECEIVED : 3일 경과 시 PENDING -> COMPLETED 변경 (얘는 정산 신청 후 승인 받았을때 approvedDatetime 업데이트함)
-    @Modifying
-    @Transactional
-    @Query("UPDATE PopHistory p SET p.popStatus = 'COMPLETED' " +
+    // RECEIVED : 3일 경과 된 RECEIVED 조회 (얘는 리스트 조회 후 스케쥴러 내부에서 상태변경 진행)
+    @Query("SELECT p FROM PopHistory p JOIN FETCH p.user " +
             "WHERE p.popStatus = 'PENDING' AND p.popTarget = 'RECEIVED' " +
             "AND p.createdDatetime <= :updateTime")
-    int updateReceived(LocalDateTime updateTime);
+    List<PopHistory> findPendingReceived(@Param("updateTime") LocalDateTime updateTime);
 }
 
