@@ -16,6 +16,9 @@ public class MyInfoResponse {
     @Schema(description = "내 이메일 주소")
     private String email;
 
+    @Schema(description = "사용자 실명")
+    private String name;
+
     @Schema(description = "내 닉네임")
     private String nickname;
 

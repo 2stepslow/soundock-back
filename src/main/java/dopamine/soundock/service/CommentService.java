@@ -116,7 +116,10 @@ public class CommentService {
         // commentRepo에서 해당 boardId에 작성된 댓글이 있는지 확인
         List<Comment> results = commentRepository.findByIsDeletedIsFalseAndBoard(board);
         if (results.isEmpty()){
-            throw new ResourceNotFoundException("작성된 댓글이 없습니다.");
+            return CommentListResponse.builder()
+                    .commentResponse(new ArrayList<>())
+                    .countComment(0)
+                    .build();
         }
         Integer countComment = results.size();
 

@@ -43,6 +43,7 @@ public class MypageService {
         return MyInfoResponse
                 .builder()
                 .email(user.getEmail())
+                .name(user.getName())
                 .nickname(user.getNickname())
                 .phoneNumber(user.getPhoneNumber())
                 .isYoutubeConnected(isConnected)
