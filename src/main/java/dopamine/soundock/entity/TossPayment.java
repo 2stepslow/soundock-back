@@ -20,7 +20,7 @@ public class TossPayment {
     @Column(name = "payment_id")
     private Integer paymentId;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "pop_history_id", unique = true)
     private PopHistory popHistory;
 

@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CancelPaymentRequest {
+    private String paymentKey;
+
     @NotBlank
     private String cancelReason;
 }

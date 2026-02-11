@@ -5,6 +5,7 @@ import dopamine.soundock.dto.response.PaymentHistoryResponse;
 import dopamine.soundock.dto.response.PopHistoryResponse;
 import dopamine.soundock.entity.Board;
 import dopamine.soundock.entity.PopHistory;
+import dopamine.soundock.entity.TossPayment;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.CategoryType;
 import dopamine.soundock.enums.PopStatus;
@@ -14,6 +15,7 @@ import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.repository.BoardRepository;
 import dopamine.soundock.repository.PopHistoryRepository;
+import dopamine.soundock.repository.TossPaymentRepository;
 import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,10 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +32,7 @@ public class PopService {
     private final UserRepository userRepository;
     private final PopHistoryRepository popHistoryRepository;
     private final BoardRepository boardRepository;
+    private final TossPaymentRepository tossPaymentRepository;
 
     // 재화 구매(충전) 내역 조회
     public List<PaymentHistoryResponse> getPaymentHistory(){
@@ -45,7 +45,19 @@ public class PopService {
 
         // 재화 구매(충전) 내역 유무 확인
         if (results.isEmpty()){
-            throw new ResourceNotFoundException("재화 구매 내역이 없습니다.");
+            return new ArrayList<>();
+        }
+
+        List<String> orderIds = new ArrayList<>();
+        for (PopHistory history : results) {
+            orderIds.add(history.getOrderId());
+        }
+
+        List<TossPayment> payments = tossPaymentRepository.findByOrderIdIn(orderIds);
+
+        Map<String, String> paymentMap = new HashMap<>();
+        for (TossPayment payment : payments) {
+            paymentMap.put(payment.getOrderId(), payment.getPaymentKey());
         }
 
         // 엔티티 정보를 받을 response 배열 생성
@@ -56,16 +68,19 @@ public class PopService {
                     popHistory.getCreatedDatetime().plusYears(AppConstants.Time.POP_HISTORY_EXPIRATION_YEARS);
             // 구매 취소 여부
             boolean isCanceled = popHistory.getCanceledDatetime() != null;
+            String key = paymentMap.get(popHistory.getOrderId());
 
             // popHistory 내역들 dto로 전환
-            PaymentHistoryResponse response = new PaymentHistoryResponse(
-                    popHistory.getCreatedDatetime(),
-                    popHistory.getChangeAmount(),
-                    popHistory.getPopTarget(),
-                    popHistory.getActualAmount(),
-                    expiredDatetime,
-                    isCanceled
-            );
+            PaymentHistoryResponse response = PaymentHistoryResponse.builder()
+                    .popHistoryId(popHistory.getPopHistoryId())
+                    .orderId(popHistory.getOrderId())
+                    .paymentKey(key)
+                    .target(popHistory.getPopTarget())
+                    .isCanceled(isCanceled)
+                    .changeAmount(popHistory.getChangeAmount())
+                    .createdDatetime(popHistory.getCreatedDatetime())
+                    .expiredDatetime(expiredDatetime)
+                    .build();
             paymentHistoryResponses.add(response);
         }
         return paymentHistoryResponses;
