@@ -45,7 +45,7 @@ public class PopService {
 
         // 재화 구매(충전) 내역 유무 확인
         if (results.isEmpty()){
-            throw new ResourceNotFoundException("재화 구매 내역이 없습니다.");
+            return new ArrayList<>();
         }
 
         List<String> orderIds = new ArrayList<>();
