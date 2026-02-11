@@ -19,7 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -110,6 +112,21 @@ public class SettlementService {
                     .popHistoryResponses(new ArrayList<>())
                     .build();
         }
+
+        List<String> transactionIds = new ArrayList<>();
+        for (PopHistory popHistory : availableSettlements){
+            transactionIds.add(popHistory.getTransactionId());
+        }
+
+        List<PopHistory> relatedPopHistory = popHistoryRepository.findByTransactionIdIn(transactionIds);
+
+        Map<String, LocalDateTime> donorDateMap = new HashMap<>();
+        for (PopHistory history : relatedPopHistory){
+            if (history.getChangeAmount() <0) {
+                donorDateMap.put(history.getTransactionId(), history.getApprovedDatetime());
+            }
+        }
+
         int totalAmount = 0;
         for (PopHistory popHistory : availableSettlements){
             totalAmount += popHistory.getChangeAmount();
@@ -118,7 +135,15 @@ public class SettlementService {
         // 정산 가능한 내역 pop dto 전환
         List<PopHistoryResponse> responses = new ArrayList<>();
         for (PopHistory popHistory : availableSettlements){
-            PopHistoryResponse response = PopHistoryResponse.fromSettlement(popHistory);
+            LocalDateTime donorApprovedDatetime = donorDateMap.get(popHistory.getTransactionId());
+
+            // 후원자의 후원 승인 날짜가 없으면 popHistory의 후원일을 넣어야함
+            if (donorApprovedDatetime == null) {
+                donorApprovedDatetime = popHistory.getCreatedDatetime();
+                log.warn("후원 승인 날짜 기록 미기입. 후원일로 대체. transaction ID: {}", popHistory.getTransactionId());
+            }
+
+            PopHistoryResponse response = PopHistoryResponse.fromAvailableSettlement(popHistory, donorApprovedDatetime);
             responses.add(response);
         }
 

@@ -104,4 +104,17 @@ public class PopHistoryResponse {
                 .cancelDatetime(popHistory.getCanceledDatetime())
                 .build();
     }
+    public static PopHistoryResponse fromAvailableSettlement(PopHistory popHistory, LocalDateTime approvedPopDatetime){
+        return PopHistoryResponse.builder()
+                .userId(popHistory.getUser().getId())
+                .popHistoryId(popHistory.getPopHistoryId())
+                .popStatus(popHistory.getPopStatus())
+                .popTarget(popHistory.getPopTarget())
+                .changeAmount(popHistory.getChangeAmount())
+                .requestedDatetime(popHistory.getRequestedDatetime())
+                .approvedDatetime(approvedPopDatetime)
+                .cancelDatetime(popHistory.getCanceledDatetime())
+                .build();
+    }
+
 }

@@ -1,6 +1,8 @@
 package dopamine.soundock.repository;
 
+import dopamine.soundock.dto.response.PopHistoryResponse;
 import dopamine.soundock.entity.PopHistory;
+import dopamine.soundock.entity.TossPayment;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.PopStatus;
 import dopamine.soundock.enums.PopTarget;
@@ -33,6 +35,8 @@ public interface PopHistoryRepository extends JpaRepository<PopHistory, Integer>
     // popTarget이 FEATURED_BOARD, boardId와 일치하는 내역 조회
     Optional<PopHistory> findByPopTargetAndBoardBoardId(PopTarget popTarget, Integer boardId);
 
+    //        얘네의 related user가 approvedDatetime이 채워져있고 cancelDatetime이 null인 애들의 approvedDate을 전달해야함
+   List<PopHistory> findByTransactionIdIn(List<String> transactionIds);
 
     String SETTLEMENT_QUERY = "SELECT p FROM PopHistory p " +
             "WHERE p.user.id = :userId " +
