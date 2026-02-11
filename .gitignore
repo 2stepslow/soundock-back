@@ -45,12 +45,16 @@ out/
 ### VS Code ###
 .vscode/
 
+### Properties Files ###
 application.properties
+application-*.properties
+
 ### Java template
 # Compiled class file
 *.class
 
 # Log file
+logs/
 *.log
 
 # BlueJ files
@@ -91,3 +95,12 @@ gradle-app.setting
 # Mac OS
 .DS_Store
 **/.DS_Store
+
+### AWS ###
+*.pem
+*.key
+
+### Sensitive ###
+*secret*
+*password*
+*credentials*
