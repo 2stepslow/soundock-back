@@ -39,7 +39,7 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
     @Query("UPDATE Board b SET b.views = b.views + 1 WHERE b.boardId = :id")
     void incrementViews(@Param("id") Integer boardId);
 
-    @EntityGraph(attributePaths = {"playlist", "playlist.items"})
+    @EntityGraph(attributePaths = {"playlist", "playlist.items", "category", "user"})
     @Query("SELECT b FROM Board b WHERE b.boardId = :boardId AND b.deletedDateTime IS NULL")
     Optional<Board> findByIdWithPlaylist(@Param("boardId") Integer boardId);
 
