@@ -2,10 +2,7 @@ package dopamine.soundock.service;
 
 import dopamine.soundock.dto.TokenDto;
 import dopamine.soundock.dto.request.*;
-import dopamine.soundock.dto.response.EmailCheckResult;
-import dopamine.soundock.dto.response.RefreshResponse;
-import dopamine.soundock.dto.response.ValidateEmailResponse;
-import dopamine.soundock.dto.response.VerificationStatusResponse;
+import dopamine.soundock.dto.response.*;
 import dopamine.soundock.entity.AccessTokenBlacklist;
 import dopamine.soundock.entity.RefreshToken;
 import dopamine.soundock.entity.User;
@@ -333,34 +330,10 @@ public class AuthService {
     /**
      * 이메일 찾기 메서드
      */
-    public void emailSearch(String email) {
-        String key = AppConstants.Redis.RATE_LIMIT_PREFIX + email;
+    public EmailSearchResponse emailSearch(String name, String phoneNumber) {
+        User user = userRepository.findByNameAndPhoneNumberAndIsDeletedFalse(name, phoneNumber)
+                .orElseThrow(() -> new CustomException("일치하는 회원 정보가 없습니다.", HttpStatus.BAD_REQUEST));
 
-        // Redis에서 키 존재 여부 확인 (존재하면 이메일 발송하지 않고 예외 처리)
-        if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
-            throw new CustomException("1분 후 다시 시도해주세요.", HttpStatus.TOO_MANY_REQUESTS);
-        }
-
-        boolean isRegistered = userRepository.existsByEmail(email);
-
-        String subject = "[Soundock] 가입 확인 안내";
-        String templateName;
-
-        Context context = new Context();
-        context.setVariable("email", email);
-
-        if (isRegistered) {
-            // 가입 된 경우 (true)
-            templateName = "email/register-guide";
-            context.setVariable("loginUrl", loginUrl);
-        } else {
-            templateName = "email/not-register-guide";
-            context.setVariable("signupUrl", signupUrl);
-        }
-
-        emailService.sendMailAsync(email, subject, templateName, context);
-
-        // 발송시 Redis에 키 저장 (1분뒤 자동삭제)
-        redisTemplate.opsForValue().set(key, "pushed", 1, TimeUnit.MINUTES);
+        return new EmailSearchResponse(user.getEmail());
     }
 }
