@@ -22,7 +22,7 @@ public class TokenCleaningScheduler {
     private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
 
     @Transactional
-    @Scheduled(cron = "0 0 1 * * *")
+    @Scheduled(cron = "0 0 1 * * *") // 매일 새벽 1시 정각
     public void cleanTokens() {
         LocalDateTime now = LocalDateTime.now();
         log.info("토큰 정리 스케줄러가 실행됩니다. 실행 시간 : {}", now);

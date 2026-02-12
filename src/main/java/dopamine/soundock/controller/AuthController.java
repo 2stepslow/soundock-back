@@ -2,10 +2,7 @@ package dopamine.soundock.controller;
 
 import dopamine.soundock.dto.*;
 import dopamine.soundock.dto.request.*;
-import dopamine.soundock.dto.response.LoginResponse;
-import dopamine.soundock.dto.response.RefreshResponse;
-import dopamine.soundock.dto.response.ValidateEmailResponse;
-import dopamine.soundock.dto.response.VerificationStatusResponse;
+import dopamine.soundock.dto.response.*;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.service.AuthService;
@@ -251,16 +248,24 @@ public class AuthController {
      * 이메일 찾기 API
      */
     @Operation(
-            summary = "이메일 찾기",
-            description = "사용자가 입력한 이메일 주소로 확인 메일을 발송하여 이메일을 찾는 API"
+            summary = "이메일 찾기 (성함 및 연락처 일치 확인)",
+            description = "사용자가 입력한 실명과 연락처를 기반으로 가입된 이메일 계정을 조회"
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "이메일 메일 발송 성공"),
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "이메일 조회 성공",
+                    content = @Content(schema = @Schema(implementation = EmailSearchResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "일치하는 회원 정보 없음",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))
+            )
     })
     @PostMapping("/find-email")
-    public ResponseEntity<RestResponse<Void>> findEmail(@Valid @RequestBody SearchEmailRequest request) {
-        authService.emailSearch(request.getEmail());
-
-        return ResponseEntity.ok(RestResponse.success("입력하신 이메일로 확인 메일을 발송했습니다."));
+    public ResponseEntity<RestResponse<EmailSearchResponse>> findEmail(@Valid @RequestBody SearchEmailRequest request) {
+        EmailSearchResponse response = authService.emailSearch(request.getName(), request.getPhoneNumber());
+        return ResponseEntity.ok(RestResponse.success("회원님의 정보로 가입된 계정입니다.", response));
     }
 }
