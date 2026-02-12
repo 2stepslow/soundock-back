@@ -46,8 +46,6 @@ out/
 .vscode/
 
 ### Properties Files ###
-application.properties
-application-*.properties
 
 ### Java template
 # Compiled class file
