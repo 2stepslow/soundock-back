@@ -1,0 +1,307 @@
+package dopamine.soundock.controller;
+
+import dopamine.soundock.dto.*;
+import dopamine.soundock.dto.request.CancelUsedPopRequest;
+import dopamine.soundock.dto.request.CurrentPasswdRequest;
+import dopamine.soundock.dto.request.UpdateInfoRequest;
+import dopamine.soundock.dto.request.UpdatePasswdRequest;
+import dopamine.soundock.dto.response.*;
+import dopamine.soundock.service.InquiryService;
+import dopamine.soundock.dto.request.*;
+import dopamine.soundock.dto.response.PaymentHistoryResponse;
+import dopamine.soundock.dto.response.PopHistoryResponse;
+import dopamine.soundock.dto.response.MyInfoResponse;
+import dopamine.soundock.service.MypageService;
+import dopamine.soundock.service.PopService;
+import dopamine.soundock.service.SettlementService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
+
+
+@Tag(name = "Mypage", description = "마이페이지 기능 관련 API")
+@RestController
+@RequiredArgsConstructor
+@Validated
+@RequestMapping("/api/mypage")
+public class MypageController {
+    private final MypageService mypageService;
+    private final PopService popService;
+    private final InquiryService inquiryService;
+    private final SettlementService settlementService;
+
+    /** 내 정보 조회 */
+    @Operation(
+            summary = "내 정보 조회",
+            description = "마이페이지 진입 시 유저 프로필과 유튜브 연동 여부를 반환"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "내 정보 조회 성공",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (로그인 필요)",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "404", description = "존재하지 않는 사용자",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+    @GetMapping("/me")
+    public ResponseEntity<RestResponse<MyInfoResponse>> getMyInfo() {
+        MyInfoResponse response = mypageService.getMyInfo();
+        return ResponseEntity.ok(RestResponse.success(response));
+    }
+
+
+    /** 유저 정보 수정 */
+    @Operation(
+            summary = "회원 정보 수정(닉네임, 연락처)",
+            description = "현재 로그인한 사용자의 닉네임 또는 연락처를 수정. 수정하고 싶은 항목만 선택적으로 가능."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "회원 정보 수정 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 (표현식 위반 또는 빈 값 전송), 변경된 사항 없음", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (로그인 필요)", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "404", description = "없는 유저", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "409", description = "중복 오류 (이미 존재하는 닉네임)", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+    @PatchMapping("/me")
+    public ResponseEntity<RestResponse<Void>> updateUserInfo(@Valid @RequestBody UpdateInfoRequest request) {
+        mypageService.updateUserInfo(request);
+        return ResponseEntity.ok(RestResponse.success("회원 정보 수정이 완료되었습니다."));
+    }
+
+
+    /** 비밀번호 수정 */
+    @Operation(
+            summary = "비밀번호 수정",
+            description = "현재 로그인한 사용자의 비밀번호 수정"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "비밀번호 수정 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 (표현식 위반 또는 빈 값 전송), 변경된 사항 없음", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (로그인 필요)", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "404", description = "없는 유저", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+    @PatchMapping("/mepasswd")
+    public ResponseEntity<RestResponse<Void>> updateUserPasswd(@Valid @RequestBody UpdatePasswdRequest request) {
+        mypageService.updateUserPasswd(request);
+        return ResponseEntity.ok(RestResponse.success("비밀번호 수정이 완료되었습니다."));
+    }
+
+
+    /** 현재 비밀번호 검증 */
+    @Operation(summary = "비밀번호 확인", description = "수정 페이지 진입 전 현재 비밀번호 일치 여부 검증")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "현재 비밀번호 확인 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "400", description = "일치하지 않는 비밀번호", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "404", description = "없는 유저", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+    @PostMapping("/password/verify")
+    public ResponseEntity<RestResponse<Void>> checkCurrentPassword(@Valid @RequestBody CurrentPasswdRequest request) {
+        mypageService.checkCurrentPassword(request);
+        return ResponseEntity.ok(RestResponse.success("비밀번호 확인에 성공했습니다."));
+    }
+
+
+    /** 회원 탈퇴 */
+    @Operation(
+            summary = "회원 탈퇴",
+            description = "현재 로그인한 사용자의 계정을 탈퇴 처리(Soft Delete)하고, 사용 중인 토큰을 무효화."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "회원 탈퇴 성공"),
+            @ApiResponse(responseCode = "400", description = "이미 탈퇴한 사용자이거나 유효하지 않은 토큰 정보"),
+            @ApiResponse(responseCode = "401", description = "토큰 정보가 일치하지 않음 (권한 없음)"),
+            @ApiResponse(responseCode = "404", description = "존재하지 않는 사용자")
+    })
+    @DeleteMapping("/me")
+    public ResponseEntity<RestResponse<Void>> deleteUser() {
+        mypageService.deleteUser();
+        return ResponseEntity.ok(RestResponse.success("회원 탈퇴가 완료되었습니다."));
+    }
+
+    @Operation(
+            summary = "재화(POP) 구매(충전) 내역 조회",
+            description = "로그인한 유저가 결제를 통해 재화를 충전한 내역 전체를 조회"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "404", description = "구매 내역이 존재하지 않음", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+    // 재화 구매 내역 조회
+    @GetMapping("/pop-purchase")
+    public ResponseEntity<RestResponse<List<PaymentHistoryResponse>>> getPaymentHistory() {
+        List<PaymentHistoryResponse> paymentHistoryResponses = popService.getPaymentHistory();
+        return ResponseEntity.ok(RestResponse.success(paymentHistoryResponses));
+    }
+
+    @Operation(
+            summary = "재화(POP) 사용 내역 조회",
+            description = "로그인한 유저가 재화를 사용한 내역(후원, 홍보 게시글 등록 등)을 조회"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "404", description = "사용 내역이 존재하지 않음", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+    // 재화 사용 내역 조회
+    @GetMapping("/pop-usage")
+    public ResponseEntity<RestResponse<List<PopHistoryResponse>>> getPopUsageHistory(){
+        List<PopHistoryResponse> popHistoryResponses = popService.getPopUsageHistory();
+        return ResponseEntity.ok(RestResponse.success(popHistoryResponses));
+    }
+
+    @Operation(
+            summary = "재화(POP) 사용 취소 (홍보 게시글)",
+            description = "홍보(Spotlight) 게시글 등록에 사용한 재화를 취소하고 환불 받음<br>" +
+                    "**주의사항:** 게시글 등록 후 **10분 이내**에만 취소가 가능"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "취소 및 환불 완료", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "400", description = "취소 실패 (10분 초과, 본인 게시글 아님, 이미 만료됨)", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "404", description = "해당 게시글이나 사용 내역을 찾을 수 없음", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+    // 재화 사용 취소
+    @PostMapping("/pop-usage/cancel")
+    public ResponseEntity<RestResponse<Void>> cancelUsedPop(
+            @Valid @RequestBody CancelUsedPopRequest cancelRequest
+    ) {
+        popService.cancelUsedPop(cancelRequest);
+        return ResponseEntity.ok(RestResponse.success("재화 사용 취소가 완료되었습니다."));
+    }
+    /**
+     * 1:1 문의 내역 목록 조회
+     */
+    @Operation(
+            summary = "본인 문의 내역 목록 조회",
+            description = "현재 로그인한 유저의 문의 내역을 최신순으로 페이징하여 조회"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (토큰 오류)"),
+            @ApiResponse(responseCode = "404", description = "유저 미확인")
+    })
+    @GetMapping("/inquiry")
+    public ResponseEntity<RestResponse<Page<InquirySummaryResponse>>> getMyInquiry(
+            @AuthenticationPrincipal(expression = "username") String email,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            // 프론트엔드에서 아무런 값을 보내지 않았을 때를 대비한 기본 설정값
+            // 1페이지당 10개, 생성일자 기준 최신순 정렬
+            @Parameter(description = "페이징 및 정렬 파라미터 (예: page=0&size=10&sort=createdAt,desc)")
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        // LocalDate를 검색에 적합한 LocalDateTime으로 변환
+        // 시작일은 해당 날짜의 00:00:00, 종료일은 해당 날짜의 23:59:59.999... 로 설정
+        LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
+        LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
+
+        Page<InquirySummaryResponse> responses = inquiryService.getMyInquiryList(email, startDateTime, endDateTime, pageable);
+        return ResponseEntity.ok(RestResponse.success(responses));
+    }
+
+    /**
+     * 1:1 문의 내역 상세 조회
+     */
+    @Operation(
+            summary = "문의 내역 상세 조회",
+            description = "문의 ID를 통해 특정 문의의 상세 내용(본문, 관리자 답변 등)을 조회"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "404", description = "해당 문의를 찾을 수 없음")
+    })
+    @GetMapping("/inquiry/{userInquiryId}")
+    public ResponseEntity<RestResponse<InquiryDetailResponse>> getInquiryDetail(
+            @PathVariable Integer userInquiryId,
+            @AuthenticationPrincipal(expression = "username") String email
+    ) {
+        InquiryDetailResponse response = inquiryService.getInquiry(userInquiryId, email);
+        return ResponseEntity.ok(RestResponse.success(response));
+    }
+
+
+    @Operation(
+            summary = "정산 계좌 정보 등록",
+            description = "유저가 정산받을 계좌 정보를 등록하거나 수정"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "등록 완료", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 계좌 정보 형식", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+    // 정산 정보 등록
+    @PostMapping("/settlements")
+    public ResponseEntity<RestResponse<?>> registerSettlementInfo(
+            @Valid @RequestBody RegisterSettlementRequest settlementRequest){
+        settlementService.registerSettlementInfo(settlementRequest);
+        return ResponseEntity.ok(RestResponse.success("정산 정보 등록이 완료되었습니다."));
+    }
+
+    @Operation(
+            summary = "정산 신청하기",
+            description = "보유한 POP에 대해 현금화를 신청"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "신청 완료", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "400", description = "정산 가능한 POP 부족 또는 계좌 미등록", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+    // 정산 신청
+    @PostMapping("/settlements/request")
+    public ResponseEntity<RestResponse<?>> requestSettlement(){
+        AvailableSettlementResponse availableSettlementResponse = settlementService.requestSettlement();
+        return ResponseEntity.ok(RestResponse.success("정산 신청이 완료되었습니다.", availableSettlementResponse));
+    }
+
+    @Operation(
+            summary = "내 정산 신청 가능 내역 조회",
+            description = "로그인한 유저의 현재 정산 가능 신청 내역과 상태(처리중, 완료 등)를 조회"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+    // 정산 가능 내역 조회
+    @GetMapping("/settlements/history/available")
+    public ResponseEntity<RestResponse<?>> getListAvailableSettlement(){
+        AvailableSettlementResponse availableSettlementResponse = settlementService.getListAvailableSettlement();
+        return ResponseEntity.ok(RestResponse.success(availableSettlementResponse));
+    }
+
+
+    @Operation(
+            summary = "내 정산 신청 내역 조회",
+            description = "로그인한 유저의 과거 정산 신청 내역과 상태(처리중, 완료 등)를 조회"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+    // 정산 내역 조회
+    @GetMapping("/settlements/history")
+    public ResponseEntity<RestResponse<?>> getListSettlement(){
+        List<PopHistoryResponse> settlementResponse = settlementService.getListSettlement();
+        return ResponseEntity.ok(RestResponse.success(settlementResponse));
+    }
+}

@@ -5,6 +5,15 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### .env ###
+.env
+.env.*
+.env.*.local
+src/main/resources/.env
+.env.local
+.env.development
+.env.production
+
 ### STS ###
 .apt_generated
 .classpath
@@ -36,12 +45,16 @@ out/
 ### VS Code ###
 .vscode/
 
+### Properties Files ###
 application.properties
+application-*.properties
+
 ### Java template
 # Compiled class file
 *.class
 
 # Log file
+logs/
 *.log
 
 # BlueJ files
@@ -78,3 +91,16 @@ gradle-app.setting
 
 # Cache of project
 .gradletasknamecache
+
+# Mac OS
+.DS_Store
+**/.DS_Store
+
+### AWS ###
+*.pem
+*.key
+
+### Sensitive ###
+*secret*
+*password*
+*credentials*

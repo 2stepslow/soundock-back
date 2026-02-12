@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soundock 인증 결과</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .result-card {
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+            max-width: 480px;
+            width: 100%;
+            padding: 60px 50px;
+            text-align: center;
+            animation: fadeIn 0.6s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .result-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .result-card.error::before {
+            background: linear-gradient(90deg, #ff6b6b 0%, #ee5a6f 100%);
+        }
+
+        .status-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            position: relative;
+            animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .status-icon.success {
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.15) 0%, rgba(0, 242, 254, 0.15) 100%);
+            border: 3px solid #4facfe;
+            color: #4facfe;
+        }
+
+        .status-icon.error {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.15) 0%, rgba(238, 90, 111, 0.15) 100%);
+            border: 3px solid #ff6b6b;
+            color: #ff6b6b;
+        }
+
+        .brand {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #95a5a6;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 900;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+
+        .message {
+            font-size: 16px;
+            line-height: 1.7;
+            color: #7f8c8d;
+            margin-bottom: 45px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 15px 35px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #f0f3f5;
+            color: #5a6c7d;
+        }
+
+        .btn:hover {
+            background: #e1e6e9;
+            transform: translateY(-2px);
+        }
+
+        .footer-note {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #e8ecef;
+            font-size: 12px;
+            color: #b0bac5;
+        }
+
+        @media (max-width: 600px) {
+            .result-card {
+                padding: 45px 30px;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="result-card" th:classappend="${success ? '' : 'error'}">
+    <!-- Status Icon -->
+    <div class="status-icon" th:classappend="${success ? 'success' : 'error'}">
+        <span th:text="${success ? '✓' : '✕'}"></span>
+    </div>
+
+    <!-- Brand -->
+    <div class="brand">Soundock</div>
+
+    <!-- Title -->
+    <h1 th:text="${success ? '인증 완료!' : '인증 실패'}">결과</h1>
+
+    <!-- Message -->
+    <p class="message" th:text="${message}"></p>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <button class="btn btn-close" onclick="window.close()">
+            <span>닫기</span>
+        </button>
+    </div>
+
+    <!-- Footer Note -->
+    <div class="footer-note">
+        © 2026 Soundock. All rights reserved.
+    </div>
+</div>
+</body>
+</html>

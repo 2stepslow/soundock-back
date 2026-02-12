@@ -1,0 +1,76 @@
+package dopamine.soundock.global;
+
+import dopamine.soundock.repository.AccessTokenBlacklistRepository;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private final TokenProvider tokenProvider;
+    private final UserDetailsService userDetailsService;
+    private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
+
+    /**
+     * OncePerRequestFilter에서 제공하는 기능
+     * 특정 조건 일때 doFilterInternal(필터 로직)을 실행하지 않고 그냥 통과
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+
+        return path.startsWith("/api/auth/refresh");
+    }
+
+
+    @Override
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
+
+        // 토큰 추출 및 "Bearer " 부분의 7자 이후 정보를 token에 저장
+        // ("Bearer "가 띄어쓰기 포함 7자이므로 이 글자 이후로 저장한다고 보면 됨)
+        String header = request.getHeader("Authorization");
+        if(header != null && header.startsWith("Bearer ")) {
+            String token = header.substring(7);
+
+            // tokenProvider 의 validateToken 부분에 token을 넣어 위변조 검증
+            // 통과해서 true가 반환되면 토큰 안의 사용자 이름을 추출
+            if(tokenProvider.validateToken(token)) {
+                // 블랙리스트 여부 확인
+                boolean isBlacklisted = accessTokenBlacklistRepository.existsByAccessToken(token);
+                if(!isBlacklisted) {
+                    String email = tokenProvider.getEmailFromToken(token);
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+
+                    // Spring Security 인증 설정
+                    UsernamePasswordAuthenticationToken authenticationToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
+                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                }
+            }
+        }
+
+        filterChain.doFilter(request, response);
+    }
+}

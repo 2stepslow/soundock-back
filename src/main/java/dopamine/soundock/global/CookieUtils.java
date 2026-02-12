@@ -1,0 +1,88 @@
+package dopamine.soundock.global;
+
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.util.SerializationUtils;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.util.Base64;
+import java.util.Optional;
+
+/**
+ * 쿠키의 생성, 조회, 삭제 및 객체 직렬화를 도와주는 유틸리티 클래스
+ */
+public class CookieUtils {
+    /**
+     * [조회] 브라우저가 보낸 요청(Request)에서 특정 이름의 쿠키를 찾아 가져옴
+     * Optional을 사용하여 쿠키가 없을 경우에도 안전하게 처리(Null 방지)
+     */
+    public static Optional<Cookie> getCookie(HttpServletRequest request, String name) {
+        Cookie[] cookies = request.getCookies(); // 브라우저가 보낸 모든 쿠키를 배열로 가져옴
+        if (cookies != null && cookies.length > 0) {
+            for (Cookie cookie : cookies) {
+                // 우리가 찾는 이름(name)과 일치하는 쿠키가 있는지 확인
+                if (cookie.getName().equals(name)) {
+                    // 찾았다면 담아서 반환
+                    return Optional.of(cookie);
+                }
+            }
+        }
+        // 없다면 빈 상자를 반환
+        return Optional.empty();
+    }
+
+    /**
+     * [생성] 서버에서 브라우저로 전달할 새로운 쿠키를 만들어 응답(Response)에 추가
+     */
+    public static void addCookie(HttpServletResponse response, String name, String value, int maxAge) {
+        Cookie cookie = new Cookie(name, value);
+        cookie.setPath("/"); // 사이트 전체 영역에서 이 쿠키를 사용할 수 있게 설정
+        cookie.setHttpOnly(true); // 자바스크립트로 쿠키를 훔쳐볼 수 없게 차단 (보안)
+        cookie.setMaxAge(maxAge); // 쿠키가 브라우저에 살아있을 시간(초 단위) 설정
+        response.addCookie(cookie); // 응답 헤더에 실어서 보냄
+    }
+
+    /**
+     * [삭제] 브라우저에 저장된 특정 쿠키를 지우도록 명령
+     * 실제로는 쿠키를 '삭제'하는 것이 아니라, 만료 시간을 0으로 만들어 즉시 사라지게힘
+     */
+    public static void deleteCookie(HttpServletRequest request, HttpServletResponse response, String name) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null && cookies.length > 0) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals(name)) {
+                    cookie.setValue(""); // 값을 비우고
+                    cookie.setPath("/"); // 경로를 맞춘 뒤
+                    cookie.setMaxAge(0); // 수명을 0초로 설정하여 브라우저가 즉시 지우게 함
+                    response.addCookie(cookie);
+                }
+            }
+        }
+    }
+
+    /**
+     * [직렬화] 자바 객체를 브라우저에 저장할 수 있도록 문자열로 변환
+     * 객체 -> 바이트 배열 -> Base64 문자열 순서
+     */
+    public static String serialize(Object object) {
+        //SerializationUtils를 사용하여 객체를 바이트로 바꾸고, 이를 안전한 Base64 문자로 인코딩
+        return Base64.getUrlEncoder().encodeToString(SerializationUtils.serialize(object));
+    }
+
+    /**
+     * [역직렬화] 쿠키에 저장된 문자열을 다시 자바 객체로 되돌림
+     * serialize의 역순으로 변환
+     */
+    public static <T> T deserialize(Cookie cookie, Class<T> cls) {
+        // 쿠키 값(Base64 문자열)을 다시 바이트 배열로 디코딩한 뒤, 객체로 읽어들임
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(Base64.getUrlDecoder().decode(cookie.getValue()));
+             ObjectInputStream ois = new ObjectInputStream(bis)) {
+            return cls.cast(ois.readObject()); // 요청한 클래스 타입(T)으로 형변환하여 반환
+        } catch (IOException | ClassNotFoundException e) {
+            throw new IllegalArgumentException("Failed to deserialize object", e);
+        }
+    }
+}
