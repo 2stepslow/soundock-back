@@ -33,4 +33,7 @@ public class MyInfoResponse {
 
     @Schema(description = "사이트 내 등급")
     private String userGrade;
+
+    @Schema(description = "패스워드리스 등록 여부")
+    private boolean isPasswordless;
 }
