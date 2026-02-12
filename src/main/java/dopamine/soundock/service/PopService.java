@@ -76,6 +76,7 @@ public class PopService {
                     .orderId(popHistory.getOrderId())
                     .paymentKey(key)
                     .target(popHistory.getPopTarget())
+                    .popStatus(popHistory.getPopStatus())
                     .isCanceled(isCanceled)
                     .changeAmount(popHistory.getChangeAmount())
                     .actualAmount(popHistory.getActualAmount())
