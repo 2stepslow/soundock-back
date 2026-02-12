@@ -29,7 +29,6 @@ import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
-@AllArgsConstructor
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
@@ -37,20 +36,37 @@ public class SecurityConfig {
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
 
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
+    @Value("${app.alb.url}")
+    private String albUrl;
+
+    @Value("${oauth.request.dev}")
+    private boolean dev;
+
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository,
+            OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler,
+            OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler
+    ) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.httpCookieOAuth2AuthorizationRequestRepository = httpCookieOAuth2AuthorizationRequestRepository;
+        this.oAuth2AuthenticationSuccessHandler = oAuth2AuthenticationSuccessHandler;
+        this.oAuth2AuthenticationFailureHandler = oAuth2AuthenticationFailureHandler;
+    }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList(
-                "http://localhost:3000",
-                "http://localhost:5173",
-                "http://192.168.200.*:5173",
-                "http://192.168.56.1:3000",
-                "http://192.168.200.*:3000"
+                frontendUrl,
+                albUrl
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")); // 허용할 HTTP 메서드들
         configuration.addAllowedHeader("*"); // 모든 헤더 허용
         configuration.setAllowCredentials(true); // 쿠키 허용
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
@@ -68,7 +84,7 @@ public class SecurityConfig {
                                 // 작성한 CustomAuthorizationRequestResolver를 등록
                                 // 구글에게 "유튜브 API 사용을 위해 리프레시 토큰을 달라"고 요청하는 역할
                                 .authorizationRequestResolver(
-                                        new CustomAuthorizationRequestResolver(clientRegistrationRepository))
+                                        new CustomAuthorizationRequestResolver(clientRegistrationRepository, dev))
                                 // [인증 요청 저장소 등록]
                                 // 쿠키를 사용하는 HttpCookieOAuth2AuthorizationRequestRepository를 등록합니다.
                                 // 구글에 갔다 오기 전까지 필요한 임시 정보들을 브라우저 쿠키에 임시저장하는 역할
@@ -93,6 +109,7 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/v1/payments/**","/payment/**").permitAll() // ** : 테스트용 /api/payments/, /payment/ 뒤의 모든 것들 허용
                         .requestMatchers("/api/auth/**").permitAll() // ** : /api/auth/ 뒤의 모든 것들 허용
                         .requestMatchers(HttpMethod.GET,"/api/boards/**").permitAll() // ** : 테스트용 /api/boards/ 뒤의 모든 것들 허용
@@ -143,16 +160,15 @@ public class SecurityConfig {
     public static class CustomAuthorizationRequestResolver implements OAuth2AuthorizationRequestResolver {
         // 스프링 시큐리티가 기본으로 제공하는 리졸버(기본적인 틀)
         private final OAuth2AuthorizationRequestResolver defaultResolver;
-
-        @Value("${oauth.request.dev}")
-        private boolean dev;
+        private final boolean dev;
 
         /**
          * 생성자: 기본 리졸버를 초기화
          * /oauth2/authorization 주소로 들어오는 요청을 처리하도록 설정
          */
-        public CustomAuthorizationRequestResolver(ClientRegistrationRepository repo) {
+        public CustomAuthorizationRequestResolver(ClientRegistrationRepository repo, boolean dev) {
             this.defaultResolver = new DefaultOAuth2AuthorizationRequestResolver(repo, "/oauth2/authorization");
+            this.dev = dev;
         }
 
         /**
