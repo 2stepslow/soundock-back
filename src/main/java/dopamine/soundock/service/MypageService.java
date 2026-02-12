@@ -49,6 +49,7 @@ public class MypageService {
                 .isYoutubeConnected(isConnected)
                 .popBalance(user.getPopBalance())
                 .userGrade(user.getUserGrade().getGrade())
+                .isPasswordless(user.isPasswordless())
                 .build();
     }
 
