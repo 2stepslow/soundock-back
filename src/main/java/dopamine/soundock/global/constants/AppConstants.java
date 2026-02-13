@@ -89,6 +89,9 @@ public final class AppConstants {
 
         // 이름: 한글, 영문
         public static final String NAME_PATTERN = "^[가-힣a-zA-Z]+$";
+
+        // 이메일 :
+        public static final String EMAIL_PATTERN = "^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$";
     }
 
     /**
@@ -117,6 +120,8 @@ public final class AppConstants {
                 "이름은 한글, 영문만 입력 가능합니다.";
         public static final String REAL_NAME_PATTERN_ERROR =
                 "이름은 한글 또는 영문으로 2~20자 내외로 입력해 주세요. (특수문자, 숫자 제외)";
+        public static final String EMAIL_PATTERN_ERROR =
+                "이메일 형식이 올바르지 않습니다.";
     }
 
     /**

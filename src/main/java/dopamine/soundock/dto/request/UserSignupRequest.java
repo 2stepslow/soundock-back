@@ -19,7 +19,10 @@ public class UserSignupRequest {
 
     @Schema(description = "사용자 이메일 주소")
     @NotBlank(message = "이메일은 필수 입력 항목입니다.")
-    @Email(message = "유효한 이메일 형식이 아닙니다.")
+    @Pattern(
+            regexp = AppConstants.ValidationPattern.EMAIL_PATTERN,
+            message = AppConstants.ErrorMessage.EMAIL_PATTERN_ERROR
+    )
     private String email;
 
     @Schema(description = "비밀번호 (대문자, 숫자, 특수문자 포함 10자 이상, 공백 불가")
