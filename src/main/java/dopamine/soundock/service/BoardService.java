@@ -8,6 +8,7 @@ import dopamine.soundock.dto.response.PlaylistItemResponse;
 import dopamine.soundock.entity.*;
 import dopamine.soundock.enums.CategoryType;
 import dopamine.soundock.enums.FileType;
+import dopamine.soundock.enums.NotificationType;
 import dopamine.soundock.exceptions.AuthRejectedException;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
@@ -39,6 +40,7 @@ public class BoardService {
     private final EntityManager entityManager;
     private final Validatorservice attachmentValidator;
     private final PlaylistRepository playlistRepository;
+    private final NotificationService notificationService;
 
     // 게시글 작성
     @Transactional
@@ -428,6 +430,15 @@ public class BoardService {
             isLiked = true;
         }
 
+        if (!board.getUser().getId().equals(user.getId())) {
+            notificationService.createNotification(
+                    board.getUser(),
+                    user,
+                    NotificationType.LIKE,
+                    "님이 회원님의 게시글을 좋아합니다",
+                    board
+            );
+        }
         entityManager.refresh(board);
 
         BoardResponse boardResponse = BoardResponse.builder()

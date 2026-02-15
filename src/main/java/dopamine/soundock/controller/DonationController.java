@@ -39,9 +39,10 @@ public class DonationController {
     @PostMapping("/donations/{targetUserId}")
     public ResponseEntity<RestResponse<?>> donate(
             @PathVariable Integer targetUserId,
+            @RequestParam Integer boardId,
             @Valid @RequestBody DonationRequest donationRequest
     ) {
-        donationService.donate(targetUserId, donationRequest);
+        donationService.donate(targetUserId, boardId, donationRequest);
         return ResponseEntity.ok(RestResponse.success("후원을 완료했습니다."));
     }
 
