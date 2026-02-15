@@ -39,8 +39,8 @@ public class SecurityConfig {
     @Value("${app.frontend.url}")
     private String frontendUrl;
 
-    @Value("${app.alb.url}")
-    private String albUrl;
+//    @Value("${app.alb.url}")
+//    private String albUrl;
 
     @Value("${oauth.request.dev}")
     private boolean dev;
@@ -61,8 +61,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList(
-                frontendUrl,
-                albUrl
+                frontendUrl
+//                albUrl
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")); // 허용할 HTTP 메서드들
         configuration.addAllowedHeader("*"); // 모든 헤더 허용
