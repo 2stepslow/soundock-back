@@ -5,11 +5,14 @@ import dopamine.soundock.dto.request.SendMessageRequest;
 import dopamine.soundock.dto.response.MessageResponse;
 import dopamine.soundock.entity.Messages;
 import dopamine.soundock.entity.User;
+import dopamine.soundock.enums.MessageType;
 import dopamine.soundock.enums.UserStatus;
+import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.repository.MessageRepository;
 import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static dopamine.soundock.enums.MessageType.RECEIVED;
+import static dopamine.soundock.enums.MessageType.SENT;
 
 @RequiredArgsConstructor
 @Service
@@ -38,12 +44,12 @@ public class MessageService {
 
         // 받는 사람이 탈퇴한 회원인지 확인
         if (receivedUser.isDeleted() || receivedUser.getStatus().equals(UserStatus.QUITTED)) {
-            throw new IllegalArgumentException("탈퇴한 유저입니다. 메세지를 보낼 수 없습니다.");
+            throw new CustomException("탈퇴한 유저입니다. 메세지를 보낼 수 없습니다.", HttpStatus.NOT_FOUND);
         }
 
         // 본인에게 메세지 전송 방지
         if (receivedUser.getId().equals(sendingUser.getId())) {
-            throw new IllegalArgumentException("본인에게는 메세지를 보낼 수 없습니다.");
+            throw new CustomException("본인에게는 메세지를 보낼 수 없습니다.", HttpStatus.BAD_REQUEST);
         }
 
         Messages message = new Messages();
@@ -57,7 +63,7 @@ public class MessageService {
 
     // 메세지 전체 조회
     @Transactional(readOnly = true)
-    public List<MessageResponse> getMessages(String type) {
+    public List<MessageResponse> getMessages(MessageType type){
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
@@ -65,8 +71,8 @@ public class MessageService {
 
         List<Messages> messages;
 
-        switch (type.toLowerCase()) {
-            case "received":
+        switch (type) {
+            case RECEIVED :
                 messages = messageRepository.findByReceivedUser_IdOrderByCreatedDatetimeDesc(user.getId());
 
                 // 안 읽은 메세지 먼저, 읽은 메세지 나중에
@@ -81,7 +87,7 @@ public class MessageService {
                     return m2.getCreatedDatetime().compareTo(m1.getCreatedDatetime());
                 });
                 break;
-            case "sent":
+            case SENT :
                 // 보낸 메세지
                 messages = messageRepository.findBySendingUser_IdOrderByCreatedDatetimeDesc(user.getId());
                 break;
@@ -110,7 +116,7 @@ public class MessageService {
         // 보낸 사람 / 받은 사람만 조회 가능
         if (!message.getSendingUser().getId().equals(user.getId())
                 && !message.getReceivedUser().getId().equals(user.getId())) {
-            throw new IllegalArgumentException("메세지를 확인 할 수 없습니다..");
+            throw new CustomException("메세지를 확인 할 수 없습니다.", HttpStatus.UNAUTHORIZED);
         }
 
         // 아직 읽지 않았으면 읽음 처리

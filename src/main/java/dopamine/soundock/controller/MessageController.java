@@ -4,6 +4,7 @@ package dopamine.soundock.controller;
 import dopamine.soundock.dto.RestResponse;
 import dopamine.soundock.dto.request.SendMessageRequest;
 import dopamine.soundock.dto.response.MessageResponse;
+import dopamine.soundock.enums.MessageType;
 import dopamine.soundock.service.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -51,7 +52,7 @@ public class MessageController {
     })
     @GetMapping
     public ResponseEntity<RestResponse<List<MessageResponse>>> getMessages(
-            @RequestParam String type) {
+            @RequestParam MessageType type) {
         List<MessageResponse> messages = messageService.getMessages(type);
         return ResponseEntity.ok(RestResponse.success(messages));
     }
