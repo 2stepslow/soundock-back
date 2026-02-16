@@ -5,6 +5,7 @@ import dopamine.soundock.dto.request.BoardCreateRequest;
 import dopamine.soundock.dto.response.BoardResponse;
 import dopamine.soundock.enums.CategoryType;
 import dopamine.soundock.service.BoardService;
+import dopamine.soundock.service.RankingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -28,6 +29,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BoardController {
     private final BoardService boardService;
+    private final RankingService rankingService;
 
     @Operation(
             summary = "특정 카테고리 내 게시글 작성",
@@ -148,4 +150,12 @@ public class BoardController {
         return ResponseEntity.ok(RestResponse.success(boardResponse));
     }
 
+    /**
+     * 인기 게시글 조회 (메인페이지)
+     */
+    @PostMapping("/hot/main")
+    public ResponseEntity<RestResponse<List<BoardResponse>>> mainHotBoard() {
+        List<BoardResponse> response = rankingService.mainHotBoard();
+        return ResponseEntity.ok(RestResponse.success(response));
+    }
 }

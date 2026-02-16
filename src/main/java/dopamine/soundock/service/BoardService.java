@@ -41,6 +41,7 @@ public class BoardService {
     private final Validatorservice attachmentValidator;
     private final PlaylistRepository playlistRepository;
     private final NotificationService notificationService;
+    private final RankingService rankingService;
 
     // 게시글 작성
     @Transactional
@@ -133,6 +134,7 @@ public class BoardService {
 
         if (viewService.checkView(boardId, email, clientIp)) {
             boardRepository.incrementViews(boardId);
+            rankingService.incrementHotViewCount(boardId);
         }
 
         // 게시글에 연결된 첨부파일 조회
@@ -423,6 +425,7 @@ public class BoardService {
         if (existingLike.isPresent()) {
             boardLikeRepository.delete(existingLike.get());
             boardRepository.decreaseLikes(boardId);
+            rankingService.decrementHotLikeCount(boardId);
             isLiked = false;
         } else {
             LikeBoard likeboard = new LikeBoard();
@@ -430,6 +433,7 @@ public class BoardService {
             likeboard.setBoard(board);
             boardLikeRepository.save(likeboard);
             boardRepository.increaseLikes(boardId);
+            rankingService.incrementHotLikeCount(boardId);
             isLiked = true;
         }
 
