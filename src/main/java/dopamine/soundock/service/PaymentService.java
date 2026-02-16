@@ -15,6 +15,8 @@ import dopamine.soundock.repository.TossPaymentRepository;
 import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
@@ -86,13 +89,13 @@ public class PaymentService {
                         .onStatus(HttpStatusCode::is4xxClientError,
                                 clientResponse -> clientResponse.bodyToMono(String.class)
                                         .flatMap(body -> Mono.error(
-                                                new ResourceNotFoundException("요청을 처리할 수 없습니다.")
+                                                new ResponseStatusException(HttpStatus.BAD_REQUEST, "유효하지 않는 결제 요청입니다.")
                                         ))
                         )
                         .onStatus(HttpStatusCode::is5xxServerError,
                                 clientResponse -> clientResponse.bodyToMono(String.class)
                                         .flatMap(body -> Mono.error(
-                                                new IllegalArgumentException("토스 서버 내부에서 오류가 발생했습니다."))
+                                                new ResponseStatusException(HttpStatus.BAD_GATEWAY, "토스 서버 내부에서 오류가 발생했습니다."))
                                         ))
                         .bodyToMono(ConfirmPaymentResponse.class)
                         .block();
@@ -119,7 +122,7 @@ public class PaymentService {
                 );
 
                 if (updatedCount == 0) {
-                    throw new RuntimeException("DB 업데이트 실패: ID를 찾을 수 없음");
+                    throw new RuntimeException("서버 데이터 저장 중 오류가 발생했습니다.");
                 }
 
                 // 3. TossPayment 저장
@@ -150,7 +153,7 @@ public class PaymentService {
                 // 내부 로그 기록함
                 log.error("토스 결제 취소 요청 실패[관리자 확인 필요] | paymentKey : {}", confirmRequest.getPaymentKey());
             }
-            throw new RuntimeException("결제 승인 요청 실패로 결제가 취소되었습니다.");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "결제 승인 요청 실패로 결제가 취소되었습니다.", e);
         }
     }
 
@@ -178,12 +181,12 @@ public class PaymentService {
                 .onStatus(HttpStatusCode::is4xxClientError,
                         clientResponse -> clientResponse.bodyToMono(String.class)
                                 .flatMap(body -> Mono.error(
-                                        new ResourceNotFoundException("요청을 처리할 수 없습니다.")
+                                        new ResponseStatusException(HttpStatus.BAD_REQUEST, "유효하지 않는 요청입니다.")
                                 ))
                 )
                 .onStatus(HttpStatusCode::is5xxServerError,
                         clientResponse -> Mono.error(
-                                new IllegalArgumentException("토스 서버 내부에서 오류가 발생했습니다.")
+                                new ResponseStatusException(HttpStatus.BAD_GATEWAY, "토스 서버 내부에서 오류가 발생했습니다.")
                         ))
                 .bodyToMono(ConfirmPaymentResponse.class)
                 .block();
@@ -210,11 +213,11 @@ public class PaymentService {
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError,
                         clientResponse -> clientResponse.bodyToMono(String.class)
-                                .flatMap(body -> Mono.error(new ResourceNotFoundException("요청을 처리할 수 없습니다."))
+                                .flatMap(body -> Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "요청을 처리할 수 없습니다."))
                                 ))
                 .onStatus(HttpStatusCode::is5xxServerError,
                         clientResponse -> clientResponse.bodyToMono(String.class)
-                                .flatMap(body -> Mono.error(new IllegalArgumentException("토스 서버 내부에서 오류가 발생했습니다."))
+                                .flatMap(body -> Mono.error(new ResponseStatusException(HttpStatus.BAD_GATEWAY, "토스 서버 내부에서 오류가 발생했습니다."))
                                 ))
                 .bodyToMono(ConfirmPaymentResponse.class)
                 .block();
@@ -284,11 +287,11 @@ public class PaymentService {
                             .retrieve()
                             .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
                                     clientResponse.bodyToMono(String.class)
-                                            .flatMap(body -> Mono.error(new IllegalArgumentException("토스 에러 : " + body))
+                                            .flatMap(body -> Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "토스 에러 : " + body))
                                             ))
                             .onStatus(HttpStatusCode::is5xxServerError, clientResponse ->
                                     clientResponse.bodyToMono(String.class)
-                                            .flatMap(body -> Mono.error(new IllegalArgumentException("토스 에러 : " + body))
+                                            .flatMap(body -> Mono.error(new ResponseStatusException(HttpStatus.BAD_GATEWAY, "토스 에러 : " + body))
                                             ))
                             .bodyToMono(ConfirmPaymentResponse.class)
                             .block();
