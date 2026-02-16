@@ -75,7 +75,6 @@ public class CommentService {
                     board.getUser(),
                     user,
                     NotificationType.COMMENT,
-                    "님이 회원님의 게시글에 댓글을 남겼습니다",
                     board
             );
         }

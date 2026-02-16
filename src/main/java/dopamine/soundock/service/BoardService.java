@@ -435,7 +435,6 @@ public class BoardService {
                     board.getUser(),
                     user,
                     NotificationType.LIKE,
-                    "님이 회원님의 게시글을 좋아합니다",
                     board
             );
         }

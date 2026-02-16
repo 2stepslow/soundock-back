@@ -37,9 +37,7 @@ public class Notifications {
     @Column(name = "notification_type", nullable = false)
     @Enumerated(EnumType.STRING)
     private NotificationType notificationType;
-
-    @Column(name = "content", nullable = false)
-    private String content;
+    
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reference_id", nullable = true)

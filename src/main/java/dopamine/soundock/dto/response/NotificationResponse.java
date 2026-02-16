@@ -18,7 +18,6 @@ public class NotificationResponse {
     private Integer sendingUserId;
     private String senderNickname;
     private NotificationType notificationtype;
-    private String content;
     private Integer boardId;
     private LocalDateTime createdAt;
     private boolean isRead;
@@ -29,7 +28,6 @@ public class NotificationResponse {
                 .sendingUserId(notification.getSendingUser().getId())
                 .senderNickname(notification.getSendingUser().getNickname())
                 .notificationtype(notification.getNotificationType())
-                .content(notification.getContent())
                 .boardId(notification.getBoard() != null ? notification.getBoard().getBoardId() : null)
                 .createdAt(notification.getCreatedDatetime())
                 .isRead(notification.getReadAt() != null)

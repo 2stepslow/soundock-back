@@ -1,6 +1,7 @@
 package dopamine.soundock.service;
 
 import dopamine.soundock.dto.request.DonationRequest;
+import dopamine.soundock.dto.request.SendMessageRequest;
 import dopamine.soundock.dto.response.PopHistoryResponse;
 import dopamine.soundock.entity.Board;
 import dopamine.soundock.entity.PopHistory;
@@ -36,6 +37,7 @@ public class DonationService {
     private final PopHistoryRepository popHistoryRepository;
     private final BoardRepository boardRepository;
     private final NotificationService notificationService;
+    private final MessageService messageService;
 
     // 후원 하기
     @Transactional
@@ -86,7 +88,6 @@ public class DonationService {
                 .requestedDatetime(now)
                 .popTarget(PopTarget.DONATION)
                 .relatedUser(targetUser)
-                .board(board)
                 .user(user)
                 .build();
         popHistoryRepository.save(donatedPopHistory);
@@ -99,25 +100,28 @@ public class DonationService {
                 .createdDatetime(now)
                 .popTarget(PopTarget.RECEIVED)
                 .relatedUser(user)
-                .board(board)
                 .user(targetUser)
                 .build();
         popHistoryRepository.save(receivedPopHistory);
 
 
 
-        // 후원 메세지/ 없으면 기본 메세지 저장
-        String notificationContent = (donationRequest.getMessage() != null && !donationRequest.getMessage().isEmpty())
-                ? donationRequest.getMessage()
-                : "인재가 여기 있었네";
-
         notificationService.createNotification(
                 targetUser,
                 user,
                 NotificationType.DONATION,
-                notificationContent,
                 board
         );
+
+        // 후원 메시지 전송 (메시지가 없으면 기본 메시지)
+        String donationMessage = (donationRequest.getMessage() != null && !donationRequest.getMessage().isEmpty())
+                ? donationRequest.getMessage()
+                : "인재가 여기 있었네?";
+
+        SendMessageRequest messageRequest = new SendMessageRequest();
+        messageRequest.setContent(donationMessage);
+        messageService.sendMessage(targetUser.getId(), messageRequest);
+
     }
 
     // 후원 취소 요청 하기

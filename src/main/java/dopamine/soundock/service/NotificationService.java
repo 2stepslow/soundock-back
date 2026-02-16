@@ -86,7 +86,7 @@ public class NotificationService {
     // 알림 추가 - 좋아요/댓글/후원 시 사용
     @Transactional
     public void createNotification(User receivedUser, User sendingUser,
-                                   NotificationType notificationtype, String content, Board board) {
+                                   NotificationType notificationtype, Board board) {
 
         // 알림 중복 생성 방지  (한 게시글의 반복된 좋아요와 취소 시 작성 방지), 댓글/후원은 중복 가능
         if (notificationtype == NotificationType.LIKE) {
@@ -109,7 +109,6 @@ public class NotificationService {
         notification.setReceivedUser(receivedUser);
         notification.setSendingUser(sendingUser);
         notification.setNotificationType(notificationtype);
-        notification.setContent(content);
         notification.setBoard(board);
 
         notificationRepository.save(notification);
