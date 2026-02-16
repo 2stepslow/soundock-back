@@ -64,7 +64,7 @@ public class PaymentService {
     // 결제 승인 요청
     public ConfirmPaymentResponse confirmPayment(ConfirmPaymentRequest confirmRequest) {
 
-        // 1. // 결제 시도자가 로그인한 유저인지 검증
+        // 1. 결제 시도자가 로그인한 유저인지 검증
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
@@ -132,8 +132,25 @@ public class PaymentService {
                 return confirmPaymentResponse;
             });
         } catch (Exception e) {
-            log.error("에러발생: {}", e.getMessage());
-            throw new RuntimeException(e.getMessage());
+
+            // DB 업데이트 실패 -> Toss 결제 취소 요청 보냄
+            // 4. Toss 결제 취소 요청
+            try {
+                 tossWebClient.post()
+                        .uri("/payments/{paymentKey}/cancel", confirmPaymentResponse.getPaymentKey())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(new CancelPaymentRequest
+                                (confirmPaymentResponse.getPaymentKey(), "내부 오류로 인한 결제 취소 요청"))
+                        .retrieve()
+                        .bodyToMono(ConfirmPaymentResponse.class)
+                        .block();
+                 log.info("토스 결제 취소 요청 성공 | paymentKey : {} | popHistory 주문 생성 내역 확인 바람", confirmPaymentResponse.getPaymentKey());
+            } catch (Exception exception) {
+                // 4-1. Toss에서 결제 취소 처리 중 에러 발생할 경우
+                // 내부 로그 기록함
+                log.error("토스 결제 취소 요청 실패[관리자 확인 필요] | paymentKey : {}", confirmRequest.getPaymentKey());
+            }
+            throw new RuntimeException("결제 승인 요청 실패로 결제가 취소되었습니다.");
         }
     }
 
