@@ -7,6 +7,7 @@ import dopamine.soundock.entity.Board;
 import dopamine.soundock.entity.Comment;
 import dopamine.soundock.entity.CommentLike;
 import dopamine.soundock.entity.User;
+import dopamine.soundock.enums.NotificationType;
 import dopamine.soundock.exceptions.AuthRejectedException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.repository.BoardRepository;
@@ -36,6 +37,7 @@ public class CommentService {
     private final BoardRepository boardRepository;
     private final UserRepository userRepository;
     private final CommentLikeRepository commentLikeRepository;
+    private final NotificationService notificationService;
 
     // 댓글 작성
     @Transactional
@@ -66,6 +68,18 @@ public class CommentService {
                 .build();
         // 댓글 저장
         commentRepository.save(comment);
+
+        // 본인의 게시글이 아닐 때만 알림 생성
+        if (!board.getUser().getId().equals(user.getId())) {
+            notificationService.createNotification(
+                    board.getUser(),
+                    user,
+                    NotificationType.COMMENT,
+                    board
+            );
+        }
+
+
         // 게시글에 달린 댓글 수 조회
         Integer countComment = commentRepository.countByIsDeletedIsFalseAndBoard(board);
 
