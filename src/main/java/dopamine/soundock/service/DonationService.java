@@ -1,15 +1,19 @@
 package dopamine.soundock.service;
 
 import dopamine.soundock.dto.request.DonationRequest;
+import dopamine.soundock.dto.request.SendMessageRequest;
 import dopamine.soundock.dto.response.PopHistoryResponse;
+import dopamine.soundock.entity.Board;
 import dopamine.soundock.entity.PopHistory;
 import dopamine.soundock.entity.User;
+import dopamine.soundock.enums.NotificationType;
 import dopamine.soundock.enums.PopStatus;
 import dopamine.soundock.enums.PopTarget;
 import dopamine.soundock.enums.UserStatus;
 import dopamine.soundock.exceptions.InvalidCancelDonationException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.global.constants.AppConstants;
+import dopamine.soundock.repository.BoardRepository;
 import dopamine.soundock.repository.PopHistoryRepository;
 import dopamine.soundock.repository.UserRepository;
 
@@ -31,10 +35,13 @@ import java.util.UUID;
 public class DonationService {
     private final UserRepository userRepository;
     private final PopHistoryRepository popHistoryRepository;
+    private final BoardRepository boardRepository;
+    private final NotificationService notificationService;
+    private final MessageService messageService;
 
     // 후원 하기
     @Transactional
-    public void donate(Integer targetUserId, DonationRequest donationRequest){
+    public void donate(Integer targetUserId,Integer boardId, DonationRequest donationRequest){
         // 사용자 로그인 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
@@ -65,6 +72,8 @@ public class DonationService {
         if (updatedRow == 0){
             throw new IllegalArgumentException("차감할 재화가 없습니다. 재화가 부족하거나 이미 처리된 요청입니다.");
         }
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글입니다."));
 
         // 수혜자-후원자 한 쌍 확인용 UUID 생성
         String transactionId = UUID.randomUUID().toString();
@@ -94,6 +103,25 @@ public class DonationService {
                 .user(targetUser)
                 .build();
         popHistoryRepository.save(receivedPopHistory);
+
+
+
+        notificationService.createNotification(
+                targetUser,
+                user,
+                NotificationType.DONATION,
+                board
+        );
+
+        // 후원 메시지 전송 (메시지가 없으면 기본 메시지)
+        String donationMessage = (donationRequest.getMessage() != null && !donationRequest.getMessage().isEmpty())
+                ? donationRequest.getMessage()
+                : "인재가 여기 있었네?";
+
+        SendMessageRequest messageRequest = new SendMessageRequest();
+        messageRequest.setContent(donationMessage);
+        messageService.sendMessage(targetUser.getId(), messageRequest);
+
     }
 
     // 후원 취소 요청 하기
