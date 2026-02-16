@@ -3,6 +3,10 @@ package dopamine.soundock.global;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
+import org.springframework.stereotype.Component;
 import org.springframework.util.SerializationUtils;
 
 import java.io.ByteArrayInputStream;
@@ -14,7 +18,16 @@ import java.util.Optional;
 /**
  * 쿠키의 생성, 조회, 삭제 및 객체 직렬화를 도와주는 유틸리티 클래스
  */
+@Component
 public class CookieUtils {
+
+    private static String cookieDomain;
+
+    @Value("${app.cookie.domain}")
+    public void setCookieDomain(String domain) {
+        CookieUtils.cookieDomain = domain;
+    }
+
     /**
      * [조회] 브라우저가 보낸 요청(Request)에서 특정 이름의 쿠키를 찾아 가져옴
      * Optional을 사용하여 쿠키가 없을 경우에도 안전하게 처리(Null 방지)
@@ -38,11 +51,21 @@ public class CookieUtils {
      * [생성] 서버에서 브라우저로 전달할 새로운 쿠키를 만들어 응답(Response)에 추가
      */
     public static void addCookie(HttpServletResponse response, String name, String value, int maxAge) {
-        Cookie cookie = new Cookie(name, value);
-        cookie.setPath("/"); // 사이트 전체 영역에서 이 쿠키를 사용할 수 있게 설정
-        cookie.setHttpOnly(true); // 자바스크립트로 쿠키를 훔쳐볼 수 없게 차단 (보안)
-        cookie.setMaxAge(maxAge); // 쿠키가 브라우저에 살아있을 시간(초 단위) 설정
-        response.addCookie(cookie); // 응답 헤더에 실어서 보냄
+        ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from(name, value)
+                .path("/")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")
+                .maxAge(maxAge);
+
+        // 도메인 값이 있을 때만 명시(로컬, 배포 서버 구분)
+        if (cookieDomain != null && !cookieDomain.isBlank() && !cookieDomain.equals("localhost")) {
+            cookieBuilder.domain(cookieDomain);
+        }
+
+        ResponseCookie cookie = cookieBuilder.build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
     /**
@@ -50,17 +73,21 @@ public class CookieUtils {
      * 실제로는 쿠키를 '삭제'하는 것이 아니라, 만료 시간을 0으로 만들어 즉시 사라지게힘
      */
     public static void deleteCookie(HttpServletRequest request, HttpServletResponse response, String name) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null && cookies.length > 0) {
-            for (Cookie cookie : cookies) {
-                if (cookie.getName().equals(name)) {
-                    cookie.setValue(""); // 값을 비우고
-                    cookie.setPath("/"); // 경로를 맞춘 뒤
-                    cookie.setMaxAge(0); // 수명을 0초로 설정하여 브라우저가 즉시 지우게 함
-                    response.addCookie(cookie);
-                }
-            }
+        ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from(name, "")
+                .path("/")
+                .maxAge(0)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None");
+
+        // 도메인 값이 있을 때만 명시(로컬, 배포 서버 구분)
+        if (cookieDomain != null && !cookieDomain.isBlank() && !cookieDomain.equals("localhost")) {
+            cookieBuilder.domain(cookieDomain);
         }
+
+        ResponseCookie cookie = cookieBuilder.build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
     /**

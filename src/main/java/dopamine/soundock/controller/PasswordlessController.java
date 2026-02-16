@@ -22,6 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +39,9 @@ import org.springframework.web.bind.annotation.*;
 public class PasswordlessController {
 
     private final PasswordlessService passwordlessService;
+
+    @Value("${app.cookie.domain}")
+    private String cookieDomain;
 
     /**
      * 로그인한 사용자 패스워드리스 가입 확인
@@ -198,13 +202,18 @@ public class PasswordlessController {
         if (response.getData() != null && "Y".equals(response.getData().getAuth())) {
             String refreshToken = response.getData().getRefreshToken(); // 서비스에서 임시로 담아준 토큰 추출
 
-            ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+            ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("refreshToken", refreshToken)
                     .httpOnly(true)
-                    .secure(false)
+                    .secure(true)
                     .path("/")
                     .maxAge(AppConstants.Time.REFRESH_TOKEN_VALIDITY_MS / 1000)
-                    .sameSite("Lax")
-                    .build();
+                    .sameSite("none");
+
+            if (cookieDomain != null && !cookieDomain.isBlank() && !cookieDomain.equals("localhost")) {
+                cookieBuilder.domain(cookieDomain);
+            }
+
+            ResponseCookie cookie = cookieBuilder.build();
 
             // 응답 바디에서 refreshToken 제거
             response.getData().setRefreshToken(null);
