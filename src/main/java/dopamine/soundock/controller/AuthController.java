@@ -14,9 +14,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +35,9 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class AuthController {
     private final AuthService authService;
     private final EmailService emailService;
+
+    @Value("${app.cookie.domain}")
+    private String cookieDomain;
 
     // 이메일 중복 체크
     @Operation(
@@ -164,13 +167,19 @@ public class AuthController {
         TokenDto tokenDto = authService.login(loginRequest);
 
         // Refresh Token을 담은 쿠키 생성
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", tokenDto.getRefreshToken())
+        ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("refreshToken", tokenDto.getRefreshToken())
                 .httpOnly(true) // JS에서 접근 불가 (XSS 방어)
-                .secure(false) // HTTPS에서만 전송 (테스트 환경에서는 false)
+                .secure(true) // HTTPS에서만 전송 (테스트 환경에서는 false)
                 .path("/") // 모든 경로에서 쿠키 전송
                 .maxAge(AppConstants.Time.REFRESH_TOKEN_VALIDITY_MS / 1000)
-                .sameSite("Lax") // CSRF 방어
-                .build();
+                .sameSite("none"); // CSRF 방어
+
+        if (cookieDomain != null && !cookieDomain.isBlank() && !cookieDomain.equals("localhost")) {
+            cookieBuilder.domain(cookieDomain);
+        }
+
+        ResponseCookie cookie = cookieBuilder.build();
+
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
                 .body(RestResponse.success("로그인에 성공했습니다.", new LoginResponse(tokenDto.getAccessToken())));
@@ -194,13 +203,19 @@ public class AuthController {
         String accessToken = authHeader.substring(7);
         authService.logout(accessToken, refreshToken);
 
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
+        ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
-                .secure(false) // 실제 배포단계에서는 true
+                .secure(true) // 실제 배포단계에서는 true
                 .path("/")
                 .maxAge(0) // 만료시간 0 (즉시삭제)
-                .sameSite("Lax")
-                .build();
+                .sameSite("none");
+
+        if (cookieDomain != null && !cookieDomain.isBlank() && !cookieDomain.equals("localhost")) {
+            cookieBuilder.domain(cookieDomain);
+        }
+
+        ResponseCookie cookie = cookieBuilder.build();
+
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
                 .body(RestResponse.success("로그아웃을 완료 했습니다."));
