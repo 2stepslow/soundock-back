@@ -6,14 +6,11 @@ import dopamine.soundock.dto.request.CurrentPasswdRequest;
 import dopamine.soundock.dto.request.UpdateInfoRequest;
 import dopamine.soundock.dto.request.UpdatePasswdRequest;
 import dopamine.soundock.dto.response.*;
-import dopamine.soundock.service.InquiryService;
+import dopamine.soundock.service.*;
 import dopamine.soundock.dto.request.*;
 import dopamine.soundock.dto.response.PaymentHistoryResponse;
 import dopamine.soundock.dto.response.PopHistoryResponse;
 import dopamine.soundock.dto.response.MyInfoResponse;
-import dopamine.soundock.service.MypageService;
-import dopamine.soundock.service.PopService;
-import dopamine.soundock.service.SettlementService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -49,6 +46,7 @@ public class MypageController {
     private final PopService popService;
     private final InquiryService inquiryService;
     private final SettlementService settlementService;
+    private final MyActivityService myActivityService;
 
     /** 내 정보 조회 */
     @Operation(
@@ -304,4 +302,24 @@ public class MypageController {
         List<PopHistoryResponse> settlementResponse = settlementService.getListSettlement();
         return ResponseEntity.ok(RestResponse.success(settlementResponse));
     }
+
+
+    @Operation(
+            summary = "내가 쓴 게시글 조회",
+            description = "현재 로그인 한 유저가 쓴 게시글 내역 조회"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+
+    // 내가 쓴 게시글 조회
+    @GetMapping("/my-posts")
+    public ResponseEntity<RestResponse<?>> getMyPosts(
+            @PageableDefault(sort = "createdDateTime", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<MyPostsResponse> myPostsResponsePage = myActivityService.getMyPosts(pageable);
+        return ResponseEntity.ok(RestResponse.success(myPostsResponsePage));
+    }
+
 }
