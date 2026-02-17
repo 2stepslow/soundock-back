@@ -138,7 +138,7 @@ public class DonationService {
         }
 
         // 후원한 내역 검증
-        // popStatus = COMPLETED, popTarget = donation, created_at이 요청일 기준 3일 이내,
+        // popStatus = PENDING, popTarget = donation, created_at이 요청일 기준 3일 이내,
         // canceled_at = null인 후원 내역의 user_id가 일치해야함
         PopHistory donatedPopHistory =
                 popHistoryRepository.findById(donationCancelRequest.getPopHistoryId())
