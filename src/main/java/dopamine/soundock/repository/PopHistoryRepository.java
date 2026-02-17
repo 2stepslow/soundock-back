@@ -44,7 +44,7 @@ public interface PopHistoryRepository extends JpaRepository<PopHistory, Integer>
             "AND p.popStatus = :popStatus " +
             "AND p.requestedDatetime IS NULL " +
             "AND p.approvedDatetime IS NULL " +
-            "AND p.createdDatetime >= :availableDay " +
+            "AND p.createdDatetime <= :availableDay " +
             "ORDER BY p.createdDatetime DESC ";
 
     // 단순 정산 가능 내역 조회 시 사용
