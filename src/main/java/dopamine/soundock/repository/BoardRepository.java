@@ -1,6 +1,7 @@
 package dopamine.soundock.repository;
 
 import dopamine.soundock.entity.Board;
+import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.CategoryType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,4 +44,6 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
     @Query("SELECT b FROM Board b WHERE b.boardId = :boardId AND b.deletedDateTime IS NULL")
     Optional<Board> findByIdWithPlaylist(@Param("boardId") Integer boardId);
 
+    // 내가 쓴 게시글 조회 (삭제된 글 제외)
+    Page<Board> findByUserAndIsDeletedFalse(User user, Pageable pageable);
 }
