@@ -21,6 +21,7 @@ public class MyActivityService {
     private final BoardRepository boardRepository;
     private final UserRepository userRepository;
 
+@Transactional(readOnly = true)
 public Page<MyPostsResponse> getMyPosts(Pageable pageable) {
     String email = SecurityContextHolder.getContext().getAuthentication().getName();
     User user = userRepository.findByEmail(email)
