@@ -354,7 +354,7 @@ public class MypageController {
     // 내가 좋아요 한 게시글
     @GetMapping("/my-post-likes")
     public ResponseEntity<RestResponse<?>> getMyPostLikes(
-            @PageableDefault(sort = "PostLikeId", direction = Sort.Direction.DESC) Pageable pageable
+            @PageableDefault(sort = "postLikeId", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<MyPostLikesResponse> myPostLikesResponses = myActivityService.getMyPostLikes(pageable);
         return ResponseEntity.ok(RestResponse.success(myPostLikesResponses));

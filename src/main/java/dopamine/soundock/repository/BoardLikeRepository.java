@@ -1,6 +1,5 @@
 package dopamine.soundock.repository;
 
-import dopamine.soundock.dto.response.MyPostLikesResponse;
 import dopamine.soundock.entity.Board;
 import dopamine.soundock.entity.LikeBoard;
 import dopamine.soundock.entity.User;

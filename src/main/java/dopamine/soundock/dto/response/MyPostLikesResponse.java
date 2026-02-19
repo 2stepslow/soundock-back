@@ -25,7 +25,7 @@ public class MyPostLikesResponse {
     @Schema(description = "좋아요 한 게시글의 제목")
     private String title;
 
-    @Schema(description = "좋아요 한 사람의 닉네임")
+    @Schema(description = "게시글 작성자의 닉네임")
     private String nickname;
 
     @Schema(description = "좋아요 한 게시글의 조회수")
