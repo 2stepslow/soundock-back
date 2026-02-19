@@ -332,7 +332,7 @@ public class MypageController {
     })
 
     // 내가 쓴 댓글 조회
-    @GetMapping("my-comments")
+    @GetMapping("/my-comments")
     public ResponseEntity<RestResponse<?>> getMyComments(
             @PageableDefault(sort = "createdDateTime", direction = Sort.Direction.DESC) Pageable pageable
     ) {
