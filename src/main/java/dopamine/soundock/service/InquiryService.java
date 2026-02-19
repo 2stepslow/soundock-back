@@ -25,7 +25,7 @@ public class InquiryService {
     private final UserRepository userRepository;
 
     /**
-     * 1:1 문의 등록 (현재는 서버 로컬 저장, S3 사용시 내부 메서드 교체 필요)
+     * 1:1 문의 등록
      */
     @Transactional
     public void registerInquiry(InquiryCreateRequest request, String email) {

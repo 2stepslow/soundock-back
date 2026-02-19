@@ -145,6 +145,7 @@ public final class AppConstants {
         public static final String RATE_LIMIT_PREFIX = "rate:limit:email-search:"; // 이메일 찾기 발송 제한 키
         public static final String KEY_PREFIX = "board:view:"; // 조회수 중복 제한 키
         public static final String RANKING_MONTH_PREFIX = "ranking:monthly:"; // 월간 게시글 랭킹(메인페이지)
+        public static final String RANKING_WEEK_PREFIX = "ranking:weekly:";
     }
 
 

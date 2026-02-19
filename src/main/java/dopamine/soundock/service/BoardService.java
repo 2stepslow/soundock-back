@@ -134,7 +134,7 @@ public class BoardService {
 
         if (viewService.checkView(boardId, email, clientIp)) {
             boardRepository.incrementViews(boardId);
-            rankingService.incrementHotViewCount(boardId);
+            rankingService.incrementHotViewCount(board);
         }
 
         // 게시글에 연결된 첨부파일 조회
@@ -425,7 +425,7 @@ public class BoardService {
         if (existingLike.isPresent()) {
             boardLikeRepository.delete(existingLike.get());
             boardRepository.decreaseLikes(boardId);
-            rankingService.decrementHotLikeCount(boardId);
+            rankingService.decrementHotLikeCount(board);
             isLiked = false;
         } else {
             LikeBoard likeboard = new LikeBoard();
@@ -433,7 +433,7 @@ public class BoardService {
             likeboard.setBoard(board);
             boardLikeRepository.save(likeboard);
             boardRepository.increaseLikes(boardId);
-            rankingService.incrementHotLikeCount(boardId);
+            rankingService.incrementHotLikeCount(board);
             isLiked = true;
         }
 

@@ -15,7 +15,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -151,11 +150,66 @@ public class BoardController {
     }
 
     /**
-     * 인기 게시글 조회 (메인페이지)
+     * 월간 인기 게시글 조회 (메인페이지)
      */
-    @PostMapping("/hot/main")
-    public ResponseEntity<RestResponse<List<BoardResponse>>> mainHotBoard() {
-        List<BoardResponse> response = rankingService.mainHotBoard();
+    @Operation(
+            summary = "메인 페이지 카테고리 별 월간 인기 게시글 TOP 8 조회",
+            description = "전체 카테고리를 대상으로 이번 달의 조회수(1점)와 추천수(3점)를 합산하여 상위 8개를 반환" +
+                    "이번 달 데이터가 8개 미만일 경우, 지난달 데이터를 보충하여 순서대로 출력"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "조회 성공",
+                    content = @Content(schema = @Schema(implementation = BoardResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "잘못된 요청 (카테고리 타입 오류 등)",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))
+            ),
+            @ApiResponse(responseCode = "500",
+                    description = "서버 내부 오류",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))
+            )
+    })
+    @GetMapping("/hot/main/{categoryType}")
+    public ResponseEntity<RestResponse<List<BoardResponse>>> mainHotBoard(
+            @PathVariable(required = true) CategoryType categoryType
+    ) {
+        List<BoardResponse> response = rankingService.monthCategoryHotBoard(categoryType);
+        return ResponseEntity.ok(RestResponse.success(response));
+    }
+
+    /**
+     * 인기 게시글 조회 (각 카테고리별)
+     */
+    @Operation(
+            summary = "카테고리별 인기 게시글 조회 (주간)",
+            description = "특정 카테고리의 이번 주 TOP 랭킹을 조회합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "조회 성공",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "잘못된 요청 (카테고리 타입 오류 등)",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "서버 내부 오류",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))
+            )
+    })
+    @GetMapping("/hot/{categoryType}")
+    public ResponseEntity<RestResponse<List<BoardResponse>>> getBoards(
+            @PathVariable(required = true) CategoryType categoryType
+    ){
+        List<BoardResponse> response = rankingService.monthCategoryHotBoard(categoryType);
         return ResponseEntity.ok(RestResponse.success(response));
     }
 }
