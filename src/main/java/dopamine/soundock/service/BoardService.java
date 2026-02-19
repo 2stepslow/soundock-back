@@ -160,12 +160,14 @@ public class BoardService {
             }
         }
 
+        Integer playlistId = null;
         String playlistTitle = null;
         List<PlaylistItemResponse> playlistItems = null;
 
         if (board.getCategory().getCategoryType() == CategoryType.PLAYLISTS && board.getPlaylist() != null) {
 
             Playlist playlist = board.getPlaylist();
+            playlistId = playlist.getPlaylistId();
             playlistTitle = playlist.getTitle();
 
             playlistItems = playlist.getItems().stream()
@@ -191,6 +193,7 @@ public class BoardService {
                 .linkUrl(board.getLinkUrl())
                 .createdDateTime(board.getCreatedDateTime())
                 .categoryType(board.getCategory().getCategoryType())
+                .playlistId(playlistId)
                 .playlistTitle(playlistTitle)
                 .playlistItems(playlistItems)
                 .build();
