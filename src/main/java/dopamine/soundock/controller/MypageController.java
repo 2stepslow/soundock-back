@@ -322,6 +322,7 @@ public class MypageController {
         return ResponseEntity.ok(RestResponse.success(myPostsResponses));
     }
 
+
     @Operation(
             summary = "내가 쓴 댓글 조회",
             description = "현재 로그인 한 유저가 쓴 댓글 내역 조회"
@@ -340,4 +341,22 @@ public class MypageController {
         return ResponseEntity.ok(RestResponse.success(myCommentsResponses));
     }
 
+
+    @Operation(
+            summary = "내가 좋아요 한 게시글 조회",
+            description = "현재 로그인 한 유저가 좋아요 한 게시글 내역 조회"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+    })
+
+    // 내가 좋아요 한 게시글
+    @GetMapping("/my-post-likes")
+    public ResponseEntity<RestResponse<?>> getMyPostLikes(
+            @PageableDefault(sort = "PostLikeId", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<MyPostLikesResponse> myPostLikesResponses = myActivityService.getMyPostLikes(pageable);
+        return ResponseEntity.ok(RestResponse.success(myPostLikesResponses));
+    }
 }

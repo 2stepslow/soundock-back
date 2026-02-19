@@ -2,11 +2,14 @@ package dopamine.soundock.service;
 
 
 import dopamine.soundock.dto.response.MyCommentsResponse;
+import dopamine.soundock.dto.response.MyPostLikesResponse;
 import dopamine.soundock.dto.response.MyPostsResponse;
 import dopamine.soundock.entity.Board;
 import dopamine.soundock.entity.Comment;
+import dopamine.soundock.entity.LikeBoard;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
+import dopamine.soundock.repository.BoardLikeRepository;
 import dopamine.soundock.repository.BoardRepository;
 import dopamine.soundock.repository.CommentRepository;
 import dopamine.soundock.repository.UserRepository;
@@ -25,6 +28,7 @@ public class MyActivityService {
     private final BoardRepository boardRepository;
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
+    private final BoardLikeRepository boardLikeRepository;
 
     // 내가 쓴 게시글 조회
     @Transactional(readOnly = true)
@@ -69,4 +73,25 @@ public class MyActivityService {
         );
     }
 
+    // 내가 좋아요 한 게시글 조회
+    @Transactional(readOnly = true)
+    public Page<MyPostLikesResponse> getMyPostLikes(Pageable pageable) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자 입니다."));
+
+        Page<LikeBoard> likeBoards = boardLikeRepository.findByUser(user, pageable);
+
+        return likeBoards.map(likeBoard ->
+                new MyPostLikesResponse(
+                        likeBoard.getPostLikeId(),
+                        likeBoard.getBoard().getCategory().getCategoryType(),
+                        likeBoard.getBoard().getBoardId(),
+                        likeBoard.getBoard().getTitle(),
+                        likeBoard.getBoard().getUser().getNickname(),
+                        likeBoard.getBoard().getViews(),
+                        likeBoard.getBoard().getLikes()
+                )
+        );
+    }
 }
