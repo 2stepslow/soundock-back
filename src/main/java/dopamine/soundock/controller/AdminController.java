@@ -7,7 +7,6 @@ import dopamine.soundock.dto.response.CancelRequestResponse;
 import dopamine.soundock.dto.response.LoginResponse;
 import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.service.AdminService;
-import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

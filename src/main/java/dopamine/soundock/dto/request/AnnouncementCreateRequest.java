@@ -27,9 +27,11 @@ public class AnnouncementCreateRequest {
 
     private String linkUrl;
 
-    private Integer priority;
+    @NotNull
+    private Integer priority = 0;
 
-    private Boolean isActive;
+    @NotNull
+    private Boolean isActive = true;
 
     private LocalDateTime startedAt;
 

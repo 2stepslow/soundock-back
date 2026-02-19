@@ -18,6 +18,7 @@ import dopamine.soundock.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -61,7 +62,7 @@ public class AdminService {
         }
 
         if(!user.getRole().equals(UserRole.ADMIN)) {
-            throw new CustomException("접근 권한이 없습니다.", HttpStatus.FORBIDDEN);
+            throw new AccessDeniedException("접근 권한이 없습니다.");
         }
 
         // 3. 상태 검증
@@ -89,15 +90,14 @@ public class AdminService {
     }
 
     // 후원 취소요청 리스트 조회
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional(readOnly = true)
     public List<CancelRequestResponse> getCancelRequests() {
 
          String email = SecurityContextHolder.getContext().getAuthentication().getName();
          User admin = userRepository.findByEmail(email)
                  .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
-         if (!admin.getRole().equals(UserRole.ADMIN)) {
-             throw new CustomException("접근 권한이 없습니다.", HttpStatus.FORBIDDEN);
-         }
 
         // CANCEL_REQUEST 상태인 DONATION 내역만 조회
         List<PopHistory> cancelRequests = popHistoryRepository
@@ -117,6 +117,7 @@ public class AdminService {
 
 
     // 후원 취소 요청 승인
+    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void approveCancelDonation(String transactionId) {
 
@@ -124,9 +125,6 @@ public class AdminService {
         User admin = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
-        if (!admin.getRole().equals(UserRole.ADMIN)) {
-            throw new AccessDeniedException("관리자 권한이 필요합니다.");
-        }
 
         // transactionId로 DONATION과 RECEIVED 내역 조회
         List<PopHistory> histories = popHistoryRepository.findByTransactionId(transactionId);
@@ -135,9 +133,18 @@ public class AdminService {
             throw new ResourceNotFoundException("해당 거래 내역을 찾을 수 없습니다.");
         }
 
-        if (histories.size() != 2) {
-            throw new CustomException("거래 내역이 올바르지 않습니다.", HttpStatus.BAD_REQUEST);
+        long donationCount = histories.stream()
+                .filter(h -> h.getPopTarget() == PopTarget.DONATION)
+                .count();
+
+        long receivedCount = histories.stream()
+                .filter(h -> h.getPopTarget() == PopTarget.RECEIVED)
+                .count();
+
+        if (donationCount != 1 || receivedCount != 1) {
+            throw new CustomException("거래 내역이 올바르지 않습니다.", HttpStatus.CONFLICT);
         }
+
 
         // DONATION과 RECEIVED 구분
         PopHistory donatedHistory = histories.stream()
@@ -187,6 +194,7 @@ public class AdminService {
 
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public int createAnnouncement(
             AnnounceType announceType,
@@ -241,7 +249,7 @@ public class AdminService {
 
         // 첨부파일 업로드 및 저장
         if (files != null && !files.isEmpty()) {
-            List<FileUploadResponse> uploadedFiles = s3Service.uploadFiles(files);
+                List<FileUploadResponse> uploadedFiles = s3Service.uploadFiles(files);
 
             // 파일 순서대로 DB에 저장
             for (int i = 0; i < uploadedFiles.size(); i++) {
