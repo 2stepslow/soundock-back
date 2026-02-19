@@ -298,8 +298,14 @@ public class MypageController {
     })
     // 정산 내역 조회
     @GetMapping("/settlements/history")
-    public ResponseEntity<RestResponse<?>> getListSettlement(){
-        List<PopHistoryResponse> settlementResponse = settlementService.getListSettlement();
+    public ResponseEntity<RestResponse<?>> getListSettlement(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end
+    ){
+        LocalDateTime startDateTime = (start != null) ? start.atStartOfDay() : null;
+        LocalDateTime endDateTime = (end != null) ? end.atTime(LocalTime.MAX) : null;
+
+        List<PopHistoryResponse> settlementResponse = settlementService.getListSettlement(startDateTime, endDateTime);
         return ResponseEntity.ok(RestResponse.success(settlementResponse));
     }
 

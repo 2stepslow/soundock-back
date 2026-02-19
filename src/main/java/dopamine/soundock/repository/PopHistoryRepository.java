@@ -73,6 +73,18 @@ public interface PopHistoryRepository extends JpaRepository<PopHistory, Integer>
             @Param("userId") Integer userId,
             @Param("status") List<PopStatus> popStatuses);
 
+    // 정산 취소하지 않은 정산 요청 중이거나 정산 완료된 내역 조회(조회 날짜 추가)
+    @Query("SELECT p FROM PopHistory p " +
+            "WHERE p.user.id = :userId " +
+            "AND p.popStatus IN :status " +
+            "AND p.canceledDatetime IS NULL " +
+            "AND p.requestedDatetime BETWEEN :start AND :end ")
+    List<PopHistory> findMySettlementListBetween(
+            @Param("userId") Integer userId,
+            @Param("status") List<PopStatus> popStatuses,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
+
     // 정산 요청 내역 일괄 업데이트 메서드
     @Modifying(clearAutomatically = true)
     @Query("UPDATE PopHistory p SET p.popStatus = :popStatus, " +
