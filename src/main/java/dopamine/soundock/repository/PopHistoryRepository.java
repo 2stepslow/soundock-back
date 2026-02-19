@@ -114,5 +114,16 @@ public interface PopHistoryRepository extends JpaRepository<PopHistory, Integer>
             @Param("now") LocalDateTime now,
             @Param("target") PopTarget target
     );
+
+
+    // 취소요청 상태와, 도네이션인 id 찾기 위해
+    List<PopHistory> findByPopStatusAndPopTargetOrderByRequestedDatetimeDesc(
+            PopStatus popStatus,
+            PopTarget popTarget
+    );
+
+    // 트랜잭션 ID로 모든 PopHistory 조회 (승인 시 DONATION과 RECEIVED 모두 업데이트용)
+    List<PopHistory> findByTransactionId(String transactionId);
+
 }
 
