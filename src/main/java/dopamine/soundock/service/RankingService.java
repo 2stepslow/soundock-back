@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -31,12 +32,12 @@ public class RankingService {
         updateScore(board, AppConstants.Validation.VIEW_WEIGHT);
     }
 
-    // 추천수 증가 (5점)
+    // 추천수 증가 (3점)
     public void incrementHotLikeCount(Board board) {
         updateScore(board, AppConstants.Validation.LIKE_WEIGHT);
     }
 
-    // 추천 취소 (5점 차감)
+    // 추천 취소 (3점 차감)
     public void decrementHotLikeCount(Board board) {
         updateScore(board, -AppConstants.Validation.LIKE_WEIGHT);
     }
@@ -67,6 +68,10 @@ public class RankingService {
         // ZINCRBY: 기존 점수에 가중치를 더함
         redisTemplate.opsForZSet().incrementScore(monthKey, board.getBoardId().toString(), score);
         redisTemplate.opsForZSet().incrementScore(weekKey, board.getBoardId().toString(), score);
+
+        // key 만료시간 추가 (month 40일, week 10일)
+        redisTemplate.expire(monthKey, 40, TimeUnit.DAYS);
+        redisTemplate.expire(weekKey, 10, TimeUnit.DAYS);
     }
 
     /**
@@ -175,6 +180,12 @@ public class RankingService {
         List<BoardResponse> responses = new ArrayList<>();
         for (Integer boardId : boardIds) {
             Board board = boardMap.get(boardId);
+
+            // Redis에는 존재하지만 혹시나 DB에서 조회되지 않거나, Hard delete 된 게시글이 생길 경우 NPE(null 예외) 방지를 위해 건너뛴다
+            if (board == null) {
+                continue;
+            }
+
             String imageUrl = getImageUrl(board);
 
             BoardResponse newResponse = BoardResponse.builder()

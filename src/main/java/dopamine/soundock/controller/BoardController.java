@@ -154,8 +154,8 @@ public class BoardController {
      */
     @Operation(
             summary = "메인 페이지 카테고리 별 월간 인기 게시글 TOP 8 조회",
-            description = "전체 카테고리를 대상으로 이번 달의 조회수(1점)와 추천수(3점)를 합산하여 상위 8개를 반환" +
-                    "이번 달 데이터가 8개 미만일 경우, 지난달 데이터를 보충하여 순서대로 출력"
+            description = "요청된 카테고리를 대상으로 이번 달의 조회수(1점)와 추천수(3점)를 합산하여 상위 8개를 반환" +
+                    " 이번 달 데이터가 8개 미만일 경우, 지난달 데이터를 보충하여 순서대로 출력"
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -209,7 +209,7 @@ public class BoardController {
     public ResponseEntity<RestResponse<List<BoardResponse>>> getBoards(
             @PathVariable(required = true) CategoryType categoryType
     ){
-        List<BoardResponse> response = rankingService.monthCategoryHotBoard(categoryType);
+        List<BoardResponse> response = rankingService.weekCategoryHotBoard(categoryType);
         return ResponseEntity.ok(RestResponse.success(response));
     }
 }
