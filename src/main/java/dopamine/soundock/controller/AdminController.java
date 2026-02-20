@@ -4,6 +4,7 @@ import dopamine.soundock.dto.RestResponse;
 import dopamine.soundock.dto.TokenDto;
 import dopamine.soundock.dto.request.AdminCommentRequest;
 import dopamine.soundock.dto.request.LoginRequest;
+import dopamine.soundock.dto.response.AdminInquiriesListResponse;
 import dopamine.soundock.dto.response.CancelRequestResponse;
 import dopamine.soundock.dto.response.LoginResponse;
 import dopamine.soundock.global.constants.AppConstants;
@@ -12,9 +13,14 @@ import dopamine.soundock.service.InquiryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -76,16 +82,27 @@ public class AdminController {
         return ResponseEntity.ok(RestResponse.success("승인이 완료 되었습니다."));
     }
 
-    
+    /**
+     * 1:1 문의 전체 목록 조회
+     */
+    @GetMapping("/inquiries")
+    public ResponseEntity<RestResponse<Page<AdminInquiriesListResponse>>> getAdminInquiries(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<AdminInquiriesListResponse> responses = inquiryService.getAdminInquiriesList(pageable);
+        return ResponseEntity.ok(RestResponse.success(responses));
+    }
+
     /**
      * 1:1 문의 답변
      */
     @PatchMapping("/inquiries/{inquiryId}")
     public ResponseEntity<RestResponse<Void>> registerAdminComment(
+            @AuthenticationPrincipal(expression = "username") String adminEmail,
             @PathVariable Integer inquiryId,
             @Valid @RequestBody AdminCommentRequest request
     ) {
-        inquiryService.registerAdminComment(inquiryId, request);
+        inquiryService.registerAdminComment(adminEmail, inquiryId, request);
         return ResponseEntity.ok(RestResponse.success("답변 등록이 완료되었습니다."));
     }
 

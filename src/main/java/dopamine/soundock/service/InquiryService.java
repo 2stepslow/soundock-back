@@ -2,6 +2,7 @@ package dopamine.soundock.service;
 
 import dopamine.soundock.dto.request.AdminCommentRequest;
 import dopamine.soundock.dto.request.InquiryCreateRequest;
+import dopamine.soundock.dto.response.AdminInquiriesListResponse;
 import dopamine.soundock.dto.response.InquiryDetailResponse;
 import dopamine.soundock.dto.response.InquirySummaryResponse;
 import dopamine.soundock.entity.User;
@@ -19,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -93,10 +95,10 @@ public class InquiryService {
     /**
      * 관리자 1:1 문의 답변 메서드
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
-    public void registerAdminComment(Integer inquiryId, AdminCommentRequest request) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User admin = userRepository.findByEmail(email)
+    public void registerAdminComment(String adminEmail, Integer inquiryId, AdminCommentRequest request) {
+        User admin = userRepository.findByEmail(adminEmail)
                 .orElseThrow(() -> new CustomException("유저를 찾을 수 없습니다.", HttpStatus.BAD_REQUEST));
 
         if (admin.getRole() != UserRole.ADMIN) {
@@ -113,5 +115,16 @@ public class InquiryService {
         inquiry.answerInquiry(admin, request.getAdminComment());
 
         userInquiryRepository.save(inquiry);
+    }
+
+    /**
+     * 관리자 1:1 문의 전체 조회 메서드 (페이징)
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional(readOnly = true)
+    public Page<AdminInquiriesListResponse> getAdminInquiriesList(Pageable pageable) {
+        Page<UserInquiry> inquiries = userInquiryRepository.findAll(pageable);
+
+        return inquiries.map(AdminInquiriesListResponse::from);
     }
 }
