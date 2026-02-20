@@ -2,11 +2,13 @@ package dopamine.soundock.controller;
 
 import dopamine.soundock.dto.RestResponse;
 import dopamine.soundock.dto.TokenDto;
+import dopamine.soundock.dto.request.AdminCommentRequest;
 import dopamine.soundock.dto.request.LoginRequest;
 import dopamine.soundock.dto.response.CancelRequestResponse;
 import dopamine.soundock.dto.response.LoginResponse;
 import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.service.AdminService;
+import dopamine.soundock.service.InquiryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +25,7 @@ import java.util.List;
 public class AdminController {
 
     private final AdminService adminService;
+    private final InquiryService inquiryService;
 
     @Value("${app.cookie.domain}")
     private String cookieDomain;
@@ -71,6 +74,19 @@ public class AdminController {
     ) {
         adminService.approveCancelDonation(transactionId);
         return ResponseEntity.ok(RestResponse.success("승인이 완료 되었습니다."));
+    }
+
+    
+    /**
+     * 1:1 문의 답변
+     */
+    @PatchMapping("/inquiries/{inquiryId}")
+    public ResponseEntity<RestResponse<Void>> registerAdminComment(
+            @PathVariable Integer inquiryId,
+            @Valid @RequestBody AdminCommentRequest request
+    ) {
+        inquiryService.registerAdminComment(inquiryId, request);
+        return ResponseEntity.ok(RestResponse.success("답변 등록이 완료되었습니다."));
     }
 
 }
