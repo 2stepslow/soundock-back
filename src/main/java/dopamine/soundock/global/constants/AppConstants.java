@@ -56,6 +56,10 @@ public final class AppConstants {
         public static final long MAX_FILE_SIZE = 20 * 1024 * 1024;
         // 계좌번호 길이
         public static final int ACCOUNT_TOTAL_LENGTH = 11; // 502 + 7 digits + 1
+        // 인기 게시글 조회수 가중치
+        public static final int VIEW_WEIGHT = 1;
+        // 인기 게시글 좋아요 가중치
+        public static final int LIKE_WEIGHT = 3;
     }
 
     /**
@@ -140,6 +144,8 @@ public final class AppConstants {
     public static class Redis {
         public static final String RATE_LIMIT_PREFIX = "rate:limit:email-search:"; // 이메일 찾기 발송 제한 키
         public static final String KEY_PREFIX = "board:view:"; // 조회수 중복 제한 키
+        public static final String RANKING_MONTH_PREFIX = "ranking:monthly:"; // 월간 게시글 랭킹(메인페이지)
+        public static final String RANKING_WEEK_PREFIX = "ranking:weekly:";
     }
 
 

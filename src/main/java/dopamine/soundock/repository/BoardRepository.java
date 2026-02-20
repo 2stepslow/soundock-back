@@ -27,6 +27,10 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
     Optional<Board> findByBoardIdAndDeletedDateTimeIsNull(Integer boardId);
     // 카테고리의 삭제되지 않은 게시글 조회
     Page<Board> findByDeletedDateTimeIsNullAndCategoryCategoryType(CategoryType categoryType, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"user", "category", "playlist", "attachments"})
+    List<Board> findAllByBoardIdInAndDeletedDateTimeIsNull(List<Integer> boardIds);
+
     @Modifying
     @Query("UPDATE Board b SET b.likes = b.likes + 1 WHERE b.boardId = :boardId")
     void increaseLikes(@Param("boardId") Integer boardId);

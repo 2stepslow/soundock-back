@@ -45,7 +45,6 @@ public class InquiryController {
     })
     @PostMapping("/create")
     public ResponseEntity<RestResponse<String>> createInquiry(
-            // @RequestBody는 파일 업로드가 안되서 @ModelAttribute 사용
             @Valid @RequestBody InquiryCreateRequest request,
             @AuthenticationPrincipal(expression = "username") String email
             ) {
