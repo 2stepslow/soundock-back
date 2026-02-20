@@ -156,7 +156,7 @@ public class SettlementService {
 
     // 정산 내역 조회
     @Transactional(readOnly = true)
-    public List<PopHistoryResponse> getListSettlement(){
+    public List<PopHistoryResponse> getListSettlement(LocalDateTime start, LocalDateTime end){
         // 로그인한 유저 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
@@ -166,7 +166,16 @@ public class SettlementService {
         // popStatus = 'SETTLEMENT REQUEST' or 'SETTLEMENT COMPLETED'
         // canceledDatetime IS NULL
         List<PopStatus> statuses = List.of(PopStatus.SETTLEMENT_REQUEST, PopStatus.SETTLEMENT_COMPLETED);
-        List<PopHistory> settlementPop = popHistoryRepository.findMySettlementList(user.getId(), statuses);
+        List<PopHistory> settlementPop;
+
+        // 시작일과 종료일이 모두 파라미터로 넘어온 경우 기간 검색 수행
+        if (start != null && end != null) {
+            settlementPop = popHistoryRepository.findMySettlementListBetween(user.getId(), statuses, start, end);
+        } else {
+            // 1-2. 날짜가 없으면 전체 내역 조회
+            settlementPop = popHistoryRepository.findMySettlementList(user.getId(), statuses);
+        }
+
 
         if (settlementPop.isEmpty()){
             return new ArrayList<>();
