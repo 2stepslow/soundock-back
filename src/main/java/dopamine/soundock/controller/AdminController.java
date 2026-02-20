@@ -4,9 +4,7 @@ import dopamine.soundock.dto.RestResponse;
 import dopamine.soundock.dto.TokenDto;
 import dopamine.soundock.dto.request.AdminCommentRequest;
 import dopamine.soundock.dto.request.LoginRequest;
-import dopamine.soundock.dto.response.AdminInquiriesListResponse;
-import dopamine.soundock.dto.response.CancelRequestResponse;
-import dopamine.soundock.dto.response.LoginResponse;
+import dopamine.soundock.dto.response.*;
 import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.service.AdminService;
 import dopamine.soundock.service.InquiryService;
@@ -94,15 +92,27 @@ public class AdminController {
     }
 
     /**
+     * 1:1 문의 상세 조회
+     */
+    @GetMapping("/inquiries/{userInquiryId}")
+    public ResponseEntity<RestResponse<AdminInquiryDetailResponse>> getInquiryDetail(
+            @PathVariable Integer userInquiryId
+    ) {
+        AdminInquiryDetailResponse response = inquiryService.getAdminInquiry(userInquiryId);
+        return ResponseEntity.ok(RestResponse.success(response));
+    }
+
+
+    /**
      * 1:1 문의 답변
      */
-    @PatchMapping("/inquiries/{inquiryId}")
+    @PatchMapping("/inquiries/{userInquiryId}")
     public ResponseEntity<RestResponse<Void>> registerAdminComment(
             @AuthenticationPrincipal(expression = "username") String adminEmail,
-            @PathVariable Integer inquiryId,
+            @PathVariable Integer userInquiryId,
             @Valid @RequestBody AdminCommentRequest request
     ) {
-        inquiryService.registerAdminComment(adminEmail, inquiryId, request);
+        inquiryService.registerAdminComment(adminEmail, userInquiryId, request);
         return ResponseEntity.ok(RestResponse.success("답변 등록이 완료되었습니다."));
     }
 

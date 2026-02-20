@@ -3,14 +3,13 @@ package dopamine.soundock.service;
 import dopamine.soundock.dto.request.AdminCommentRequest;
 import dopamine.soundock.dto.request.InquiryCreateRequest;
 import dopamine.soundock.dto.response.AdminInquiriesListResponse;
+import dopamine.soundock.dto.response.AdminInquiryDetailResponse;
 import dopamine.soundock.dto.response.InquiryDetailResponse;
 import dopamine.soundock.dto.response.InquirySummaryResponse;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.entity.UserInquiry;
 import dopamine.soundock.enums.CommentStatus;
-import dopamine.soundock.enums.InquiryStatus;
 import dopamine.soundock.enums.UserRole;
-import dopamine.soundock.enums.UserStatus;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
 import dopamine.soundock.repository.UserInquiryRepository;
@@ -21,7 +20,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -97,7 +95,7 @@ public class InquiryService {
      */
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
-    public void registerAdminComment(String adminEmail, Integer inquiryId, AdminCommentRequest request) {
+    public void registerAdminComment(String adminEmail, Integer userInquiryId, AdminCommentRequest request) {
         User admin = userRepository.findByEmail(adminEmail)
                 .orElseThrow(() -> new CustomException("유저를 찾을 수 없습니다.", HttpStatus.BAD_REQUEST));
 
@@ -105,7 +103,7 @@ public class InquiryService {
             throw new CustomException("사용할 수 없는 기능입니다.", HttpStatus.FORBIDDEN);
         }
 
-        UserInquiry inquiry = userInquiryRepository.findByUserInquiryId(inquiryId)
+        UserInquiry inquiry = userInquiryRepository.findByUserInquiryId(userInquiryId)
                 .orElseThrow(() -> new ResourceNotFoundException("문의 내역을 찾을 수 없습니다."));
 
         if (inquiry.getCommentStatus() == CommentStatus.COMPLETED) {
@@ -126,5 +124,17 @@ public class InquiryService {
         Page<UserInquiry> inquiries = userInquiryRepository.findAll(pageable);
 
         return inquiries.map(AdminInquiriesListResponse::from);
+    }
+
+    /**
+     * 관리자 1:1 문의 상세 조회 메서드
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional(readOnly = true)
+    public AdminInquiryDetailResponse getAdminInquiry(Integer userInquiryId) {
+        UserInquiry inquiry = userInquiryRepository.findByUserInquiryId(userInquiryId)
+                .orElseThrow(() -> new ResourceNotFoundException("문의 내역을 찾을 수 없습니다."));
+
+        return AdminInquiryDetailResponse.from(inquiry);
     }
 }
