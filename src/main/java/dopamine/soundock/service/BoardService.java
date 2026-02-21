@@ -200,6 +200,7 @@ public class BoardService {
                 .playlistId(playlistId)
                 .playlistTitle(playlistTitle)
                 .playlistItems(playlistItems)
+                .isDeleted(board.getUser().isDeleted())
                 .build();
 
         return boardResponse;
@@ -253,6 +254,7 @@ public class BoardService {
                     .countComment(board.getCountComment())
                     .imageUrl(imageUrl)
                     .categoryType(board.getCategory().getCategoryType())
+                    .isDeleted(board.getUser().isDeleted())
                     .build();
             boardResponses.add(newResponse);
         }
