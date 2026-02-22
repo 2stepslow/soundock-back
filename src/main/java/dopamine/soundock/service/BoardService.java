@@ -44,6 +44,7 @@ public class BoardService {
     private final PlaylistRepository playlistRepository;
     private final NotificationService notificationService;
     private final RankingService rankingService;
+    private final SpotlightService spotlightService;
 
     // 게시글 작성
     @Transactional
@@ -137,6 +138,11 @@ public class BoardService {
         if (viewService.checkView(boardId, email, clientIp)) {
             boardRepository.incrementViews(boardId);
             rankingService.incrementHotViewCount(board);
+        }
+
+        // Spotlight 게시글이면 pop 차감
+        if (board.getCategory().getCategoryType() == CategoryType.SPOTLIGHT) {
+            spotlightService.decreaseDetailViewPop(boardId, email);
         }
 
         // 게시글에 연결된 첨부파일 조회
