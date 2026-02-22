@@ -1,6 +1,8 @@
 package dopamine.soundock.repository;
 
 import dopamine.soundock.entity.Board;
+import dopamine.soundock.entity.Category;
+import dopamine.soundock.entity.LikeBoard;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.CategoryType;
 import org.springframework.data.domain.Page;
@@ -47,6 +49,20 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
     @EntityGraph(attributePaths = {"playlist", "playlist.items", "category", "user"})
     @Query("SELECT b FROM Board b WHERE b.boardId = :boardId AND b.deletedDateTime IS NULL")
     Optional<Board> findByIdWithPlaylist(@Param("boardId") Integer boardId);
+
+
+    // 검색기능 - 글제목
+    @Query("SELECT b FROM Board b WHERE b.category.categoryType = :categoryType AND b.deletedDateTime IS NULL AND b.title LIKE :pattern")
+    Page<Board> searchByTitle(@Param("categoryType") CategoryType categoryType,
+                              @Param("pattern") String pattern,
+                              Pageable pageable);
+
+    // 검색기능 - 닉네임
+    @Query("SELECT b FROM Board b WHERE b.category.categoryType = :categoryType AND b.deletedDateTime IS NULL AND b.user.nickname LIKE :pattern")
+    Page<Board> searchByNickname(@Param("categoryType") CategoryType categoryType,
+                                 @Param("pattern") String pattern,
+                                 Pageable pageable);
+
 
     // 내가 쓴 게시글 조회 (삭제된 글 제외)
     Page<Board> findByUserAndIsDeletedFalse(User user, Pageable pageable);
