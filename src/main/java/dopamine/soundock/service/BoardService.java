@@ -483,7 +483,7 @@ public class BoardService {
             }
             case NICKNAME -> {
                 if (keywordTrim.length() > AppConstants.Validation.NICKNAME_MAX_LENGTH) {
-                    throw new IllegalArgumentException("10자 이하로 입력하세요");
+                    throw new IllegalArgumentException("닉네임은 " + AppConstants.Validation.NICKNAME_MAX_LENGTH + "자 이하로 입력하세요");
                 }
                 if (!keywordTrim.matches(AppConstants.ValidationPattern.NICKNAME_PATTERN)) {
                     throw new IllegalArgumentException(AppConstants.ErrorMessage.NICKNAME_FORMAT_ERROR);

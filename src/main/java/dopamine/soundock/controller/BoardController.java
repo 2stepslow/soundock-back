@@ -221,13 +221,13 @@ public class BoardController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
-            @ApiResponse(responseCode = "404", description = "", content = @Content(schema = @Schema(implementation = RestResponse.class)))
+            @ApiResponse(responseCode = "400", description = "올바른 값을 입력하세요", content = @Content(schema = @Schema(implementation = RestResponse.class)))
     })
 
     // 검색기능
     @GetMapping("/search")
     public ResponseEntity<RestResponse<?>> getBoardSearch(
-            @ModelAttribute BoardSearchRequest boardSearchRequest,
+            @Valid @ModelAttribute BoardSearchRequest boardSearchRequest,
             @RequestParam(defaultValue = "0") Integer page) {
         Page<BoardResponse> boardResponses = boardService.getBoardSearch(boardSearchRequest, page);
         return ResponseEntity.ok(RestResponse.success(boardResponses));
