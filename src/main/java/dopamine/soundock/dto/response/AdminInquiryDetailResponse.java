@@ -15,6 +15,7 @@ public class AdminInquiryDetailResponse {
     // 문의 기본 내용
     private Integer userInquiryId;
     private String inquiryType;
+    private String nickName;
     private String title;
     private String content;
     private String inquiryStatus;
@@ -35,6 +36,7 @@ public class AdminInquiryDetailResponse {
     public static AdminInquiryDetailResponse from(UserInquiry inquiry) {
         return AdminInquiryDetailResponse.builder()
                 .userInquiryId(inquiry.getUserInquiryId())
+                .nickName(inquiry.getUser().getNickname())
                 .title(inquiry.getTitle())
                 .inquiryType(inquiry.getInquiryType().name())
                 .content(inquiry.getContent())
