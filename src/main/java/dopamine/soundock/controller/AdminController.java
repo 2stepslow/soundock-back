@@ -11,13 +11,23 @@ import dopamine.soundock.enums.AnnounceType;
 import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.service.AdminService;
 import dopamine.soundock.service.AnnouncementService;
+import dopamine.soundock.dto.request.AdminCommentRequest;
+import dopamine.soundock.dto.request.LoginRequest;
+import dopamine.soundock.dto.response.*;
+import dopamine.soundock.global.constants.AppConstants;
+import dopamine.soundock.service.AdminService;
+import dopamine.soundock.service.InquiryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,6 +41,7 @@ public class AdminController {
 
     private final AdminService adminService;
     private final AnnouncementService announcementService;
+    private final InquiryService inquiryService;
 
     @Value("${app.cookie.domain}")
     private String cookieDomain;
@@ -98,6 +109,25 @@ public class AdminController {
             @PathVariable(required = true) Integer announceId
     ) {
         AnnouncementResponse response = announcementService.getAnnouncementDetail(announceId);
+    /**
+     * 1:1 문의 전체 목록 조회
+     */
+    @GetMapping("/inquiries")
+    public ResponseEntity<RestResponse<Page<AdminInquiriesListResponse>>> getAdminInquiries(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<AdminInquiriesListResponse> responses = inquiryService.getAdminInquiriesList(pageable);
+        return ResponseEntity.ok(RestResponse.success(responses));
+    }
+
+    /**
+     * 1:1 문의 상세 조회
+     */
+    @GetMapping("/inquiries/{userInquiryId}")
+    public ResponseEntity<RestResponse<AdminInquiryDetailResponse>> getInquiryDetail(
+            @PathVariable Integer userInquiryId
+    ) {
+        AdminInquiryDetailResponse response = inquiryService.getAdminInquiry(userInquiryId);
         return ResponseEntity.ok(RestResponse.success(response));
     }
 
@@ -136,5 +166,18 @@ public class AdminController {
         return ResponseEntity.ok(RestResponse.success("삭제 되었습니다."));
     }
 
+
+    /**
+     * 1:1 문의 답변
+     */
+    @PatchMapping("/inquiries/{userInquiryId}")
+    public ResponseEntity<RestResponse<Void>> registerAdminComment(
+            @AuthenticationPrincipal(expression = "username") String adminEmail,
+            @PathVariable Integer userInquiryId,
+            @Valid @RequestBody AdminCommentRequest request
+    ) {
+        inquiryService.registerAdminComment(adminEmail, userInquiryId, request);
+        return ResponseEntity.ok(RestResponse.success("답변 등록이 완료되었습니다."));
+    }
 
 }
