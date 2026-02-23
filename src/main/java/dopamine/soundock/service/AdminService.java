@@ -23,6 +23,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -39,8 +41,9 @@ public class AdminService {
     private final TokenProvider tokenProvider;
     private final PopHistoryRepository popHistoryRepository;
     private final AnnouncementRepository announcementRepository;
-    private final S3Service s3Service;
+    private final AttachmentAfterCommitService attachmentAfterCommitService;
     private final AnnouncementAttachmentRepository announcementAttachmentRepository;
+    private final S3Service s3Service;
 
 
     // 관리자 로그인
@@ -194,38 +197,21 @@ public class AdminService {
 
     }
 
+    // 공지사항 작성
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public int createAnnouncement(
             AnnounceType announceType,
             AnnouncementCreateRequest createRequest,
             List<MultipartFile> files
-    ) throws IOException {
+    ) {
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User admin = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
 
-        if (!admin.getRole().equals(UserRole.ADMIN)) {
-            throw new AccessDeniedException("관리자 권한이 필요합니다.");
-        }
-
-        // 파일 개수 검증 (이미지 5장, 파일 5개)
-        if (files != null && !files.isEmpty()) {
-            long imageCount = files.stream()
-                    .filter(file -> file.getContentType() != null && file.getContentType().startsWith("image/"))
-                    .count();
-            long fileCount = files.stream()
-                    .filter(file -> file.getContentType() != null && !file.getContentType().startsWith("image/"))
-                    .count();
-
-            if (imageCount > 5) {
-                throw new IllegalArgumentException("이미지는 최대 5장까지 업로드 가능합니다.");
-            }
-            if (fileCount > 5) {
-                throw new IllegalArgumentException("파일은 최대 5개까지 업로드 가능합니다.");
-            }
-        }
+        // 파일 개수 검증
+        validateFileCounts(files);
 
         // 게시 시작일이 없으면 현재 시간으로 설정
         LocalDateTime startedAt = createRequest.getStartedAt();
@@ -233,13 +219,16 @@ public class AdminService {
             startedAt = LocalDateTime.now();
         }
 
-        // 공지사항 생성
+        // 타입별 기존 priority=0 은 1로만 변경
+        announcementRepository.bumpOnlyZeroToOne(announceType);
+
+        // 공지사항 생성 - 새 글은 항상 priority=0
         Announcement announcement = Announcement.builder()
                 .announceType(announceType)
                 .title(createRequest.getTitle())
                 .content(createRequest.getContent())
                 .linkUrl(createRequest.getLinkUrl())
-                .priority(createRequest.getPriority())
+                .priority(0)
                 .isActive(createRequest.getIsActive())
                 .startedAt(startedAt)
                 .endedAt(createRequest.getEndedAt())
@@ -247,28 +236,137 @@ public class AdminService {
 
         Announcement savedAnnouncement = announcementRepository.save(announcement);
 
-        // 첨부파일 업로드 및 저장
+        // 첨부파일 업로드/저장은 afterCommit 이후에만 수행
         if (files != null && !files.isEmpty()) {
-                List<FileUploadResponse> uploadedFiles = s3Service.uploadFiles(files);
+            final Integer announceId = savedAnnouncement.getAnnounceId();
+            final List<MultipartFile> filesCopy = List.copyOf(files);
 
-            // 파일 순서대로 DB에 저장
-            for (int i = 0; i < uploadedFiles.size(); i++) {
-                FileUploadResponse fileResponse = uploadedFiles.get(i);
-                FileType fileType = fileResponse.getIsImage() ? FileType.IMAGE : FileType.FILE;
-
-                AnnouncementAttachment attachment = AnnouncementAttachment.builder()
-                        .announcement(savedAnnouncement)
-                        .fileUrl(fileResponse.getFileUrl())
-                        .fileKey(fileResponse.getFileKey())
-                        .fileType(fileType)
-                        .originalFilename(fileResponse.getOriginalFilename())
-                        .build();
-
-                announcementAttachmentRepository.save(attachment);
-            }
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    attachmentAfterCommitService.uploadAndSaveAnnouncementAttachments(announceId, filesCopy);
+                }
+            });
         }
 
         return savedAnnouncement.getAnnounceId();
+    }
+
+    // 공지사항 수정
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public void updateAnnouncement(
+            Integer announceId,
+            AnnouncementCreateRequest updateRequest,
+            List<MultipartFile> newFiles,
+            List<Integer> deleteAttachmentIds
+    ) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User admin = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+
+        Announcement announcement = announcementRepository.findById(announceId)
+                .orElseThrow(() -> new ResourceNotFoundException("공지사항을 찾을 수 없습니다."));
+
+        // 들어온 값만 변경 (priority는 아래에서 따로 처리)
+        if (updateRequest != null) {
+            if (updateRequest.getTitle() != null) announcement.setTitle(updateRequest.getTitle());
+            if (updateRequest.getContent() != null) announcement.setContent(updateRequest.getContent());
+            if (updateRequest.getLinkUrl() != null) announcement.setLinkUrl(updateRequest.getLinkUrl());
+            if (updateRequest.getIsActive() != null) announcement.setIsActive(updateRequest.getIsActive());
+            if (updateRequest.getStartedAt() != null) announcement.setStartedAt(updateRequest.getStartedAt());
+            if (updateRequest.getEndedAt() != null) announcement.setEndedAt(updateRequest.getEndedAt());
+        }
+
+        // priority 처리, 타입별 priority=0은 항상 1개 유지
+        if (updateRequest != null && updateRequest.getPriority() != null) {
+            Integer newPriority = updateRequest.getPriority();
+
+            if (newPriority == 0) {
+                // 0 -> 0이면 bump 필요X
+                if (announcement.getPriority() == null || announcement.getPriority() != 0) {
+                    announcementRepository.bumpOnlyZeroToOneExceptSelf(
+                            announcement.getAnnounceType(),
+                            announcement.getAnnounceId()
+                    );
+                }
+            }
+            announcement.setPriority(newPriority);
+        }
+
+        // 첨부 삭제 (S3 + DB)
+        if (deleteAttachmentIds != null && !deleteAttachmentIds.isEmpty()) {
+            List<AnnouncementAttachment> toDelete = announcementAttachmentRepository.findAllById(deleteAttachmentIds);
+            for (AnnouncementAttachment attachment : toDelete) {
+                if (!attachment.getAnnouncement().getAnnounceId().equals(announceId)) {
+                    throw new AccessDeniedException("다른 공지사항의 첨부파일은 삭제할 수 없습니다.");
+                }
+                s3Service.deleteFile(attachment.getFileKey());
+                announcementAttachmentRepository.delete(attachment);
+            }
+        }
+
+        // 신규 파일 afterCommit 업로드
+        if (newFiles != null && !newFiles.isEmpty()) {
+            validateFileCounts(newFiles);
+
+            final Integer id = announcement.getAnnounceId();
+            final List<MultipartFile> filesCopy = List.copyOf(newFiles);
+
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    attachmentAfterCommitService.uploadAndSaveAnnouncementAttachments(id, filesCopy);
+                }
+            });
+        }
+
+        announcementRepository.save(announcement);
+    }
+
+
+    // 공지사항 삭제 - isactive가 있으므로 하드 딜리트 작성
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public void deleteAnnouncement(Integer announceId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User admin = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+
+        Announcement announcement = announcementRepository.findById(announceId)
+                .orElseThrow(() -> new ResourceNotFoundException("공지사항을 찾을 수 없습니다."));
+
+        // s3 파일 삭제
+        if (announcement.getAttachments() != null && !announcement.getAttachments().isEmpty()) {
+            for (AnnouncementAttachment attachment : announcement.getAttachments()) {
+                if (attachment.getFileKey() != null && !attachment.getFileKey().isBlank()) {
+                    s3Service.deleteFile(attachment.getFileKey());
+                }
+            }
+        }
+
+        announcementRepository.delete(announcement);
+    }
+
+
+    // 파일 개수 검증 메서드
+    private void validateFileCounts(List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) return;
+
+        long imageCount = files.stream()
+                .filter(f -> f.getContentType() != null && f.getContentType().startsWith("image/"))
+                .count();
+
+        long fileCount = files.stream()
+                .filter(f -> f.getContentType() != null && !f.getContentType().startsWith("image/"))
+                .count();
+
+        if (imageCount > 5) {
+            throw new IllegalArgumentException("이미지는 최대 5장까지 업로드 가능합니다.");
+        }
+        if (fileCount > 5) {
+            throw new IllegalArgumentException("파일은 최대 5개까지 업로드 가능합니다.");
+        }
     }
 
 

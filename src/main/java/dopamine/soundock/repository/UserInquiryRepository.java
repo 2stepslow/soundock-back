@@ -16,4 +16,6 @@ public interface UserInquiryRepository extends JpaRepository<UserInquiry, Intege
     Page<UserInquiry> findAllByUserAndCreatedAtBetween(User user, LocalDateTime start, LocalDateTime end, Pageable pageable);
 
     Optional<UserInquiry> findByUserInquiryIdAndUser_Email(Integer userInquiryId, String email);
+
+    Optional<UserInquiry> findByUserInquiryId(Integer userInquiryId);
 }
