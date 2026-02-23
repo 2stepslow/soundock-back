@@ -114,10 +114,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/adm1n/login").permitAll()    // 관리자 테스트용
                         .requestMatchers("/api/adm1n/**").hasRole("ADMIN")  // 관리자 테스트용
                         .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers("/v1/payments/**","/payment/**").permitAll() // ** : 테스트용 /api/payments/, /payment/ 뒤의 모든 것들 허용
+                        .requestMatchers("/v1/payments/**").authenticated() // 결제 API는 인증 필요
                         .requestMatchers("/api/auth/**").permitAll() // ** : /api/auth/ 뒤의 모든 것들 허용
                         .requestMatchers(HttpMethod.GET,"/api/boards/**").permitAll() // ** : 테스트용 /api/boards/ 뒤의 모든 것들 허용
                         .requestMatchers(HttpMethod.GET,"/api/announcement/**").permitAll() // ** : 공지사항 조회는 모두 허용
+                        .requestMatchers(HttpMethod.GET,"/api/spotlight/carousel").permitAll() // 비로그인 유저도 메인 캐러셀 조회 허용
                         .requestMatchers(
                                 "/api/passwordless/login-trigger", // 패스워드리스 로그인 트리거 허용
                                 "/api/passwordless/result", // 패스워드리스 로그인 결과 확인 허용

@@ -104,15 +104,19 @@ public class PopService {
         // 재화 사용 내역 조회시 내역이 없으면 예외 처리 대신 빈값 전달(throw new Resource~Exception 제거 코드 제거)
 
         // 2. 최신 내역만 담을 Map (LinkedHashMap은 정렬 순서를 보존)
+        // 홍보(FEATURED_BOARD)는 등록/연장 각각 별도 표시, 후원(DONATION)은 transactionId 기준 최신 1건
         Map<String, PopHistory> filteredMap = new LinkedHashMap<>();
 
         for (PopHistory popHistory : results) {
-            // 홍보는 boardId, 후원은 transactionId를 키로 사용(같은 값 구분)
-            String key = (popHistory.getPopTarget() == PopTarget.FEATURED_BOARD)
-                    ? "BOARD_" + popHistory.getBoard().getBoardId()
-                    : "TX_" + popHistory.getTransactionId();
+            String key;
+            if (popHistory.getPopTarget() == PopTarget.FEATURED_BOARD) {
+                // 홍보는 각 내역(등록, 연장)을 개별 표시
+                key = "BOARD_" + popHistory.getPopHistoryId();
+            } else {
+                // 후원은 transactionId 기준 최신 1건만
+                key = "TX_" + popHistory.getTransactionId();
+            }
 
-            // 최신순으로 정렬되어 있으므로, 처음 발견된 키가 가장 최신 상태의 데이터
             if (!filteredMap.containsKey(key)) {
                 filteredMap.put(key, popHistory);
             }
@@ -165,23 +169,44 @@ public class PopService {
         }
 
         // 이미 홍보 만료 기간이 지난 게시글인지 검증
-        if (board.getFeaturedExpiredDateTime().isBefore(LocalDateTime.now())){
+        // featuredExpiredDateTime이 null이면 아직 홍보 진행 중 (만료 안 됨)
+        if (board.getFeaturedExpiredDateTime() != null
+                && board.getFeaturedExpiredDateTime().isBefore(LocalDateTime.now())){
             throw new IllegalArgumentException("이미 홍보가 완료된 게시글입니다. 취소 요청이 불가합니다.");
         }
 
-        // popHistory 중 popTarget이 FEATURED_BOARD와 일치하는 boardId 내역 조회
-        PopHistory usedPop = popHistoryRepository.findByPopTargetAndBoardBoardId(PopTarget.FEATURED_BOARD, board.getBoardId())
+        // 프론트에서 선택한 특정 popHistory 내역 조회
+        PopHistory usedPop = popHistoryRepository.findById(cancelRequest.getPopHistoryId())
                 .orElseThrow(() -> new IllegalArgumentException("해당 게시글에 대한 게시글 등록 상품 구매 내역을 찾을 수 없습니다."));
+
+        // 해당 내역이 실제로 이 게시글의 FEATURED_BOARD 내역인지 검증
+        if (usedPop.getPopTarget() != PopTarget.FEATURED_BOARD
+                || usedPop.getBoard() == null
+                || !usedPop.getBoard().getBoardId().equals(board.getBoardId())) {
+            throw new IllegalArgumentException("해당 게시글의 재화 사용 내역이 아닙니다.");
+        }
+
+        // 이미 취소된 내역인지 검증
+        if (usedPop.getPopStatus() == PopStatus.CANCELED) {
+            throw new IllegalArgumentException("이미 취소된 재화 사용 내역입니다.");
+        }
 
         // 게시글 작성 시각 10분 이내인 경우만 환불
         if (LocalDateTime.now()
                 .isAfter(board.getCreatedDateTime().plusMinutes(AppConstants.Time.AVAILABLE_REQUEST_CANCEL_MINUTES))){
             throw new InvalidCancelFeaturedBoardException("게시글 등록 후 10분 이내인 경우만 재화 환불이 가능합니다.");
         }
-        // 유저 popBalance 업데이트
-        userRepository.increasePopBalance(user.getEmail(), Math.abs(usedPop.getChangeAmount()));
+        int cancelAmount = Math.abs(usedPop.getChangeAmount());
 
+        // 유저 popBalance 업데이트
+        userRepository.increasePopBalance(user.getEmail(), cancelAmount);
+
+        // 게시글 remainingPop 차감
+        boardRepository.decreaseRemainingPop(board.getBoardId(), cancelAmount);
+
+        // remainingPop이 0이 되면 만료 처리
         LocalDateTime now = LocalDateTime.now();
+        boardRepository.updateExpiredSpotlightBoards(now);
 
         // 소모한 재화 반환, popHistory 내역 생성
         PopHistory popHistory = PopHistory.builder()

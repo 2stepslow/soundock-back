@@ -44,6 +44,7 @@ public class BoardService {
     private final PlaylistRepository playlistRepository;
     private final NotificationService notificationService;
     private final RankingService rankingService;
+    private final SpotlightService spotlightService;
 
     // 게시글 작성
     @Transactional
@@ -139,6 +140,11 @@ public class BoardService {
             rankingService.incrementHotViewCount(board);
         }
 
+        // Spotlight 게시글이면 pop 차감
+        if (board.getCategory().getCategoryType() == CategoryType.SPOTLIGHT) {
+            spotlightService.decreaseDetailViewPop(board, email);
+        }
+
         // 게시글에 연결된 첨부파일 조회
         List<BoardAttachments> attachments = boardAttachmentsRepository.findByBoardOrderBySequenceAsc(board);
 
@@ -200,6 +206,8 @@ public class BoardService {
                 .playlistId(playlistId)
                 .playlistTitle(playlistTitle)
                 .playlistItems(playlistItems)
+                .isDeleted(board.getUser().isDeleted())
+                .remainingPop(board.getRemainingPop())
                 .build();
 
         return boardResponse;
@@ -253,6 +261,7 @@ public class BoardService {
                     .countComment(board.getCountComment())
                     .imageUrl(imageUrl)
                     .categoryType(board.getCategory().getCategoryType())
+                    .isDeleted(board.getUser().isDeleted())
                     .build();
             boardResponses.add(newResponse);
         }

@@ -21,6 +21,8 @@ public class BoardCreateRequest {
 
     private Integer playlistId;
 
+    // Spotlight 게시글 작성 시 사용할 재화량
+    private Integer popAmount;
 
     // 삭제할 기존 이미지 ID 리스트
     private List<Integer> deleteAttachmentIds;
