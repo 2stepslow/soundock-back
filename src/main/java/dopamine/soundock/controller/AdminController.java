@@ -109,6 +109,8 @@ public class AdminController {
             @PathVariable(required = true) Integer announceId
     ) {
         AnnouncementResponse response = announcementService.getAnnouncementDetail(announceId);
+        return ResponseEntity.ok(RestResponse.success(response));
+    }
     /**
      * 1:1 문의 전체 목록 조회
      */
