@@ -2,6 +2,7 @@ package dopamine.soundock.controller;
 
 import dopamine.soundock.dto.RestResponse;
 import dopamine.soundock.dto.request.BoardCreateRequest;
+import dopamine.soundock.dto.request.SpotlightExtendRequest;
 import dopamine.soundock.dto.response.BoardResponse;
 import dopamine.soundock.service.SpotlightService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -61,6 +62,26 @@ public class SpotlightController {
     ) {
         List<BoardResponse> responses = spotlightService.getCarouselSpotlights(email);
         return ResponseEntity.ok(RestResponse.success(responses));
+    }
+
+    @Operation(
+            summary = "Spotlight 게시글 연장",
+            description = "재화를 추가 소모하여 Spotlight 게시글의 게시 기간을 연장합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "연장 성공", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "400", description = "재화 부족 또는 최소 금액 미달", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "403", description = "본인 게시글이 아님", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+            @ApiResponse(responseCode = "404", description = "게시글 없음", content = @Content(schema = @Schema(implementation = RestResponse.class))),
+    })
+    // Spotlight 게시글 연장 (재화 추가 충전)
+    @PostMapping("/{boardId}/extend")
+    public ResponseEntity<RestResponse<?>> extendSpotlight(
+            @PathVariable Integer boardId,
+            @Valid @RequestBody SpotlightExtendRequest request
+    ) {
+        spotlightService.extendSpotlight(boardId, request.getPopAmount());
+        return ResponseEntity.ok(RestResponse.success("Spotlight 게시글 연장이 완료되었습니다."));
     }
 
 }

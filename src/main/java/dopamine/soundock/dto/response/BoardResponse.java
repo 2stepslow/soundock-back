@@ -41,4 +41,7 @@ public class BoardResponse{
     private String playlistTitle;
     private List<PlaylistItemResponse> playlistItems;
 
+    // Spotlight 잔여 재화 (일반 게시글은 null)
+    private Integer remainingPop;
+
 }

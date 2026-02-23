@@ -83,4 +83,16 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
     @Query("UPDATE Board b SET b.featuredExpiredDateTime = :now " +
            "WHERE b.remainingPop = 0 AND b.remainingPop IS NOT NULL AND b.featuredExpiredDateTime IS NULL")
     int updateExpiredSpotlightBoards(@Param("now") LocalDateTime now);
+
+    // Spotlight 게시글 잔여 재화 충전 (연장)
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Board b SET b.remainingPop = b.remainingPop + :amount " +
+           "WHERE b.boardId = :boardId")
+    int increaseRemainingPop(@Param("boardId") Integer boardId, @Param("amount") int amount);
+
+    // Spotlight 연장 시 만료 기록 초기화 (재등록 처리)
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Board b SET b.featuredExpiredDateTime = null " +
+           "WHERE b.boardId = :boardId AND b.featuredExpiredDateTime IS NOT NULL")
+    int clearFeaturedExpiredDateTime(@Param("boardId") Integer boardId);
 }

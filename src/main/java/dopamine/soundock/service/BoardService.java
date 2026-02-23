@@ -142,7 +142,7 @@ public class BoardService {
 
         // Spotlight 게시글이면 pop 차감
         if (board.getCategory().getCategoryType() == CategoryType.SPOTLIGHT) {
-            spotlightService.decreaseDetailViewPop(boardId, email);
+            spotlightService.decreaseDetailViewPop(board, email);
         }
 
         // 게시글에 연결된 첨부파일 조회
@@ -207,6 +207,7 @@ public class BoardService {
                 .playlistTitle(playlistTitle)
                 .playlistItems(playlistItems)
                 .isDeleted(board.getUser().isDeleted())
+                .remainingPop(board.getRemainingPop())
                 .build();
 
         return boardResponse;
