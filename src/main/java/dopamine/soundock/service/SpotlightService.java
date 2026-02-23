@@ -129,8 +129,11 @@ public class SpotlightService {
                 .toList();
 
         // 로그인 유저가 메인 캐러셀 조회했을 경우만 게시글의 pop 차감 (본인 게시글 제외)
+        log.info("[Carousel] email={}, selectedBoards={}", email, selectedBoards.size());
         if (email != null) {
             for (Board board : selectedBoards) {
+                log.info("[Carousel] boardId={}, boardOwner={}, viewer={}",
+                        board.getBoardId(), board.getUser().getEmail(), email);
                 if (board.getUser().getEmail().equals(email)) continue;
 
                 String key = AppConstants.Redis.SPOTLIGHT_CAROUSEL_PREFIX
@@ -139,9 +142,12 @@ public class SpotlightService {
                 Boolean isFirst = redisTemplate.opsForValue()
                         .setIfAbsent(key, "viewed", Duration.ofHours(AppConstants.Time.VIEW_COOLDOWN_HOURS));
 
+                log.info("[Carousel] boardId={}, redisKey={}, isFirst={}", board.getBoardId(), key, isFirst);
+
                 if (Boolean.TRUE.equals(isFirst)) {
-                    boardRepository.decreaseRemainingPop(
+                    int updated = boardRepository.decreaseRemainingPop(
                             board.getBoardId(), AppConstants.Spotlight.CAROUSEL_VIEW_COST);
+                    log.info("[Carousel] decreaseRemainingPop boardId={}, updatedRows={}", board.getBoardId(), updated);
                 }
             }
         }
