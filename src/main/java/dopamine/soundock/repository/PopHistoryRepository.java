@@ -32,9 +32,6 @@ public interface PopHistoryRepository extends JpaRepository<PopHistory, Integer>
     // 수혜자의 id와 후원 popHistory의 transactionId와 일치하는 내역 조회
     Optional<PopHistory> findByTransactionIdAndPopTarget(String transactionId, PopTarget popTarget);
 
-    // popTarget이 FEATURED_BOARD, boardId와 일치하는 내역 조회
-    Optional<PopHistory> findByPopTargetAndBoardBoardId(PopTarget popTarget, Integer boardId);
-
     //        얘네의 related user가 approvedDatetime이 채워져있고 cancelDatetime이 null인 애들의 approvedDate을 전달해야함
    List<PopHistory> findByTransactionIdIn(List<String> transactionIds);
 

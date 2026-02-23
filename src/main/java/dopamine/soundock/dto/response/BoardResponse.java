@@ -27,6 +27,7 @@ public class BoardResponse{
     private int countComment;
     private CategoryType categoryType;
     private String linkUrl;
+    private boolean isDeleted;
 
 
     // s3 이미지/파일url, id
@@ -39,5 +40,8 @@ public class BoardResponse{
     private Integer playlistId;
     private String playlistTitle;
     private List<PlaylistItemResponse> playlistItems;
+
+    // Spotlight 잔여 재화 (일반 게시글은 null)
+    private Integer remainingPop;
 
 }

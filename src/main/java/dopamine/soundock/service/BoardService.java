@@ -1,6 +1,7 @@
 package dopamine.soundock.service;
 
 import dopamine.soundock.dto.request.BoardCreateRequest;
+import dopamine.soundock.dto.request.BoardSearchRequest;
 import dopamine.soundock.dto.response.BoardResponse;
 import dopamine.soundock.dto.response.FileAttachmentResponse;
 import dopamine.soundock.dto.response.FileUploadResponse;
@@ -12,6 +13,7 @@ import dopamine.soundock.enums.NotificationType;
 import dopamine.soundock.exceptions.AuthRejectedException;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
+import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.repository.*;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +44,7 @@ public class BoardService {
     private final PlaylistRepository playlistRepository;
     private final NotificationService notificationService;
     private final RankingService rankingService;
+    private final SpotlightService spotlightService;
 
     // 게시글 작성
     @Transactional
@@ -137,6 +140,11 @@ public class BoardService {
             rankingService.incrementHotViewCount(board);
         }
 
+        // Spotlight 게시글이면 pop 차감
+        if (board.getCategory().getCategoryType() == CategoryType.SPOTLIGHT) {
+            spotlightService.decreaseDetailViewPop(board, email);
+        }
+
         // 게시글에 연결된 첨부파일 조회
         List<BoardAttachments> attachments = boardAttachmentsRepository.findByBoardOrderBySequenceAsc(board);
 
@@ -198,6 +206,8 @@ public class BoardService {
                 .playlistId(playlistId)
                 .playlistTitle(playlistTitle)
                 .playlistItems(playlistItems)
+                .isDeleted(board.getUser().isDeleted())
+                .remainingPop(board.getRemainingPop())
                 .build();
 
         return boardResponse;
@@ -251,6 +261,7 @@ public class BoardService {
                     .countComment(board.getCountComment())
                     .imageUrl(imageUrl)
                     .categoryType(board.getCategory().getCategoryType())
+                    .isDeleted(board.getUser().isDeleted())
                     .build();
             boardResponses.add(newResponse);
         }
@@ -453,5 +464,82 @@ public class BoardService {
                 .build();
 
         return boardResponse;
+    }
+
+
+
+    // 게시글 검색
+    public Page<BoardResponse> getBoardSearch(BoardSearchRequest boardSearchRequest, Integer page) {
+        int pageSize = switch (boardSearchRequest.getCategoryType()) {
+            case SHOWCASE, PLAYLISTS, SPOTLIGHT -> 12;
+            case COMMUNITY, REVIEWS, NOTICE -> 15;
+            default -> 10;
+        };
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by("createdDateTime").descending());
+
+        String keyword = boardSearchRequest.getKeyword();
+        String keywordTrim = keyword == null ? "" : keyword.trim();
+        if (keywordTrim.isEmpty()) {
+            throw new IllegalArgumentException("검색어를 입력 해 주세요.");
+        }
+        String pattern = "%" + keywordTrim + "%";
+
+        Page<Board> boards;
+
+        switch (boardSearchRequest.getSearchType()) {
+            case TITLE -> {
+                boards = boardRepository.searchByTitle(boardSearchRequest.getCategoryType(), pattern, pageable);
+            }
+            case NICKNAME -> {
+                if (keywordTrim.length() > AppConstants.Validation.NICKNAME_MAX_LENGTH) {
+                    throw new IllegalArgumentException("닉네임은 " + AppConstants.Validation.NICKNAME_MAX_LENGTH + "자 이하로 입력하세요");
+                }
+                if (!keywordTrim.matches(AppConstants.ValidationPattern.NICKNAME_PATTERN)) {
+                    throw new IllegalArgumentException(AppConstants.ErrorMessage.NICKNAME_FORMAT_ERROR);
+                }
+                boards = boardRepository.searchByNickname(boardSearchRequest.getCategoryType(), pattern, pageable);
+            }
+            default -> throw new IllegalArgumentException("올바른 값을 입력하세요");
+        }
+
+        // 제목으로 검색한 게시글 목록 표시
+        List<BoardResponse> boardResponses = new ArrayList<>();
+        for (Board board : boards.getContent()) {
+            // 각 게시글의 첨부파일을 sequence 순으로 조회하여 첫 번째를 배너로 사용
+            List<BoardAttachments> attachments = board.getAttachments();
+            String imageUrl = null;
+            if (!attachments.isEmpty()) {
+                imageUrl = attachments.getFirst().getFileUrl();
+            }
+
+            // PLAYLIST 썸네일 넣어주기
+            if (board.getPlaylist() != null
+                    && board.getPlaylist().getThumbnailUrl() != null) {
+                imageUrl = board.getPlaylist().getThumbnailUrl();
+            }
+
+            // Board.linkUrl이 있으면 우선 사용 (SHOWCASE 썸네일,자동재생용)
+            if (board.getLinkUrl() != null && !board.getLinkUrl().isEmpty()) {
+                imageUrl = board.getLinkUrl();
+            }
+
+            BoardResponse newResponse = BoardResponse.builder()
+                    .boardId(board.getBoardId())
+                    .title(board.getTitle())
+                    .nickname(board.getUser().getNickname())
+                    .createdDateTime(board.getCreatedDateTime())
+                    .views(board.getViews())
+                    .likes(board.getLikes())
+                    .countComment(board.getCountComment())
+                    .imageUrl(imageUrl)
+                    .categoryType(board.getCategory().getCategoryType())
+                    .build();
+            boardResponses.add(newResponse);
+        }
+        return new PageImpl<>(
+                boardResponses,
+                pageable,
+                boards.getTotalElements()
+        );
     }
 }

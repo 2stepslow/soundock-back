@@ -1,6 +1,5 @@
 package dopamine.soundock.entity;
 
-import dopamine.soundock.enums.CategoryType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.BatchSize;
@@ -60,9 +59,7 @@ public class Board {
     @Column(name = "link_url", nullable = true)
     private String linkUrl;
 
-    @Column(name = "is_featured", nullable = false)
-    private boolean isFeatured;
-
+    // Spotlight 게시글 만료 시점 기록
     @Column(name = "featured_expired_at", nullable = true)
     private LocalDateTime featuredExpiredDateTime;
 
@@ -84,4 +81,8 @@ public class Board {
     @ManyToOne
     @JoinColumn(name = "playlist_id")
     private Playlist playlist;
+
+    // SPOTLIGHT 게시글 잔여 재화 (일반 게시글은 null)
+    @Column(name = "remaining_pop")
+    private Integer remainingPop;
 }

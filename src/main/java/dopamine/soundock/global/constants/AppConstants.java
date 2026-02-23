@@ -139,6 +139,20 @@ public final class AppConstants {
     }
 
     /**
+     * Spotlight 관련 상수값
+     */
+    public static class Spotlight {
+        // Spotlight 게시글 작성 시 최소 재화
+        public static final int MIN_POP_AMOUNT = 1000;
+        // 캐러셀 노출 시 차감 재화
+        public static final int CAROUSEL_VIEW_COST = 1;
+        // 상세 조회 시 차감 재화
+        public static final int DETAIL_VIEW_COST = 5;
+        // 메인 캐러셀 표시 개수
+        public static final int CAROUSEL_DISPLAY_COUNT = 10;
+    }
+
+    /**
      * Redis Key 관련
      */
     public static class Redis {
@@ -146,6 +160,8 @@ public final class AppConstants {
         public static final String KEY_PREFIX = "board:view:"; // 조회수 중복 제한 키
         public static final String RANKING_MONTH_PREFIX = "ranking:monthly:"; // 월간 게시글 랭킹(메인페이지)
         public static final String RANKING_WEEK_PREFIX = "ranking:weekly:";
+        public static final String SPOTLIGHT_CAROUSEL_PREFIX = "spotlight:carousel:"; // 캐러셀 노출 중복 제한 키
+        public static final String SPOTLIGHT_DETAIL_PREFIX = "spotlight:detail:"; // 상세 조회 중복 제한 키
     }
 
 
