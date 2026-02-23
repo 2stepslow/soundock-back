@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +24,6 @@ import java.util.List;
 @RequestMapping("/api/spotlight")
 @RestController
 @RequiredArgsConstructor
-@Slf4j
 public class SpotlightController {
 
     private final SpotlightService spotlightService;
@@ -67,7 +65,6 @@ public class SpotlightController {
                 && auth.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails userDetails) {
             email = userDetails.getUsername();
         }
-        log.info("[CarouselController] API 호출됨, email={}", email);
         List<BoardResponse> responses = spotlightService.getCarouselSpotlights(email);
         return ResponseEntity.ok(RestResponse.success(responses));
     }
