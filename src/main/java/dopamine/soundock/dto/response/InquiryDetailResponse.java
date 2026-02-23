@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 public class InquiryDetailResponse {
     // 문의 기본 내용
     private Integer userInquiryId;
+    private String nickName;
     private String inquiryType;
     private String title;
     private String content;
@@ -35,6 +36,7 @@ public class InquiryDetailResponse {
     public static InquiryDetailResponse from(UserInquiry inquiry) {
         return InquiryDetailResponse.builder()
                 .userInquiryId(inquiry.getUserInquiryId())
+                .nickName(inquiry.getUser().getNickname())
                 .title(inquiry.getTitle())
                 .inquiryType(inquiry.getInquiryType().name())
                 .content(inquiry.getContent())
