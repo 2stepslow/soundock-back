@@ -283,4 +283,104 @@ public class AuthController {
         EmailSearchResponse response = authService.emailSearch(request.getName(), request.getPhoneNumber());
         return ResponseEntity.ok(RestResponse.success("회원님의 정보로 가입된 계정입니다.", response));
     }
+
+    /**
+     * 비밀번호 찾기용 이메일 전송 API
+     */
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "인증 메일 발송 성공",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "1. 유효하지 않은 이메일 형식\t\n2. 재전송 제한 시간(1분) 미경과",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "가입되지 않은 이메일 주소",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))
+            )
+    })
+    @Operation(
+            summary = "비밀번호 찾기 인증 메일 발송",
+            description = "비밀번호 재설정을 위해 입력한 이메일로 6자리 인증번호를 발송합니다. 1분 이내 재요청 시 에러가 발생합니다."
+    )
+    @PostMapping("/send/find-password")
+    public ResponseEntity<RestResponse<Void>> sendPasswordSearch(
+            @Valid @RequestBody SendPasswdSearchRequest request
+    ) {
+        authService.sendPasswordSearch(request.getEmail());
+        return ResponseEntity.ok(RestResponse.success("입력하신 이메일로 인증 메일을 발송했습니다."));
+    }
+
+    /**
+     * 비밀번호 인증번호 검증 API
+     */
+    @Operation(
+            summary = "비밀번호 찾기 인증번호 검증",
+            description = "사용자가 입력한 6자리 인증번호를 검증. 성공 시 **5분간 유효한 비밀번호 재설정 토큰**을 발급"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "✅ **인증 성공**\n" +
+                            "- 반환된 `data` 값(resetToken)은 비밀번호 재설정 API 호출 시 반드시 포함해야 합니다.",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "🚨 **인증 실패**\n" +
+                            "- 인증번호가 일치하지 않음\n" +
+                            "- 인증 시간이 만료됨 (5분 경과)",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))
+            )
+    })
+    @PostMapping("/verify/find-password")
+    public ResponseEntity<RestResponse<String>> verifyPasswordSearch(
+            @Valid @RequestBody VerifyCodeRequest request
+    ) {
+        String resetToken = authService.verifyPasswordSearch(request.getEmail(), request.getCode());
+
+        return ResponseEntity.ok(RestResponse.success("인증이 완료되었습니다.", resetToken));
+    }
+
+    /**
+     * 비밀번호 찾기 전용 비밀번호 수정 API
+     */
+    @Operation(
+            summary = "비밀번호 재설정 (찾기 단계 최종 완료)",
+            description = "이메일 인증을 통해 발급받은 `resetToken`을 사용하여 새로운 비밀번호로 변경합니다.\n\n" +
+                    "**주의:** 변경 성공 시 해당 토큰은 즉시 파기됩니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "✅ **비밀번호 재설정 성공**\n" +
+                            "- 이제 새로운 비밀번호로 로그인이 가능합니다.",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "🚨 **인증 실패/만료**\n" +
+                            "- 인증 토큰(`resetToken`)이 일치하지 않음\n" +
+                            "- 인증 후 5분이 경과하여 세션이 만료됨",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "🔍 **사용자 없음**\n" +
+                            "- 가입되지 않았거나 삭제된 계정",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))
+            )
+    })
+    @PatchMapping("/reset-password")
+    public ResponseEntity<RestResponse<Void>> resetPassword(
+            @Valid @RequestBody ResetPasswdRequest request
+    ) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(RestResponse.success("비밀번호 재설정이 완료되었습니다."));
+    }
 }
