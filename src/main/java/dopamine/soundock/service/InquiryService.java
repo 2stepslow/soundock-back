@@ -12,6 +12,7 @@ import dopamine.soundock.enums.CommentStatus;
 import dopamine.soundock.enums.UserRole;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
+import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.repository.UserInquiryRepository;
 import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +39,7 @@ public class InquiryService {
     @Transactional
     public void registerInquiry(InquiryCreateRequest request, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
 
         UserInquiry userInquiry = UserInquiry.builder()

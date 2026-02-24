@@ -9,6 +9,7 @@ import dopamine.soundock.entity.Comment;
 import dopamine.soundock.entity.LikeBoard;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
+import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.repository.BoardLikeRepository;
 import dopamine.soundock.repository.BoardRepository;
 import dopamine.soundock.repository.CommentRepository;
@@ -35,7 +36,7 @@ public class MyActivityService {
     public Page<MyPostsResponse> getMyPosts(Pageable pageable) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자 입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         Page<Board> boards = boardRepository.findByUserAndIsDeletedFalse(user, pageable);
 
@@ -56,7 +57,7 @@ public class MyActivityService {
     public Page<MyCommentsResponse> getMyComments(Pageable pageable) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자 입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         Page<Comment> comments = commentRepository.findByUserAndIsDeletedFalse(user, pageable);
 
@@ -78,7 +79,7 @@ public class MyActivityService {
     public Page<MyPostLikesResponse> getMyPostLikes(Pageable pageable) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자 입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         Page<LikeBoard> likeBoards = boardLikeRepository.findByUser(user, pageable);
 

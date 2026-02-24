@@ -10,6 +10,7 @@ import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.NotificationType;
 import dopamine.soundock.exceptions.AuthRejectedException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
+import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.repository.BoardRepository;
 import dopamine.soundock.repository.CommentLikeRepository;
 import dopamine.soundock.repository.CommentRepository;
@@ -49,11 +50,11 @@ public class CommentService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // boardId에 해당하는 게시글 있는지 확인
         Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 게시글입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
         // 삭제된 게시글인지 확인
         if(board.getDeletedDateTime() != null){
             throw new ResourceNotFoundException("삭제된 게시글입니다.");
@@ -95,11 +96,11 @@ public class CommentService {
         // 로그인한 유저인지 검증
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 삭제하려는 commentId에 해당하는 댓글이 있는지
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 댓글입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 댓글 삭제 하려는 id가 해당 게시글에 작성된 것이 맞는지 확인
         if(!comment.getBoard().getBoardId().equals(boardId)){
@@ -150,7 +151,7 @@ public class CommentService {
         if (isLoggedIn){
             String email = auth.getName();
             User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                    .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
             // 유저가 좋아요한 댓글들 찾기
             List<CommentLike> likes = commentLikeRepository.findAllByUserAndCommentIn(user, results);
@@ -185,7 +186,7 @@ public class CommentService {
         // 로그인한 유저인지 검증
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // commentId의 해당하는 댓글 존재 여부 확인
         Comment comment = commentRepository.findById(commentId)
@@ -214,7 +215,7 @@ public class CommentService {
         // 로그인한 유저인지 검증
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // comment Id와 일치하는 댓글 존재하는지 검증
         Comment comment = commentRepository.findById(commentId)

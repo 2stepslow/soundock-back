@@ -298,7 +298,7 @@ public class MypageController {
     })
     // 정산 내역 조회
     @GetMapping("/settlements/history")
-    public ResponseEntity<RestResponse<?>> getListSettlement(
+    public ResponseEntity<RestResponse<List<PopHistoryResponse>>> getListSettlement(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end
     ){
@@ -321,7 +321,7 @@ public class MypageController {
 
     // 내가 쓴 게시글 조회
     @GetMapping("/my-posts")
-    public ResponseEntity<RestResponse<?>> getMyPosts(
+    public ResponseEntity<RestResponse<Page<MyPostsResponse>>> getMyPosts(
             @PageableDefault(sort = "createdDateTime", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<MyPostsResponse> myPostsResponses = myActivityService.getMyPosts(pageable);
@@ -340,7 +340,7 @@ public class MypageController {
 
     // 내가 쓴 댓글 조회
     @GetMapping("/my-comments")
-    public ResponseEntity<RestResponse<?>> getMyComments(
+    public ResponseEntity<RestResponse<Page<MyCommentsResponse>>> getMyComments(
             @PageableDefault(sort = "createdDateTime", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<MyCommentsResponse> myCommentsResponses = myActivityService.getMyComments(pageable);
@@ -359,7 +359,7 @@ public class MypageController {
 
     // 내가 좋아요 한 게시글
     @GetMapping("/my-post-likes")
-    public ResponseEntity<RestResponse<?>> getMyPostLikes(
+    public ResponseEntity<RestResponse<Page<MyPostLikesResponse>>> getMyPostLikes(
             @PageableDefault(sort = "postLikeId", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<MyPostLikesResponse> myPostLikesResponses = myActivityService.getMyPostLikes(pageable);

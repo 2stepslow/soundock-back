@@ -80,7 +80,7 @@ public class CommentController {
 
     // 댓글 수정
     @PatchMapping("/{commentId}")
-    public ResponseEntity<RestResponse<?>> updateComment(
+    public ResponseEntity<RestResponse<CommentResponse>> updateComment(
             @PathVariable Integer commentId,
             @Valid @RequestBody CommentCreateRequest updateRequest
     ){

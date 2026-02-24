@@ -88,7 +88,7 @@ public class BoardController {
 
     // 게시판 카테고리별 목록 조회
     @GetMapping("/category/{categoryType}")
-    public ResponseEntity<RestResponse<?>> getBoards(
+    public ResponseEntity<RestResponse<Page<BoardResponse>>> getBoards(
             @PathVariable(required = true) CategoryType categoryType,
             @RequestParam(required = false, defaultValue = "0")
             Integer page
@@ -226,7 +226,7 @@ public class BoardController {
 
     // 검색기능
     @GetMapping("/search")
-    public ResponseEntity<RestResponse<?>> getBoardSearch(
+    public ResponseEntity<RestResponse<Page<BoardResponse>>> getBoardSearch(
             @Valid @ModelAttribute BoardSearchRequest boardSearchRequest,
             @RequestParam(defaultValue = "0") Integer page) {
         Page<BoardResponse> boardResponses = boardService.getBoardSearch(boardSearchRequest, page);

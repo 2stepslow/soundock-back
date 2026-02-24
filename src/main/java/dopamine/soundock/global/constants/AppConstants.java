@@ -126,6 +126,9 @@ public final class AppConstants {
                 "이름은 한글 또는 영문으로 2~20자 내외로 입력해 주세요. (특수문자, 숫자 제외)";
         public static final String EMAIL_PATTERN_ERROR =
                 "이메일 형식이 올바르지 않습니다.";
+
+        public static final String USER_NOT_FOUND =
+                "존재하지 않는 사용자입니다.";
     }
 
     /**
