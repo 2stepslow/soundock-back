@@ -10,6 +10,7 @@ import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.PopStatus;
 import dopamine.soundock.enums.PopTarget;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
+import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.repository.PopHistoryRepository;
 import dopamine.soundock.repository.TossPaymentRepository;
 import dopamine.soundock.repository.UserRepository;
@@ -49,7 +50,7 @@ public class PaymentService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 토스에게 줄 orderId 생성
         String orderId = UUID.randomUUID().toString();
@@ -70,7 +71,7 @@ public class PaymentService {
         // 1. 결제 시도자가 로그인한 유저인지 검증
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         PopHistory popHistory = popHistoryRepository.findByOrderIdAndPopStatus(confirmRequest.getOrderId(), PopStatus.PENDING)
                 .orElseThrow(() -> new ResourceNotFoundException("주문 Id가 일치하지 않는 결제 요청입니다."));
@@ -164,7 +165,7 @@ public class PaymentService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
 
         TossPayment tossPayment = tossPaymentRepository.findByPaymentKey(paymentKey)
@@ -199,7 +200,7 @@ public class PaymentService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         TossPayment tossPayment = tossPaymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("주문번호와 일치하는 주문 내역이 없습니다."));
@@ -231,7 +232,7 @@ public class PaymentService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         if (cancelPaymentRequest == null){
             throw new IllegalArgumentException("결제 취소 사유를 입력해주세요.");

@@ -100,7 +100,7 @@ public class PasswordlessService {
      */
     public PasswordlessApiResponse<PWLRegisterResponse> registerUserPWL(String email) {
         User user = userRepository.findByEmailAndIsDeletedFalse(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 유저가 이미 패스워드리스 사용중인 상태인지 확인
         if (user.isPasswordless()) {
@@ -123,7 +123,7 @@ public class PasswordlessService {
     @Transactional
     public PasswordlessApiResponse<PWLStatusResponse> updateUserPWL(String email) {
         User user = userRepository.findByEmailAndIsDeletedFalse(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 유저가 이미 패스워드리스 사용중인 상태인지 확인
         if (user.isPasswordless()) {
@@ -157,7 +157,7 @@ public class PasswordlessService {
     public PasswordlessApiResponse<PWLTriggerResponse> triggerLogin(String email, String ip) {
         // 유저 정보 찾기 + 우리 서비스에 가입된 회원인지 확인
         User user = userRepository.findByEmailAndIsDeletedFalse(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 상태 검증
         if(!user.getStatus().equals(UserStatus.ACTIVE)) {
@@ -206,7 +206,7 @@ public class PasswordlessService {
     public PasswordlessApiResponse<PWLResultResponse> finalLoginResult(String email, String sessionId) {
         // 유저 정보 찾기
         User user = userRepository.findByEmailAndIsDeletedFalse(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 상태 검증
         if(!user.getStatus().equals(UserStatus.ACTIVE)) {
@@ -276,7 +276,7 @@ public class PasswordlessService {
     @Transactional
     public PasswordlessApiResponse<Void> userWithdrawal(String email) {
         User user = userRepository.findByEmailAndIsDeletedFalse(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 유저가 패스워드리스 사용중인 상태인지 확인
         if (!user.isPasswordless()) {

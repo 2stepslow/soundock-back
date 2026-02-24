@@ -107,7 +107,7 @@ public class AuthService {
         boolean needsCleanup = validateEmailForSignup(userSignupRequest.getEmail());
         if (needsCleanup) {
             User existingUser = userRepository.findByEmail(userSignupRequest.getEmail())
-                    .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                    .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
             existingUser.setEmail(userSignupRequest.getEmail() + "_deleted_" + existingUser.getId() + "_" + System.currentTimeMillis());
 
             userRepository.saveAndFlush(existingUser);
@@ -265,7 +265,7 @@ public class AuthService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("추출된 인증 정보 : {}", email);
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // Refresh Token 삭제 (로그아웃 하려는 브라우저의 쿠키에 있는 특정 토큰만 삭제 or 유저의 모든 토큰 삭제)
         if (refreshToken != null) {

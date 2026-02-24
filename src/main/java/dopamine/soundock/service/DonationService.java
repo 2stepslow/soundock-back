@@ -45,7 +45,7 @@ public class DonationService {
         // 사용자 로그인 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // targetUserId와 일치하는 유저 존재 확인
         User targetUser = userRepository.findById(targetUserId)
@@ -130,7 +130,7 @@ public class DonationService {
         // 사용자 로그인 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 현재 로그인한 사용자와 경로에 받은 사용자 정보 검증
         if (!user.getId().equals(userId)){
@@ -191,7 +191,7 @@ public class DonationService {
         // 사용자 로그인 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 조회하는 후원자 id와 로그인한 유저가 일치하는지 확인
         if (!user.getId().equals(userId)){
@@ -233,7 +233,7 @@ public class DonationService {
         // 사용자 로그인 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 조회하는 후원자 id와 로그인한 유저가 일치하는지 확인
         if (!user.getId().equals(userId)){

@@ -5,13 +5,11 @@ import dopamine.soundock.dto.TokenDto;
 import dopamine.soundock.dto.request.AnnouncementCreateRequest;
 import dopamine.soundock.dto.request.LoginRequest;
 import dopamine.soundock.dto.response.CancelRequestResponse;
-import dopamine.soundock.dto.response.FileUploadResponse;
 import dopamine.soundock.entity.*;
 import dopamine.soundock.enums.*;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.LoginFailedException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
-import dopamine.soundock.exceptions.UnauthorizedException;
 import dopamine.soundock.global.TokenProvider;
 import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.repository.*;
@@ -27,7 +25,6 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -99,7 +96,7 @@ public class AdminService {
 
          String email = SecurityContextHolder.getContext().getAuthentication().getName();
          User admin = userRepository.findByEmail(email)
-                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                 .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
 
         // CANCEL_REQUEST 상태인 DONATION 내역만 조회
@@ -115,7 +112,7 @@ public class AdminService {
 
         return cancelRequests.stream()
                 .map(CancelRequestResponse::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 
 
@@ -126,7 +123,7 @@ public class AdminService {
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User admin = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
 
         // transactionId로 DONATION과 RECEIVED 내역 조회
@@ -208,7 +205,7 @@ public class AdminService {
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User admin = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 파일 개수 검증
         validateFileCounts(files);
@@ -263,7 +260,7 @@ public class AdminService {
     ) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User admin = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         Announcement announcement = announcementRepository.findById(announceId)
                 .orElseThrow(() -> new ResourceNotFoundException("공지사항을 찾을 수 없습니다."));
@@ -282,15 +279,14 @@ public class AdminService {
         if (updateRequest != null && updateRequest.getPriority() != null) {
             Integer newPriority = updateRequest.getPriority();
 
-            if (newPriority == 0) {
-                // 0 -> 0이면 bump 필요X
-                if (announcement.getPriority() == null || announcement.getPriority() != 0) {
-                    announcementRepository.bumpOnlyZeroToOneExceptSelf(
-                            announcement.getAnnounceType(),
-                            announcement.getAnnounceId()
-                    );
-                }
+            // 0으로 설정하려고 할 때만 bump 로직 실행
+            if (newPriority == 0 && (announcement.getPriority() == null || announcement.getPriority() != 0)) {
+                announcementRepository.bumpOnlyZeroToOneExceptSelf(
+                        announcement.getAnnounceType(),
+                        announcement.getAnnounceId()
+                );
             }
+
             announcement.setPriority(newPriority);
         }
 
@@ -331,7 +327,7 @@ public class AdminService {
     public void deleteAnnouncement(Integer announceId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User admin = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         Announcement announcement = announcementRepository.findById(announceId)
                 .orElseThrow(() -> new ResourceNotFoundException("공지사항을 찾을 수 없습니다."));

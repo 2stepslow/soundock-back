@@ -15,8 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RequiredArgsConstructor
 @RequestMapping("/api/boards/{boardId}/comments")
 @RestController
@@ -80,7 +78,7 @@ public class CommentController {
 
     // 댓글 수정
     @PatchMapping("/{commentId}")
-    public ResponseEntity<RestResponse<?>> updateComment(
+    public ResponseEntity<RestResponse<CommentResponse>> updateComment(
             @PathVariable Integer commentId,
             @Valid @RequestBody CommentCreateRequest updateRequest
     ){
