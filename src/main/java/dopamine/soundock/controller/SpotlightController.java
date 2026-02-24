@@ -57,9 +57,14 @@ public class SpotlightController {
     })
     // 메인 캐러셀 조회
     @GetMapping("/carousel")
-    public ResponseEntity<RestResponse<List<BoardResponse>>> getCarouselSpotlights(
-            @AuthenticationPrincipal(expression = "#this == 'anonymousUser' ? null : username") String email
-    ) {
+    public ResponseEntity<RestResponse<List<BoardResponse>>> getCarouselSpotlights() {
+        // SecurityContext에서 직접 인증 정보 추출 (permitAll이므로 비로그인 시 null 처리)
+        String email = null;
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()
+                && auth.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails userDetails) {
+            email = userDetails.getUsername();
+        }
         List<BoardResponse> responses = spotlightService.getCarouselSpotlights(email);
         return ResponseEntity.ok(RestResponse.success(responses));
     }
