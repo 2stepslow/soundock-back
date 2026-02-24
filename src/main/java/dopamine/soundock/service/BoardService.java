@@ -487,9 +487,9 @@ public class BoardService {
         Page<Board> boards;
 
         switch (boardSearchRequest.getSearchType()) {
-            case TITLE -> {
+            case TITLE ->
                 boards = boardRepository.searchByTitle(boardSearchRequest.getCategoryType(), pattern, pageable);
-            }
+
             case NICKNAME -> {
                 if (keywordTrim.length() > AppConstants.Validation.NICKNAME_MAX_LENGTH) {
                     throw new IllegalArgumentException("닉네임은 " + AppConstants.Validation.NICKNAME_MAX_LENGTH + "자 이하로 입력하세요");

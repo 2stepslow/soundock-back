@@ -1,8 +1,6 @@
 package dopamine.soundock.repository;
 
-import dopamine.soundock.dto.response.PopHistoryResponse;
 import dopamine.soundock.entity.PopHistory;
-import dopamine.soundock.entity.TossPayment;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.PopStatus;
 import dopamine.soundock.enums.PopTarget;
@@ -10,7 +8,6 @@ import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.repository.query.Param;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;

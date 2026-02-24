@@ -1,8 +1,5 @@
 package dopamine.soundock.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import dopamine.soundock.entity.Category;
-import dopamine.soundock.entity.PlaylistItem;
 import dopamine.soundock.enums.CategoryType;
 import lombok.*;
 

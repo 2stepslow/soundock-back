@@ -3,7 +3,6 @@ package dopamine.soundock.dto.request;
 
 import dopamine.soundock.global.constants.AppConstants;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
 

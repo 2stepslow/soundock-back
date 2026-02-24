@@ -1,9 +1,6 @@
 package dopamine.soundock.global.constants;
 
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 public final class AppConstants {
     /**
      * 시간 관련 상수값
