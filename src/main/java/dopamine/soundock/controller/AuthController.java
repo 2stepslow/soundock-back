@@ -283,4 +283,37 @@ public class AuthController {
         EmailSearchResponse response = authService.emailSearch(request.getName(), request.getPhoneNumber());
         return ResponseEntity.ok(RestResponse.success("회원님의 정보로 가입된 계정입니다.", response));
     }
+
+    /**
+     * 비밀번호 찾기용 이메일 전송 API
+     */
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "인증 메일 발송 성공",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "1. 유효하지 않은 이메일 형식\t\n2. 재전송 제한 시간(1분) 미경과",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "가입되지 않은 이메일 주소",
+                    content = @Content(schema = @Schema(implementation = RestResponse.class))
+            )
+    })
+    @Operation(
+            summary = "비밀번호 찾기 인증 메일 발송",
+            description = "비밀번호 재설정을 위해 입력한 이메일로 6자리 인증번호를 발송합니다. 1분 이내 재요청 시 에러가 발생합니다."
+    )
+    @PostMapping("/send/find-password")
+    public ResponseEntity<RestResponse<Void>> sendPasswordSearch(
+            @Valid @RequestBody SendPasswdSearchRequest request
+    ) {
+        authService.sendPasswordSearch(request.getEmail());
+        return ResponseEntity.ok(RestResponse.success("입력하신 이메일로 인증 메일을 발송했습니다."));
+    }
+
 }

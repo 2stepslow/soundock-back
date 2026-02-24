@@ -18,7 +18,6 @@ import dopamine.soundock.repository.UserRepository;
 import dopamine.soundock.repository.VerificationTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,12 +26,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.context.Context;
 
+import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -46,12 +46,6 @@ public class AuthService {
     private final TokenProvider tokenProvider;
     private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
     private final StringRedisTemplate redisTemplate;
-
-    @Value("${search.email.login}")
-    private String loginUrl;
-
-    @Value("${search.email.signup}")
-    private String signupUrl;
 
     /**
      * 이메일 중복체크 메서드
@@ -336,4 +330,37 @@ public class AuthService {
 
         return new EmailSearchResponse(user.getEmail());
     }
+
+    /**
+     * 비밀번호 찾기 인증용 이메일 전송 메서드
+     */
+    public void sendPasswordSearch(String email) {
+        // 존재 여부 확인 (탈퇴 시에도 Exception 발생)
+        userRepository.findByEmailAndIsDeletedFalse(email)
+                .orElseThrow(() -> new CustomException("이메일 주소를 다시 확인해주세요.", HttpStatus.NOT_FOUND));
+
+        // 재발송 제한 확인 (쿨타임 1분)
+        String rateLimitKey = AppConstants.Redis.KEY_PREFIX_FIND_PW_LIMIT + email;
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(rateLimitKey))) {
+            throw new CustomException("잠시 후 다시 시도해주세요.(재전송 대기시간 : 1분)", HttpStatus.BAD_REQUEST);
+        }
+
+        // 랜덤 인증번호 6자리 생성
+        SecureRandom random = new SecureRandom();
+        String verificationCode = String.format("%06d", random.nextInt(1000000));
+
+        // Redis에 저장 (Key: "AUTH:FIND_PW:" + email, Value: 인증번호, 만료시간: 5분)
+        String redisKey = AppConstants.Redis.KEY_PREFIX_FIND_PW + email;
+        redisTemplate.opsForValue().set(redisKey, verificationCode, Duration.ofMinutes(AppConstants.Time.VERIFICATION_EXPIRE_MINUTES));
+        // 재발송 제한 키도 같이 저장
+        redisTemplate.opsForValue().set(rateLimitKey, "LOCKED", Duration.ofMinutes(AppConstants.Time.VERIFICATION_EXPIRE_LIMIT_MINUTES));
+
+        String subject = "[Soundock] 비밀번호 찾기 인증번호 안내";
+
+        Context context = new Context();
+        context.setVariable("code", verificationCode);
+
+        emailService.sendMailAsync(email, subject, "password/find-password", context);
+    }
+
 }
