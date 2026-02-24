@@ -128,24 +128,7 @@ public class SpotlightService {
                 .limit(AppConstants.Spotlight.CAROUSEL_DISPLAY_COUNT)
                 .toList();
 
-        // 로그인 유저가 메인 캐러셀 조회했을 경우만 게시글의 pop 차감 (본인 게시글 제외)
-        if (email != null) {
-            for (Board board : selectedBoards) {
-                if (board.getUser().getEmail().equals(email)) continue;
-
-                String key = AppConstants.Redis.SPOTLIGHT_CAROUSEL_PREFIX
-                        + board.getBoardId() + ":user:" + email;
-
-                Boolean isFirst = redisTemplate.opsForValue()
-                        .setIfAbsent(key, "viewed", Duration.ofHours(AppConstants.Time.VIEW_COOLDOWN_HOURS));
-
-                if (Boolean.TRUE.equals(isFirst)) {
-                    boardRepository.decreaseRemainingPop(
-                            board.getBoardId(), AppConstants.Spotlight.CAROUSEL_VIEW_COST);
-                }
-            }
-        }
-
+        // Response를 먼저 빌드 (영속성 컨텍스트가 살아있는 상태)
         List<BoardResponse> responses = new ArrayList<>();
         for (Board board : selectedBoards) {
             List<BoardAttachments> attachments = board.getAttachments();
@@ -167,6 +150,25 @@ public class SpotlightService {
                     .isDeleted(board.getUser().isDeleted())
                     .build();
             responses.add(response);
+        }
+
+        // Response 빌드 후 pop 차감 (@Modifying clearAutomatically로 영속성 컨텍스트가 비워짐)
+        // 재화 차감을 먼저하니 영속성 컨텍스트가 비워져서 찾아놓은 게시글에 대한 정보가 사라짐 -> 캐러셀 조회 오류 -> 롤백됨
+        if (email != null) {
+            for (Board board : selectedBoards) {
+                if (board.getUser().getEmail().equals(email)) continue;
+
+                String key = AppConstants.Redis.SPOTLIGHT_CAROUSEL_PREFIX
+                        + board.getBoardId() + ":user:" + email;
+
+                Boolean isFirst = redisTemplate.opsForValue()
+                        .setIfAbsent(key, "viewed", Duration.ofHours(AppConstants.Time.VIEW_COOLDOWN_HOURS));
+
+                if (Boolean.TRUE.equals(isFirst)) {
+                    boardRepository.decreaseRemainingPop(
+                            board.getBoardId(), AppConstants.Spotlight.CAROUSEL_VIEW_COST);
+                }
+            }
         }
 
         return responses;
