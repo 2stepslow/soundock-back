@@ -1,9 +1,6 @@
 package dopamine.soundock.global.constants;
 
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 public final class AppConstants {
     /**
      * 시간 관련 상수값
@@ -32,6 +29,10 @@ public final class AppConstants {
 
         // 조회수 중복 증가 방지 시간
         public static final long VIEW_COOLDOWN_HOURS = 24; // 24 hours
+        // 비밀번호 찾기 인증번호 만료 시간
+        public static final long VERIFICATION_EXPIRE_MINUTES = 5; // 5 minutes
+        // 비밀번호 찾기 재전송 가능 시간
+        public static final long VERIFICATION_EXPIRE_LIMIT_MINUTES = 1; // 1 minutes
     }
 
     /**
@@ -126,6 +127,9 @@ public final class AppConstants {
                 "이름은 한글 또는 영문으로 2~20자 내외로 입력해 주세요. (특수문자, 숫자 제외)";
         public static final String EMAIL_PATTERN_ERROR =
                 "이메일 형식이 올바르지 않습니다.";
+
+        public static final String USER_NOT_FOUND =
+                "존재하지 않는 사용자입니다.";
     }
 
     /**
@@ -162,6 +166,9 @@ public final class AppConstants {
         public static final String RANKING_WEEK_PREFIX = "ranking:weekly:";
         public static final String SPOTLIGHT_CAROUSEL_PREFIX = "spotlight:carousel:"; // 캐러셀 노출 중복 제한 키
         public static final String SPOTLIGHT_DETAIL_PREFIX = "spotlight:detail:"; // 상세 조회 중복 제한 키
+        public static final String KEY_PREFIX_FIND_PW = "AUTH:FIND_PW:"; // 비밀번호 찾기 인증
+        public static final String KEY_PREFIX_FIND_PW_LIMIT = "AUTH:LIMIT:";
+        public static final String KEY_PREFIX_RESET_PW_TOKEN = "AUTH:RESET_PW_TOKEN:"; // 비밀번호 재설정 임시발급 토큰
     }
 
 

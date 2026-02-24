@@ -9,6 +9,7 @@ import dopamine.soundock.enums.MessageType;
 import dopamine.soundock.enums.UserStatus;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
+import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.repository.MessageRepository;
 import dopamine.soundock.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +37,7 @@ public class MessageService {
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User sendingUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 받는 사람 존재 확인
         User receivedUser = userRepository.findById(receivedUserId)
@@ -67,7 +68,7 @@ public class MessageService {
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         List<Messages> messages;
 
@@ -97,7 +98,7 @@ public class MessageService {
 
         return messages.stream()
                 .map(MessageResponse::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 
 
@@ -107,7 +108,7 @@ public class MessageService {
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
 
         Messages message = messageRepository.findById(messageId)
@@ -135,7 +136,7 @@ public class MessageService {
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         return messageRepository.countUnreadMessages(user.getId());
     }

@@ -35,7 +35,7 @@ public class SettlementService {
         // 로그인한 유저 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 로그인한 유저와 정산 정보의 유저 이메일과 일치하는지 검증
         if (!settlementRequest.getEmail().equals(user.getEmail())){
@@ -57,7 +57,7 @@ public class SettlementService {
         // 로그인한 유저 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // popStatus = COMPLETED, target = RECEIVED인 정산 요청, 승인 기록이 없는 popHistory 내역 조회
         // 후원 받은 날짜(createdDatetime)로부터 3일이 지나야 정산 신청 가능
@@ -97,7 +97,7 @@ public class SettlementService {
         // 로그인한 유저 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 정산 가능한 popHistory 조회
         LocalDateTime availableDay = LocalDateTime.now().minusDays(AppConstants.Time.AVAILABLE_REQUEST_SETTLEMENT_DAYS);
@@ -160,7 +160,7 @@ public class SettlementService {
         // 로그인한 유저 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 정산 요청 중, 정산 완료 기록 표시
         // popStatus = 'SETTLEMENT REQUEST' or 'SETTLEMENT COMPLETED'

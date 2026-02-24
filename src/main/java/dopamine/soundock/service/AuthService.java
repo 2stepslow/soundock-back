@@ -18,7 +18,6 @@ import dopamine.soundock.repository.UserRepository;
 import dopamine.soundock.repository.VerificationTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,12 +26,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.context.Context;
 
+import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -46,12 +46,6 @@ public class AuthService {
     private final TokenProvider tokenProvider;
     private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
     private final StringRedisTemplate redisTemplate;
-
-    @Value("${search.email.login}")
-    private String loginUrl;
-
-    @Value("${search.email.signup}")
-    private String signupUrl;
 
     /**
      * 이메일 중복체크 메서드
@@ -113,7 +107,7 @@ public class AuthService {
         boolean needsCleanup = validateEmailForSignup(userSignupRequest.getEmail());
         if (needsCleanup) {
             User existingUser = userRepository.findByEmail(userSignupRequest.getEmail())
-                    .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                    .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
             existingUser.setEmail(userSignupRequest.getEmail() + "_deleted_" + existingUser.getId() + "_" + System.currentTimeMillis());
 
             userRepository.saveAndFlush(existingUser);
@@ -271,7 +265,7 @@ public class AuthService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("추출된 인증 정보 : {}", email);
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // Refresh Token 삭제 (로그아웃 하려는 브라우저의 쿠키에 있는 특정 토큰만 삭제 or 유저의 모든 토큰 삭제)
         if (refreshToken != null) {
@@ -335,5 +329,94 @@ public class AuthService {
                 .orElseThrow(() -> new CustomException("일치하는 회원 정보가 없습니다.", HttpStatus.BAD_REQUEST));
 
         return new EmailSearchResponse(user.getEmail());
+    }
+
+    /**
+     * 비밀번호 찾기 인증용 이메일 전송 메서드
+     */
+    public void sendPasswordSearch(String email) {
+        // 존재 여부 확인 (탈퇴 시에도 Exception 발생)
+        userRepository.findByEmailAndIsDeletedFalse(email)
+                .orElseThrow(() -> new CustomException("이메일 주소를 다시 확인해주세요.", HttpStatus.NOT_FOUND));
+
+        // 재발송 제한 확인 (쿨타임 1분)
+        String rateLimitKey = AppConstants.Redis.KEY_PREFIX_FIND_PW_LIMIT + email;
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(rateLimitKey))) {
+            throw new CustomException("잠시 후 다시 시도해주세요.(재전송 대기시간 : 1분)", HttpStatus.BAD_REQUEST);
+        }
+
+        // 랜덤 인증번호 6자리 생성
+        SecureRandom random = new SecureRandom();
+        String verificationCode = String.format("%06d", random.nextInt(1000000));
+
+        // Redis에 저장 (Key: "AUTH:FIND_PW:" + email, Value: 인증번호, 만료시간: 5분)
+        String redisKey = AppConstants.Redis.KEY_PREFIX_FIND_PW + email;
+        redisTemplate.opsForValue().set(redisKey, verificationCode, Duration.ofMinutes(AppConstants.Time.VERIFICATION_EXPIRE_MINUTES));
+        // 재발송 제한 키도 같이 저장
+        redisTemplate.opsForValue().set(rateLimitKey, "LOCKED", Duration.ofMinutes(AppConstants.Time.VERIFICATION_EXPIRE_LIMIT_MINUTES));
+
+        String subject = "[Soundock] 비밀번호 찾기 인증번호 안내";
+
+        Context context = new Context();
+        context.setVariable("code", verificationCode);
+
+        emailService.sendMailAsync(email, subject, "search-passwd", context);
+    }
+
+    /**
+     * 비밀번호 찾기 인증번호 검증 메서드
+     */
+    public String verifyPasswordSearch(String email, String code) {
+        String redisKey = AppConstants.Redis.KEY_PREFIX_FIND_PW + email;
+        String savedCode = redisTemplate.opsForValue().get(redisKey);
+
+        // 만료되었거나 없는 경우
+        if (savedCode == null) {
+            throw new CustomException("인증 시간이 만료되었거나 잘못된 접근입니다. 다시 시도해주세요.", HttpStatus.BAD_REQUEST);
+        }
+
+        // 번호 불일치
+        if (!savedCode.equals(code)) {
+            throw new CustomException("인증번호가 일치하지 않습니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        // 인증 성공시 비밀번호 변경용 임시 토큰 발행
+        String resetToken = UUID.randomUUID().toString();
+        String tokenKey = AppConstants.Redis.KEY_PREFIX_RESET_PW_TOKEN + email;
+
+        // 비밀번호 변경 유효시간 설정 (5분)
+        redisTemplate.opsForValue().set(tokenKey, resetToken, Duration.ofMinutes(AppConstants.Time.VERIFICATION_EXPIRE_MINUTES));
+
+        // 사용 완료된 데이터 삭제 (인증번호, 발송제한)
+        redisTemplate.delete(redisKey);
+        redisTemplate.delete(AppConstants.Redis.KEY_PREFIX_FIND_PW_LIMIT + email);
+
+        return resetToken;
+    }
+
+    /**
+     * 비밀번호 찾기 전용 비밀번호 재설정 메서드
+     */
+    @Transactional
+    public void resetPassword(ResetPasswdRequest request) {
+        // Redis에서 임시 토큰 검증
+        String tokenKey = AppConstants.Redis.KEY_PREFIX_RESET_PW_TOKEN + request.getEmail();
+        String savedToken = redisTemplate.opsForValue().get(tokenKey);
+
+        // 인증 토큰이 만료(5분 후 삭제) 되었거나 다른 경우
+        if (savedToken == null || !savedToken.equals(request.getResetToken())) {
+            throw new CustomException("인증 세션이 만료되었거나 유효하지 않은 시도입니다.", HttpStatus.UNAUTHORIZED);
+        }
+
+        // 유저 조회
+        User user = userRepository.findByEmailAndIsDeletedFalse(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+
+        // 유저 패스워드 변경
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        userRepository.save(user);
+
+        // 사용한 임시토큰 삭제
+        redisTemplate.delete(tokenKey);
     }
 }

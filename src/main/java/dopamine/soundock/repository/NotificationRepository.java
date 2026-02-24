@@ -1,7 +1,6 @@
 package dopamine.soundock.repository;
 
 
-import dopamine.soundock.entity.Messages;
 import dopamine.soundock.entity.Notifications;
 import dopamine.soundock.enums.NotificationType;
 import org.springframework.data.domain.Page;

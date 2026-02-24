@@ -7,6 +7,7 @@ import dopamine.soundock.entity.PlaylistItem;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
+import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.repository.PlaylistItemRepository;
 import dopamine.soundock.repository.PlaylistRepository;
 import dopamine.soundock.repository.UserRepository;
@@ -53,7 +54,7 @@ public class YouTubeService {
     public List<YouTubePlaylistResponse> getUserYouTubePlaylists(String email) {
         // DB에서 해당 유저의 구글 액세스 토큰 가져오기
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         checkYouTubeLinkage(user);
 
@@ -138,7 +139,7 @@ public class YouTubeService {
                     }
                 })
                 .filter(response -> response != null)
-                .collect(Collectors.toList());
+                .toList();
     }
     /**
      * 썸네일 URL 추출
@@ -174,7 +175,7 @@ public class YouTubeService {
     public void registerPlaylist(String email, PlaylistRegisterRequest request) {
         // 유저 확인
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("해당 유저를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         checkYouTubeLinkage(user);
 
@@ -205,7 +206,7 @@ public class YouTubeService {
     @Transactional(readOnly = true)
     public List<YouTubePlaylistResponse> getMyRegisterPlaylist(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         checkYouTubeLinkage(user);
 
@@ -213,7 +214,7 @@ public class YouTubeService {
 
         return playlists.stream()
                 .map(YouTubePlaylistResponse::fromEntity)
-                .collect(Collectors.toList());
+                .toList();
     }
 
 
@@ -223,7 +224,7 @@ public class YouTubeService {
     @Transactional
     public void deleteMyPlaylist(Integer playlistId, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         checkYouTubeLinkage(user);
 
@@ -244,7 +245,7 @@ public class YouTubeService {
     @Transactional
     public void syncPlaylistItem(Integer playlistId, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // DB 에서 플레이리스트 정보 조회
         Playlist playlist = playlistRepository.findByPlaylistIdAndUser(playlistId, user)
@@ -306,7 +307,7 @@ public class YouTubeService {
                             .thumbnailUrl(extractThumbnailUrl(item.getSnippet().getThumbnails()))
                             .position(item.getSnippet().getPosition())
                             .build())
-                    .collect(Collectors.toList());
+                    .toList();
 
         } catch (Exception e) {
             log.error("유튜브 API 호출 실패", e);
@@ -318,7 +319,7 @@ public class YouTubeService {
     public List<PlaylistItemResponse> getPlaylistItems(Integer playlistId, String email) {
         // 유저 및 권한 체크
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         Playlist playlist = playlistRepository.findByPlaylistIdAndUser(playlistId, user)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 플레이리스트를 찾을 수 없습니다."));
@@ -328,6 +329,6 @@ public class YouTubeService {
 
         return items.stream()
                 .map(PlaylistItemResponse::fromEntity)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

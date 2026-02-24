@@ -8,6 +8,7 @@ import dopamine.soundock.entity.User;
 import dopamine.soundock.entity.UserGrade;
 import dopamine.soundock.enums.UserStatus;
 import dopamine.soundock.exceptions.*;
+import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.repository.*;
 import dopamine.soundock.repository.RefreshTokenRepository;
 import dopamine.soundock.repository.UserRepository;
@@ -36,7 +37,7 @@ public class MypageService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자 입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         boolean isConnected = youTubeAuthService.validateAndCleanupOAuth(user);
 
@@ -59,7 +60,7 @@ public class MypageService {
     public void updateUserInfo(UpdateInfoRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 닉네임 수정 할 시
         if (request.getNickname() != null
@@ -88,7 +89,7 @@ public class MypageService {
     public void checkCurrentPassword(CurrentPasswdRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             throw new CustomException("현재 비밀번호가 일치하지 않습니다.", HttpStatus.BAD_REQUEST);
@@ -100,7 +101,7 @@ public class MypageService {
     public void updateUserPasswd(UpdatePasswdRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 새 비밀번호가 기존 비밀번호와 같은지 확인
         if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -119,7 +120,7 @@ public class MypageService {
     public void deleteUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 이미 탈퇴한 사용자인지 확인
         if (user.isDeleted()) {

@@ -54,7 +54,7 @@ public class BoardService {
         // 사용자 로그인 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
 
         // 카테고리 입력값 검증
@@ -282,7 +282,7 @@ public class BoardService {
         // 작성자와 현재 로그인한 유저가 같은지 검사
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 로그인한 유저가 작성한 게시글이 있는지 확인
         if (!board.getUser().getId().equals(user.getId())) {
@@ -309,7 +309,7 @@ public class BoardService {
         // 작성자와 현재 로그인한 유저가 같은지 검사
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 로그인한 유저가 작성한 게시글이 있는지 확인
         if (!board.getUser().getId().equals(user.getId())) {
@@ -425,7 +425,7 @@ public class BoardService {
     public BoardResponse likeBoard(Integer boardId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         Board board = boardRepository.findByBoardIdAndDeletedDateTimeIsNull(boardId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
@@ -487,9 +487,9 @@ public class BoardService {
         Page<Board> boards;
 
         switch (boardSearchRequest.getSearchType()) {
-            case TITLE -> {
+            case TITLE ->
                 boards = boardRepository.searchByTitle(boardSearchRequest.getCategoryType(), pattern, pageable);
-            }
+
             case NICKNAME -> {
                 if (keywordTrim.length() > AppConstants.Validation.NICKNAME_MAX_LENGTH) {
                     throw new IllegalArgumentException("닉네임은 " + AppConstants.Validation.NICKNAME_MAX_LENGTH + "자 이하로 입력하세요");

@@ -38,7 +38,7 @@ public class PopService {
     public List<PaymentHistoryResponse> getPaymentHistory(){
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // popHistory 내역에서 사용자에 대한 정보 조회
         List<PopHistory> results = popHistoryRepository.findByUserAndPopTargetOrderByCreatedDatetimeDesc(user, PopTarget.CHARGE);
@@ -93,7 +93,7 @@ public class PopService {
         // 로그인한 유저 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // popHistory 내역에서 사용자에 대한 정보 조회
         // requested_at이 채워져있으면 사용한다고 요청이 들어온 상태
@@ -153,7 +153,7 @@ public class PopService {
         // 로그인한 유저 확인
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
         // 취소 요청자 id와 현재 로그인 유저가 동일한지 검증
         if (!user.getId().equals(cancelRequest.getUserId())){
