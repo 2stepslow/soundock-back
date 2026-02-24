@@ -168,6 +168,7 @@ public final class AppConstants {
         public static final String SPOTLIGHT_DETAIL_PREFIX = "spotlight:detail:"; // 상세 조회 중복 제한 키
         public static final String KEY_PREFIX_FIND_PW = "AUTH:FIND_PW:"; // 비밀번호 찾기 인증
         public static final String KEY_PREFIX_FIND_PW_LIMIT = "AUTH:LIMIT:";
+        public static final String KEY_PREFIX_RESET_PW_TOKEN = "AUTH:RESET_PW_TOKEN:"; // 비밀번호 재설정 임시발급 토큰
     }
 
 

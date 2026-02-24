@@ -360,7 +360,63 @@ public class AuthService {
         Context context = new Context();
         context.setVariable("code", verificationCode);
 
-        emailService.sendMailAsync(email, subject, "password/find-password", context);
+        emailService.sendMailAsync(email, subject, "search-passwd", context);
     }
 
+    /**
+     * 비밀번호 찾기 인증번호 검증 메서드
+     */
+    public String verifyPasswordSearch(String email, String code) {
+        String redisKey = AppConstants.Redis.KEY_PREFIX_FIND_PW + email;
+        String savedCode = redisTemplate.opsForValue().get(redisKey);
+
+        // 만료되었거나 없는 경우
+        if (savedCode == null) {
+            throw new CustomException("인증 시간이 만료되었거나 잘못된 접근입니다. 다시 시도해주세요.", HttpStatus.BAD_REQUEST);
+        }
+
+        // 번호 불일치
+        if (!savedCode.equals(code)) {
+            throw new CustomException("인증번호가 일치하지 않습니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        // 인증 성공시 비밀번호 변경용 임시 토큰 발행
+        String resetToken = UUID.randomUUID().toString();
+        String tokenKey = AppConstants.Redis.KEY_PREFIX_RESET_PW_TOKEN + email;
+
+        // 비밀번호 변경 유효시간 설정 (5분)
+        redisTemplate.opsForValue().set(tokenKey, resetToken, Duration.ofMinutes(AppConstants.Time.VERIFICATION_EXPIRE_MINUTES));
+
+        // 사용 완료된 데이터 삭제 (인증번호, 발송제한)
+        redisTemplate.delete(redisKey);
+        redisTemplate.delete(AppConstants.Redis.KEY_PREFIX_FIND_PW_LIMIT + email);
+
+        return resetToken;
+    }
+
+    /**
+     * 비밀번호 찾기 전용 비밀번호 재설정 메서드
+     */
+    @Transactional
+    public void resetPassword(ResetPasswdRequest request) {
+        // Redis에서 임시 토큰 검증
+        String tokenKey = AppConstants.Redis.KEY_PREFIX_RESET_PW_TOKEN + request.getEmail();
+        String savedToken = redisTemplate.opsForValue().get(tokenKey);
+
+        // 인증 토큰이 만료(5분 후 삭제) 되었거나 다른 경우
+        if (savedToken == null || !savedToken.equals(request.getResetToken())) {
+            throw new CustomException("인증 세션이 만료되었거나 유효하지 않은 시도입니다.", HttpStatus.UNAUTHORIZED);
+        }
+
+        // 유저 조회
+        User user = userRepository.findByEmailAndIsDeletedFalse(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("유저를 찾을 수 없습니다."));
+
+        // 유저 패스워드 변경
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        userRepository.save(user);
+
+        // 사용한 임시토큰 삭제
+        redisTemplate.delete(tokenKey);
+    }
 }
