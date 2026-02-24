@@ -250,7 +250,7 @@ public class MypageController {
     })
     // 정산 정보 등록
     @PostMapping("/settlements")
-    public ResponseEntity<RestResponse<?>> registerSettlementInfo(
+    public ResponseEntity<RestResponse<Void>> registerSettlementInfo(
             @Valid @RequestBody RegisterSettlementRequest settlementRequest){
         settlementService.registerSettlementInfo(settlementRequest);
         return ResponseEntity.ok(RestResponse.success("정산 정보 등록이 완료되었습니다."));
@@ -267,7 +267,7 @@ public class MypageController {
     })
     // 정산 신청
     @PostMapping("/settlements/request")
-    public ResponseEntity<RestResponse<?>> requestSettlement(){
+    public ResponseEntity<RestResponse<AvailableSettlementResponse>> requestSettlement(){
         AvailableSettlementResponse availableSettlementResponse = settlementService.requestSettlement();
         return ResponseEntity.ok(RestResponse.success("정산 신청이 완료되었습니다.", availableSettlementResponse));
     }
@@ -282,7 +282,7 @@ public class MypageController {
     })
     // 정산 가능 내역 조회
     @GetMapping("/settlements/history/available")
-    public ResponseEntity<RestResponse<?>> getListAvailableSettlement(){
+    public ResponseEntity<RestResponse<AvailableSettlementResponse>> getListAvailableSettlement(){
         AvailableSettlementResponse availableSettlementResponse = settlementService.getListAvailableSettlement();
         return ResponseEntity.ok(RestResponse.success(availableSettlementResponse));
     }

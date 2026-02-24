@@ -84,9 +84,10 @@ public class YouTubeAuthService {
         return oauth.getAccessToken();
     }
 
-    /** 구글 리프레시 토큰을 이용한 액세스토큰 재발급 메서드 */
-    @Transactional
-    public String refreshAccessToken(Oauth oauth) {
+    /**
+     * 구글 리프레시 토큰을 이용한 액세스토큰 재발급 메서드
+     */
+    private String refreshAccessToken(Oauth oauth) {
         if (oauth.getRefreshToken() == null) {
             return null;
         }

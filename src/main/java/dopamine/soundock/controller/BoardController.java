@@ -43,7 +43,7 @@ public class BoardController {
     })
     // 게시글 작성
     @PostMapping("/category/{categoryType}")
-    public ResponseEntity<RestResponse<?>> createNewBoard(
+    public ResponseEntity<RestResponse<Void>> createNewBoard(
             @PathVariable(required = true) CategoryType categoryType,
             @Valid @RequestPart BoardCreateRequest createRequest,
             @RequestPart(required = false) List<MultipartFile> files
@@ -109,7 +109,7 @@ public class BoardController {
     })
     // 게시글 삭제
     @DeleteMapping("/{boardId}")
-    public ResponseEntity<RestResponse<?>> deleteBoard(
+    public ResponseEntity<RestResponse<Void>> deleteBoard(
             @PathVariable(required = true) Integer boardId
     ){
         boardService.deleteBoard(boardId);
@@ -127,7 +127,7 @@ public class BoardController {
     })
     // 게시글 수정
     @PatchMapping("/{boardId}")
-    public ResponseEntity<?> updateBoard(
+    public ResponseEntity<String> updateBoard(
             @PathVariable Integer boardId,
             @RequestPart("data") BoardCreateRequest updateRequest,
             @RequestPart(value = "files", required = false) List<MultipartFile> newFiles,
