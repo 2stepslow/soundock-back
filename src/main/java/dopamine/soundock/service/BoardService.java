@@ -208,6 +208,7 @@ public class BoardService {
                 .playlistItems(playlistItems)
                 .isDeleted(board.getUser().isDeleted())
                 .remainingPop(board.getRemainingPop())
+                .profileUrl(board.getUser().getProfileUrl())
                 .build();
 
         return boardResponse;
@@ -262,6 +263,7 @@ public class BoardService {
                     .imageUrl(imageUrl)
                     .categoryType(board.getCategory().getCategoryType())
                     .isDeleted(board.getUser().isDeleted())
+                    .profileUrl(board.getUser().getProfileUrl())
                     .build();
             boardResponses.add(newResponse);
         }

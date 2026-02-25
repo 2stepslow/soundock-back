@@ -3,6 +3,7 @@ package dopamine.soundock.service;
 import dopamine.soundock.dto.request.CurrentPasswdRequest;
 import dopamine.soundock.dto.request.UpdateInfoRequest;
 import dopamine.soundock.dto.request.UpdatePasswdRequest;
+import dopamine.soundock.dto.response.FileUploadResponse;
 import dopamine.soundock.dto.response.MyInfoResponse;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.entity.UserGrade;
@@ -19,7 +20,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 
 @Service
@@ -30,6 +33,7 @@ public class MypageService {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
     private final YouTubeAuthService youTubeAuthService;
+    private final S3Service s3Service;
 
     // 내 정보 조회
     @Transactional(readOnly = true)
@@ -51,6 +55,7 @@ public class MypageService {
                 .popBalance(user.getPopBalance())
                 .userGrade(user.getUserGrade().getGrade())
                 .isPasswordless(user.isPasswordless())
+                .profileUrl(user.getProfileUrl())
                 .build();
     }
 
@@ -142,4 +147,42 @@ public class MypageService {
         // Refresh Token 무효화
         refreshTokenRepository.deleteByUserId(user.getId());
     }
+
+
+    @Transactional
+    public void updateUserProfile(MultipartFile profileImage) throws IOException {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
+
+        // 기존 프로필 이미지 key 확보 (삭제용)
+        String oldProfileUrl = user.getProfileUrl();
+        String oldFileKey = (oldProfileUrl == null) ? null : s3Service.getFileKeyFromUrl(oldProfileUrl);
+
+        // profileImage가 null이라면 DB는 null 저장, s3는 기존 파일 삭제
+        if (profileImage == null || profileImage.isEmpty()) {
+            user.setProfileUrl(null);
+
+            if (oldFileKey != null && !oldFileKey.isBlank()) {
+                s3Service.deleteFile(oldFileKey);
+            }
+
+            return;
+        }
+
+        // 파일이 있으면 업로드 후 DB에 URL 저장
+        FileUploadResponse uploaded = s3Service.uploadFile(profileImage);
+
+        user.setProfileUrl(uploaded.getFileUrl());
+
+        // 기존 s3 파일은 삭제
+        if (oldFileKey != null && !oldFileKey.isBlank()) {
+            s3Service.deleteFile(oldFileKey);
+        }
+
+        userRepository.save(user);
+    }
+
+
 }

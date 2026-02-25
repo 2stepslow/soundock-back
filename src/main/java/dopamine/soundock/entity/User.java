@@ -84,4 +84,7 @@ public class User {
 
     @Column(name = "is_passwordless", nullable = false)
     private boolean isPasswordless;
+
+    @Column(name = "profile_url", nullable = true)
+    private String profileUrl;
 }

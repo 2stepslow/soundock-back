@@ -198,6 +198,7 @@ public class RankingService {
                     .countComment(board.getCountComment())
                     .imageUrl(imageUrl)
                     .categoryType(board.getCategory().getCategoryType())
+                    .profileUrl(board.getUser().getProfileUrl())
                     .build();
             responses.add(newResponse);
         }
