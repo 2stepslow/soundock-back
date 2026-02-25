@@ -10,7 +10,7 @@ import java.util.Optional;
 @Repository
 public interface TossPaymentRepository extends JpaRepository <TossPayment, Integer> {
     Optional<TossPayment> findByPaymentKey(String paymentKey);
-    Optional<TossPayment> findByOrderId(String OrderId);
+    Optional<TossPayment> findByOrderId(String orderId);
 
     List<TossPayment> findByOrderIdIn(List<String> orderIds);
 }
