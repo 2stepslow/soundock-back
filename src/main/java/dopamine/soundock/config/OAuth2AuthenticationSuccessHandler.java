@@ -43,6 +43,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     // 우리 사이트 전용 통행증(JWT)을 만들어주는 도구
     private final TokenProvider tokenProvider;
     private final UserRepository userRepository;
+    private final CookieUtils cookieUtils;
 
 
     @Value("${app.frontend.url}")
@@ -65,7 +66,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         // 2. 이 구글 정보를 누구의 계정에 저장할지 결정
         // 우리가 인증 시작할 때 '쿠키'에 적어둔 "연동 시도한 유저 이메일"이 있는지 확인
-        String targetEmail = CookieUtils.getCookie(request, AppConstants.OAuth2.LINKING_USER_EMAIL_COOKIE_NAME)
+        String targetEmail = cookieUtils.getCookie(request, AppConstants.OAuth2.LINKING_USER_EMAIL_COOKIE_NAME)
                 .map(Cookie::getValue)
                 .orElseThrow(() -> new CustomException("연동할 계정 정보를 찾을 수 없습니다. 브라우저의 쿠키 설정을 확인하거나 다시 시도해 주세요.", HttpStatus.BAD_REQUEST));
         User user = userRepository.findByEmail(targetEmail)

@@ -130,6 +130,10 @@ public final class AppConstants {
 
         public static final String USER_NOT_FOUND =
                 "존재하지 않는 사용자입니다.";
+        public static final String INQUIRY_NOT_FOUND_ERROR =
+                "문의 내역을 찾을 수 없습니다.";
+        public static final String TOSS_SERVER_ERROR =
+                "토스 서버 내부에서 오류가 발생했습니다.";
     }
 
     /**

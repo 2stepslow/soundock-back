@@ -37,7 +37,7 @@ public class DonationController {
     })
     // 후원하기
     @PostMapping("/donations/{targetUserId}")
-    public ResponseEntity<RestResponse<?>> donate(
+    public ResponseEntity<RestResponse<Void>> donate(
             @PathVariable Integer targetUserId,
             @RequestParam Integer boardId,
             @Valid @RequestBody DonationRequest donationRequest
@@ -59,7 +59,7 @@ public class DonationController {
     })
     // 후원 취소 요청
     @PostMapping("/{userId}/donations/cancel")
-    public ResponseEntity<RestResponse<?>> cancelDonation(
+    public ResponseEntity<RestResponse<Void>> cancelDonation(
             @PathVariable Integer userId,
             @RequestBody DonationRequest donationCancelRequest
     ){
