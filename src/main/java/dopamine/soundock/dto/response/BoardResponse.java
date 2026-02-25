@@ -25,6 +25,7 @@ public class BoardResponse{
     private CategoryType categoryType;
     private String linkUrl;
     private boolean isDeleted;
+    private String profileUrl;
 
 
     // s3 이미지/파일url, id

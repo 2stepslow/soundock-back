@@ -35,4 +35,6 @@ public class MyInfoResponse {
 
     @Schema(description = "패스워드리스 등록 여부")
     private boolean isPasswordless;
+
+    private String profileUrl;
 }

@@ -29,6 +29,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -364,5 +365,14 @@ public class MypageController {
     ) {
         Page<MyPostLikesResponse> myPostLikesResponses = myActivityService.getMyPostLikes(pageable);
         return ResponseEntity.ok(RestResponse.success(myPostLikesResponses));
+    }
+
+
+    @PatchMapping(value = "/me/profile")
+    public ResponseEntity<RestResponse<Void>> updateUserProfile(
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
+    ) throws Exception {
+        mypageService.updateUserProfile(profileImage);
+        return ResponseEntity.ok(RestResponse.success("프로필 이미지가 변경되었습니다."));
     }
 }
