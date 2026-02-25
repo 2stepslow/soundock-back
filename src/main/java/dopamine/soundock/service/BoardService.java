@@ -292,6 +292,7 @@ public class BoardService {
         // 게시글 soft Delete
         board.setDeletedDateTime(LocalDateTime.now());
         board.setDeleted(true);
+        board.setPlaylist(null);
         boardRepository.save(board);
     }
 
