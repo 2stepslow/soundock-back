@@ -39,6 +39,9 @@ public class AuthController {
     @Value("${app.cookie.domain}")
     private String cookieDomain;
 
+    @Value("${app.base.url}")
+    private String siteURL;
+
     // 이메일 중복 체크
     @Operation(
             summary = "이메일 중복 및 재가입 가능 여부 체크",
@@ -107,9 +110,6 @@ public class AuthController {
     @PostMapping("/verification")
     public ResponseEntity<RestResponse<Void>> verification(
             @Valid @RequestBody VerificationEmailRequest verificationEmailRequest) {
-        // ----------테스트 단계에서는 현재 주소를 자동으로 추적하는 이 코드를 사용하지만 배포환경에서는 변경이 필요함-------------------
-        String siteURL = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
-        // ------------------------------------------------------------------------------------------------------------
         authService.sendVerificationEmail(verificationEmailRequest, siteURL);
         return ResponseEntity.ok(RestResponse.success("이메일 인증 전송이 완료되었습니다."));
     }
