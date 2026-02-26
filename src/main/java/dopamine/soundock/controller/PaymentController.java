@@ -102,8 +102,8 @@ public class PaymentController {
             @RequestParam String orderId,
             @RequestParam int amount
     ) {
-        logger.info("Payment success received. paymentKey = {}, orderId = {} , amount = {}",
-                paymentKey, orderId, amount);
+        logger.info("Payment success received. orderId = {} , amount = {}",
+                orderId, amount);
         return ResponseEntity.ok(RestResponse.success("결제 성공"));
     }
 

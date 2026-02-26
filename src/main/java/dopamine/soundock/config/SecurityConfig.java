@@ -117,6 +117,7 @@ public class SecurityConfig {
                                 "/api/auth/logout",
                                 "/api/passwordless/login-trigger",
                                 "/api/passwordless/cancel",
+                                "/api/passwordless/result",
 
                                 // 2. 관리자 및 시스템 관련
                                 "/api/adm1n/login",
@@ -152,8 +153,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/passwordless/login-trigger", // 패스워드리스 로그인 트리거 허용
                                 "/api/passwordless/result", // 패스워드리스 로그인 결과 확인 허용
-                                "/api/passwordless/cancel", // 패스워드리스 인증 취소 허용
-                                "/api/passwordless/status" // 패스워드리스 가입 확인 허용
+                                "/api/passwordless/cancel"  // 패스워드리스 인증 취소 허용
                         ).permitAll()
                         .requestMatchers(
                                 "/payment/*.html",
