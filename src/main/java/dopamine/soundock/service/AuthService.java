@@ -264,7 +264,6 @@ public class AuthService {
     @Transactional
     public void logout(String accessToken, String refreshToken) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        log.info("추출된 인증 정보 : {}", email);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
