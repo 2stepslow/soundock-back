@@ -81,11 +81,13 @@ public class RankingService {
         String monthKey = AppConstants.Redis.RANKING_MONTH_PREFIX + categoryType + ":" + getCurrentMonth();
         String previousMonthKey = AppConstants.Redis.RANKING_MONTH_PREFIX + categoryType + ":" + getPreviousMonth();
 
-        // 0부터 7까지 총 8개 가져오기
-        int limit = 7;
-        Set<String> range = redisTemplate.opsForZSet().reverseRange(monthKey, 0, limit);
+        // 0부터 19까지 총 20개 가져오기 (삭제된 글이 있을 경우를 대비해서)
+        int redisLimit = 19;
+        // 실제 프론트에 줄 개수
+        int targetSize = 8;
+        Set<String> range = redisTemplate.opsForZSet().reverseRange(monthKey, 0, redisLimit);
 
-        return getTopBoards(range, limit, previousMonthKey);
+        return getTopBoards(range, targetSize, previousMonthKey);
 
     }
 
@@ -96,11 +98,13 @@ public class RankingService {
         String weekKey = AppConstants.Redis.RANKING_WEEK_PREFIX + categoryType + ":" + getCurrentWeek();
         String previousWeekKey = AppConstants.Redis.RANKING_WEEK_PREFIX + categoryType + ":" + getPreviousWeek();
 
-        // Showcase는 4개 나머지는 10개 가져오기
-        int limit = (categoryType == CategoryType.SHOWCASE) ? 3 : 9;
-        Set<String> range = redisTemplate.opsForZSet().reverseRange(weekKey, 0, limit);
+        // Redis에서 가져올 개수 (Showcase는 13개, 나머지는 19개)
+        int redisLimit = (categoryType == CategoryType.SHOWCASE) ? 13 : 19;
+        // 실제 프론트에 줄 개수 (Showcase는 4개 나머지는 10개 가져오기)
+        int targetSize = (categoryType == CategoryType.SHOWCASE) ? 4 : 10;
+        Set<String> range = redisTemplate.opsForZSet().reverseRange(weekKey, 0, redisLimit);
 
-        return getTopBoards(range, limit, previousWeekKey);
+        return getTopBoards(range, targetSize, previousWeekKey);
     }
 
     /**
@@ -129,7 +133,7 @@ public class RankingService {
     /**
      * 인기 게시글 조회 공통 메서드
      */
-    private List<BoardResponse> getTopBoards(Set<String> range, int limit, String previousKey) {
+    private List<BoardResponse> getTopBoards(Set<String> range, int targetSize, String previousKey) {
         List<Integer> boardIds = new ArrayList<>();
 
         if (range != null) {
@@ -139,9 +143,9 @@ public class RankingService {
             }
         }
 
-        if (boardIds.size() < limit + 1) {
+        if (boardIds.size() < targetSize && previousKey != null) {
             // 개수가 부족 할 경우 저번 주 (또는 저번 달) 인기 게시글을 조회해서 추가 시켜준다.
-            Set<String> previousRange = redisTemplate.opsForZSet().reverseRange(previousKey, 0, limit);
+            Set<String> previousRange = redisTemplate.opsForZSet().reverseRange(previousKey, 0, targetSize);
 
             if (previousRange != null) {
                 for (String key : previousRange) {
@@ -154,7 +158,7 @@ public class RankingService {
                     }
 
                     // 8개 꽉 차면 for 문 종료
-                    if (boardIds.size() == limit + 1) {
+                    if (boardIds.size() == targetSize) {
                         break;
                     }
                 }
@@ -201,6 +205,11 @@ public class RankingService {
                     .profileUrl(board.getUser().getProfileUrl())
                     .build();
             responses.add(newResponse);
+
+            // Redis에서 뽑아온 최대 개수 중 각 카테고리마다 정한 개수에 도달할 경우 for 문 종료
+            if (responses.size() == targetSize) {
+                break;
+            }
         }
 
         return responses;
