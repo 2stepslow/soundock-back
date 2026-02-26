@@ -133,15 +133,15 @@ public class AuthController {
         ModelAndView mav = new ModelAndView("verification-result");
         try {
             emailService.verifyUser(token);
-            mav.addObject("success", true);
-            mav.addObject("message", "이메일 인증이 완료되었습니다. 원래 페이지로 돌아가 가입을 마무리 해주세요!");
+            mav.addObject(AppConstants.VERIFY_EMAIL_SUCCESS, true);
+            mav.addObject(AppConstants.VERIFY_EMAIL_MESSAGE, "이메일 인증이 완료되었습니다. 원래 페이지로 돌아가 가입을 마무리 해주세요!");
         } catch (CustomException e) {
-            mav.addObject("success", false);
-            mav.addObject("message", e.getMessage());
+            mav.addObject(AppConstants.VERIFY_EMAIL_SUCCESS, false);
+            mav.addObject(AppConstants.VERIFY_EMAIL_MESSAGE, e.getMessage());
         } catch (Exception e) {
             log.error("인증 처리 중 서버 에러 발생: ", e);
-            mav.addObject("success", false);
-            mav.addObject("message", "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            mav.addObject(AppConstants.VERIFY_EMAIL_SUCCESS, false);
+            mav.addObject(AppConstants.VERIFY_EMAIL_MESSAGE, "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
         }
 
         return mav;
