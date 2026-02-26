@@ -289,17 +289,12 @@ public class AuthController {
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "200",
-                    description = "인증 메일 발송 성공",
+                    description = "인증 메일 발송 성공 or 없는 사용자거나 탈퇴한 사용자인 경우(열거 공격 방지를 위해)",
                     content = @Content(schema = @Schema(implementation = RestResponse.class))
             ),
             @ApiResponse(
                     responseCode = "400",
                     description = "1. 유효하지 않은 이메일 형식\t\n2. 재전송 제한 시간(1분) 미경과",
-                    content = @Content(schema = @Schema(implementation = RestResponse.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "가입되지 않은 이메일 주소",
                     content = @Content(schema = @Schema(implementation = RestResponse.class))
             )
     })
