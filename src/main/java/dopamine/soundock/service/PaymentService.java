@@ -9,7 +9,9 @@ import dopamine.soundock.entity.TossPayment;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.PopStatus;
 import dopamine.soundock.enums.PopTarget;
+import dopamine.soundock.exceptions.CustomException;
 import dopamine.soundock.exceptions.ResourceNotFoundException;
+import dopamine.soundock.exceptions.UnauthorizedException;
 import dopamine.soundock.global.constants.AppConstants;
 import dopamine.soundock.repository.PopHistoryRepository;
 import dopamine.soundock.repository.TossPaymentRepository;
@@ -75,6 +77,11 @@ public class PaymentService {
 
         PopHistory popHistory = popHistoryRepository.findByOrderIdAndPopStatus(confirmRequest.getOrderId(), PopStatus.PENDING)
                 .orElseThrow(() -> new ResourceNotFoundException("주문 Id가 일치하지 않는 결제 요청입니다."));
+
+        // 현재 로그인한 유저의 주문인지 검증
+        if (!popHistory.getUser().getId().equals(user.getId())) {
+            throw new CustomException("본인의 결제 요청만 승인할 수 있습니다.", HttpStatus.UNAUTHORIZED);
+        }
 
         if (!Objects.equals(popHistory.getActualAmount(), confirmRequest.getAmount())) {
             throw new ResourceNotFoundException("결제 요청 금액과 일치하지 않습니다.");
