@@ -65,7 +65,13 @@ public class SecurityConfig {
                 albUrl
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")); // 허용할 HTTP 메서드들
-        configuration.addAllowedHeader("*"); // 모든 헤더 허용
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "Origin",
+                "X-Requested-With"
+        ));
         configuration.setAllowCredentials(true); // 쿠키 허용
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -121,7 +127,6 @@ public class SecurityConfig {
                                 "/api/passwordless/login-trigger", // 패스워드리스 로그인 트리거 허용
                                 "/api/passwordless/result", // 패스워드리스 로그인 결과 확인 허용
                                 "/api/passwordless/cancel", // 패스워드리스 인증 취소 허용
-                                "/api/passwordless/register", // 패스워드리스 등록 허용
                                 "/api/passwordless/status" // 패스워드리스 가입 확인 허용
                         ).permitAll()
                         .requestMatchers(

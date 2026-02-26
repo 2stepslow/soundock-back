@@ -134,7 +134,7 @@ public class AdminController {
 
     // 공지사항 작성
     @PostMapping("/announcement/announce/{announceType}")
-    public ResponseEntity<RestResponse<?>> createAnnouncement(
+    public ResponseEntity<RestResponse<Void>> createAnnouncement(
             @PathVariable AnnounceType announceType,
             @Valid @RequestPart("data") AnnouncementCreateRequest createRequest,
             @RequestPart(value = "files", required = false) List<MultipartFile> files
@@ -146,7 +146,7 @@ public class AdminController {
 
     // 공지사항 수정
     @PatchMapping("/announcement/{announceId}")
-    public ResponseEntity<RestResponse<?>> updateAnnouncement(
+    public ResponseEntity<RestResponse<Void>> updateAnnouncement(
             @PathVariable Integer announceId,
             @RequestPart("data") AnnouncementCreateRequest updateRequest,
             @RequestPart(value = "files", required = false) List<MultipartFile> newFiles,
@@ -158,7 +158,7 @@ public class AdminController {
 
     // 공지사항 삭제
     @DeleteMapping("/announcement/{announceId}")
-    public ResponseEntity<RestResponse<?>> deleteAnnouncement(
+    public ResponseEntity<RestResponse<Void>> deleteAnnouncement(
             @PathVariable Integer announceId
     ) {
         adminService.deleteAnnouncement(announceId);

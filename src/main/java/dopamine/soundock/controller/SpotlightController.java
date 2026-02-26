@@ -13,7 +13,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -39,7 +38,7 @@ public class SpotlightController {
     })
     // Spotlight 게시글 작성
     @PostMapping
-    public ResponseEntity<RestResponse<?>> createSpotlightBoard(
+    public ResponseEntity<RestResponse<Void>> createSpotlightBoard(
             @Valid @RequestPart("data") BoardCreateRequest createRequest,
             @RequestPart("files") List<MultipartFile> files
     ) throws IOException {
@@ -81,7 +80,7 @@ public class SpotlightController {
     })
     // Spotlight 게시글 연장 (재화 추가 충전)
     @PostMapping("/{boardId}/extend")
-    public ResponseEntity<RestResponse<?>> extendSpotlight(
+    public ResponseEntity<RestResponse<Void>> extendSpotlight(
             @PathVariable Integer boardId,
             @Valid @RequestBody SpotlightExtendRequest request
     ) {

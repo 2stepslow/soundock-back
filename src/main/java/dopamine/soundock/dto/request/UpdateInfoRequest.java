@@ -28,4 +28,5 @@ public class UpdateInfoRequest {
             message = AppConstants.ErrorMessage.PHONE_FORMAT_ERROR
     )
     private String phoneNumber;
+
 }

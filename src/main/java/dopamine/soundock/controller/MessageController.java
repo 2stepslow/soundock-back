@@ -35,7 +35,7 @@ public class MessageController {
             @ApiResponse(responseCode = "404", description = "받는 사용자를 찾을 수 없음", content = @Content(schema = @Schema(implementation = RestResponse.class))),
     })
     @PostMapping("/{userId}")
-    public ResponseEntity<RestResponse<?>> sendMessage(
+    public ResponseEntity<RestResponse<Void>> sendMessage(
             @PathVariable Integer userId,
             @Valid @RequestBody SendMessageRequest request) {
         messageService.sendMessage(userId, request);

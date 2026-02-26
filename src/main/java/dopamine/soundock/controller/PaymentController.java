@@ -51,7 +51,7 @@ public class PaymentController {
     })
     // 결제 주문 정보 생성
     @PostMapping("/prepare")
-    public ResponseEntity<RestResponse<?>> preparePayment(
+    public ResponseEntity<RestResponse<PreparePaymentRequest>> preparePayment(
             @Valid @RequestBody PreparePaymentRequest paymentRequest
     ){
         PreparePaymentRequest result = paymentService.preparePayment(paymentRequest);
@@ -80,7 +80,7 @@ public class PaymentController {
     })
     // 결제 승인 요청
     @PostMapping("/confirm")
-    public ResponseEntity<RestResponse<?>> confirmPayment(
+    public ResponseEntity<RestResponse<ConfirmPaymentResponse>> confirmPayment(
             @Valid @RequestBody ConfirmPaymentRequest confirmPaymentRequest
     ) {
         ConfirmPaymentResponse confirmPaymentResponse = paymentService.confirmPayment(confirmPaymentRequest);
@@ -97,7 +97,7 @@ public class PaymentController {
             @Parameter(name = "amount", description = "결제 금액", required = true, example = "10000")
     })
     @GetMapping("/success")
-    public ResponseEntity<RestResponse<?>> success(
+    public ResponseEntity<RestResponse<Void>> success(
             @RequestParam String paymentKey,
             @RequestParam String orderId,
             @RequestParam int amount
@@ -121,7 +121,7 @@ public class PaymentController {
     })
     // PaymentKey를 통한 결제 조회
     @GetMapping("/{paymentKey}")
-    public ResponseEntity<RestResponse<?>> getPaymentByKey(
+    public ResponseEntity<RestResponse<ConfirmPaymentResponse>> getPaymentByKey(
             @PathVariable String paymentKey
     ){
          ConfirmPaymentResponse getPaymentResponse = paymentService.getPaymentByKey(paymentKey);
@@ -140,7 +140,7 @@ public class PaymentController {
     })
     // OrderId를 통한 결제 조회
     @GetMapping("/orders/{orderId}")
-    public ResponseEntity<RestResponse<?>> getPaymentById(
+    public ResponseEntity<RestResponse<ConfirmPaymentResponse>> getPaymentById(
             @PathVariable String orderId
     ){
         ConfirmPaymentResponse getPaymentResponse = paymentService.getPaymentById(orderId);
@@ -167,7 +167,7 @@ public class PaymentController {
     })
     // 결제 취소
     @PostMapping("/{paymentKey}/cancel")
-    public ResponseEntity<RestResponse<?>> cancelPayment(
+    public ResponseEntity<RestResponse<ConfirmPaymentResponse>> cancelPayment(
             @PathVariable String paymentKey,
             @Valid @RequestBody CancelPaymentRequest cancelPaymentRequest
     ){

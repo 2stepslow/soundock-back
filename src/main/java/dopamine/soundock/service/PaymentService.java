@@ -96,7 +96,7 @@ public class PaymentService {
                         .onStatus(HttpStatusCode::is5xxServerError,
                                 clientResponse -> clientResponse.bodyToMono(String.class)
                                         .flatMap(body -> Mono.error(
-                                                new ResponseStatusException(HttpStatus.BAD_GATEWAY, "토스 서버 내부에서 오류가 발생했습니다."))
+                                                new ResponseStatusException(HttpStatus.BAD_GATEWAY, AppConstants.ErrorMessage.TOSS_SERVER_ERROR))
                                         ))
                         .bodyToMono(ConfirmPaymentResponse.class)
                         .block();
@@ -187,7 +187,7 @@ public class PaymentService {
                 )
                 .onStatus(HttpStatusCode::is5xxServerError,
                         clientResponse -> Mono.error(
-                                new ResponseStatusException(HttpStatus.BAD_GATEWAY, "토스 서버 내부에서 오류가 발생했습니다.")
+                                new ResponseStatusException(HttpStatus.BAD_GATEWAY, AppConstants.ErrorMessage.TOSS_SERVER_ERROR)
                         ))
                 .bodyToMono(ConfirmPaymentResponse.class)
                 .block();
@@ -218,7 +218,7 @@ public class PaymentService {
                                 ))
                 .onStatus(HttpStatusCode::is5xxServerError,
                         clientResponse -> clientResponse.bodyToMono(String.class)
-                                .flatMap(body -> Mono.error(new ResponseStatusException(HttpStatus.BAD_GATEWAY, "토스 서버 내부에서 오류가 발생했습니다."))
+                                .flatMap(body -> Mono.error(new ResponseStatusException(HttpStatus.BAD_GATEWAY, AppConstants.ErrorMessage.TOSS_SERVER_ERROR))
                                 ))
                 .bodyToMono(ConfirmPaymentResponse.class)
                 .block();

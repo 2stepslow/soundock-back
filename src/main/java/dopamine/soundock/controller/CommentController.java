@@ -32,7 +32,7 @@ public class CommentController {
     })
     // 댓글 작성
     @PostMapping
-    public ResponseEntity<RestResponse<?>> createComment(
+    public ResponseEntity<RestResponse<CommentResponse>> createComment(
             @PathVariable(required = true) Integer boardId,
             @Valid @RequestBody CommentCreateRequest createRequest
     ){
@@ -51,7 +51,7 @@ public class CommentController {
     })
     // 댓글 삭제
     @DeleteMapping("/{commentId}")
-    public ResponseEntity<RestResponse<?>> deleteComment(
+    public ResponseEntity<RestResponse<Integer>> deleteComment(
             @PathVariable(required = true) Integer boardId,
             @PathVariable(required = true) Integer commentId
     ){
@@ -69,7 +69,7 @@ public class CommentController {
     })
     // 댓글 조회
     @GetMapping
-    public ResponseEntity<RestResponse<?>> getComment(
+    public ResponseEntity<RestResponse<CommentListResponse>> getComment(
             @PathVariable(required = true) Integer boardId
     ){
         CommentListResponse responses = commentService.getComment(boardId);

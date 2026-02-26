@@ -29,6 +29,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -250,7 +251,7 @@ public class MypageController {
     })
     // 정산 정보 등록
     @PostMapping("/settlements")
-    public ResponseEntity<RestResponse<?>> registerSettlementInfo(
+    public ResponseEntity<RestResponse<Void>> registerSettlementInfo(
             @Valid @RequestBody RegisterSettlementRequest settlementRequest){
         settlementService.registerSettlementInfo(settlementRequest);
         return ResponseEntity.ok(RestResponse.success("정산 정보 등록이 완료되었습니다."));
@@ -267,7 +268,7 @@ public class MypageController {
     })
     // 정산 신청
     @PostMapping("/settlements/request")
-    public ResponseEntity<RestResponse<?>> requestSettlement(){
+    public ResponseEntity<RestResponse<AvailableSettlementResponse>> requestSettlement(){
         AvailableSettlementResponse availableSettlementResponse = settlementService.requestSettlement();
         return ResponseEntity.ok(RestResponse.success("정산 신청이 완료되었습니다.", availableSettlementResponse));
     }
@@ -282,7 +283,7 @@ public class MypageController {
     })
     // 정산 가능 내역 조회
     @GetMapping("/settlements/history/available")
-    public ResponseEntity<RestResponse<?>> getListAvailableSettlement(){
+    public ResponseEntity<RestResponse<AvailableSettlementResponse>> getListAvailableSettlement(){
         AvailableSettlementResponse availableSettlementResponse = settlementService.getListAvailableSettlement();
         return ResponseEntity.ok(RestResponse.success(availableSettlementResponse));
     }
@@ -364,5 +365,14 @@ public class MypageController {
     ) {
         Page<MyPostLikesResponse> myPostLikesResponses = myActivityService.getMyPostLikes(pageable);
         return ResponseEntity.ok(RestResponse.success(myPostLikesResponses));
+    }
+
+
+    @PatchMapping(value = "/me/profile")
+    public ResponseEntity<RestResponse<Void>> updateUserProfile(
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
+    ) throws Exception {
+        mypageService.updateUserProfile(profileImage);
+        return ResponseEntity.ok(RestResponse.success("프로필 이미지가 변경되었습니다."));
     }
 }

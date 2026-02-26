@@ -86,7 +86,7 @@ public class InquiryService {
     @Transactional(readOnly = true)
     public InquiryDetailResponse getInquiry(Integer userInquiryId, String email) {
         UserInquiry inquiry = userInquiryRepository.findByUserInquiryIdAndUser_Email(userInquiryId, email)
-                .orElseThrow(() -> new ResourceNotFoundException("문의 내역을 찾을 수 없습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.INQUIRY_NOT_FOUND_ERROR));
 
         return InquiryDetailResponse.from(inquiry);
     }
@@ -105,7 +105,7 @@ public class InquiryService {
         }
 
         UserInquiry inquiry = userInquiryRepository.findByUserInquiryId(userInquiryId)
-                .orElseThrow(() -> new ResourceNotFoundException("문의 내역을 찾을 수 없습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.INQUIRY_NOT_FOUND_ERROR));
 
         if (inquiry.getCommentStatus() == CommentStatus.COMPLETED) {
             throw new CustomException("이미 답변이 완료된 문의 입니다.", HttpStatus.BAD_REQUEST);
@@ -134,7 +134,7 @@ public class InquiryService {
     @Transactional(readOnly = true)
     public AdminInquiryDetailResponse getAdminInquiry(Integer userInquiryId) {
         UserInquiry inquiry = userInquiryRepository.findByUserInquiryId(userInquiryId)
-                .orElseThrow(() -> new ResourceNotFoundException("문의 내역을 찾을 수 없습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.INQUIRY_NOT_FOUND_ERROR));
 
         return AdminInquiryDetailResponse.from(inquiry);
     }
