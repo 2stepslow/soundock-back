@@ -222,18 +222,30 @@ public class BoardService {
             case COMMUNITY, REVIEWS, NOTICE -> 15;
             default -> 10;
         };
-        Pageable pageable = PageRequest.of(page, pageSize, Sort.by("createdDateTime").descending());
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by("boardId").descending());
 
+        Category category = categoryRepository.findByCategoryType(categoryType)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리입니다."));
 
+        // 삭제되지 않은 게시글에 대해 boardId순으로 정렬(createdDatetime과 같이 먼저 등록된 글일수록 숫자가 작음)
+        Page<Integer> boardIds = boardRepository.findBoardIdsByCategoryAndDeletedDateTimeIsNull(category, pageable);
 
-        Page<Board> boards = boardRepository.findByDeletedDateTimeIsNullAndCategoryCategoryType(categoryType, pageable);
-        if (boards.getTotalElements() == 0) {
+        if (boardIds.getTotalElements() == 0) {
             throw new ResourceNotFoundException("현재 카테고리에 작성된 게시글이 없습니다.");
         }
 
+        List<Integer> boardIdList = boardIds.getContent();
+
+        List<Board> boards = boardRepository.findAllByBoardIdInAndDeletedDateTimeIsNull(boardIdList);
+
+        Map<Integer, Board> boardMap = boards.stream()
+                .collect(Collectors.toMap(Board::getBoardId, b -> b));
+
+
         // 게시글 목록 표시
         List<BoardResponse> boardResponses = new ArrayList<>();
-        for (Board board : boards) {
+        for (Integer id : boardIdList) {
+            Board board = boardMap.get(id);
             // 각 게시글의 첨부파일을 sequence 순으로 조회하여 첫 번째를 배너로 사용
             List<BoardAttachments> attachments = board.getAttachments();
             String imageUrl = null;
@@ -263,14 +275,13 @@ public class BoardService {
                     .imageUrl(imageUrl)
                     .categoryType(board.getCategory().getCategoryType())
                     .isDeleted(board.getUser().isDeleted())
-                    .profileUrl(board.getUser().getProfileUrl())
                     .build();
             boardResponses.add(newResponse);
         }
         return new PageImpl<>(
                 boardResponses,
                 pageable,
-                boards.getTotalElements()
+                boardIds.getTotalElements()
         );
     }
 

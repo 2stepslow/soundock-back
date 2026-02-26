@@ -1,6 +1,7 @@
 package dopamine.soundock.repository;
 
 import dopamine.soundock.entity.Board;
+import dopamine.soundock.entity.Category;
 import dopamine.soundock.entity.User;
 import dopamine.soundock.enums.CategoryType;
 import org.springframework.data.domain.Page;
@@ -95,4 +96,7 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
     @Query("UPDATE Board b SET b.featuredExpiredDateTime = null " +
            "WHERE b.boardId = :boardId AND b.featuredExpiredDateTime IS NOT NULL")
     int clearFeaturedExpiredDateTime(@Param("boardId") Integer boardId);
+
+    @Query("SELECT b.boardId FROM Board b WHERE b.category = :category AND b.deletedDateTime IS NULL")
+    Page<Integer> findBoardIdsByCategoryAndDeletedDateTimeIsNull(Category category, Pageable pageable);
 }
