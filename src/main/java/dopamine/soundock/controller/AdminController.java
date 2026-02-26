@@ -28,7 +28,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -177,6 +176,30 @@ public class AdminController {
     ) {
         inquiryService.registerAdminComment(adminEmail, userInquiryId, request);
         return ResponseEntity.ok(RestResponse.success("답변 등록이 완료되었습니다."));
+    }
+
+    @GetMapping("/settlements")
+    public ResponseEntity<RestResponse<List<AdminSettlementResponse>>> getAdminSettlement(){
+        List<AdminSettlementResponse> adminSettlementResponses = adminService.getAdminSettlement();
+        return ResponseEntity.ok(RestResponse.success(adminSettlementResponses));
+    }
+
+    // 정산 승인
+    @PostMapping("/settlements/approve/{popHistoryId}")
+    public ResponseEntity<RestResponse<String>> approveSettlement(
+            @PathVariable Integer popHistoryId
+    ) {
+        adminService.approveSettlement(popHistoryId);
+        return ResponseEntity.ok(RestResponse.success("정산 승인이 완료되었습니다."));
+    }
+
+    // 정산 거절
+    @PostMapping("/settlements/reject/{popHistoryId}")
+    public ResponseEntity<RestResponse<String>> rejectSettlement(
+            @PathVariable Integer popHistoryId
+    ) {
+        adminService.rejectSettlement(popHistoryId);
+        return ResponseEntity.ok(RestResponse.success("정산이 거절되었습니다."));
     }
 
 }

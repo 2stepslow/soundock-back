@@ -4,6 +4,7 @@ package dopamine.soundock.service;
 import dopamine.soundock.dto.TokenDto;
 import dopamine.soundock.dto.request.AnnouncementCreateRequest;
 import dopamine.soundock.dto.request.LoginRequest;
+import dopamine.soundock.dto.response.AdminSettlementResponse;
 import dopamine.soundock.dto.response.CancelRequestResponse;
 import dopamine.soundock.entity.*;
 import dopamine.soundock.enums.*;
@@ -26,6 +27,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -364,6 +366,85 @@ public class AdminService {
         }
     }
 
+    // 정산 요청 내역 조회
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public List<AdminSettlementResponse> getAdminSettlement(){
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User admin = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
+        // 사용자가 신청한 정산 내역들 표시 (정산 요청 + 정산 완료)
+        List<PopHistory> popHistories = popHistoryRepository.findByPopStatusIn(
+                List.of(PopStatus.SETTLEMENT_REQUEST, PopStatus.SETTLEMENT_COMPLETED));
 
+        if (popHistories.isEmpty()){
+            throw new ResourceNotFoundException("정산 요청 내역이 없습니다.");
+        }
+
+        List<AdminSettlementResponse> adminSettlementResponses = new ArrayList<>();
+        for (PopHistory popHistory : popHistories){
+            AdminSettlementResponse response = AdminSettlementResponse.builder()
+                    .popHistoryId(popHistory.getPopHistoryId())
+                    .userId(popHistory.getUser().getId())
+                    .nickName(popHistory.getUser().getNickname())
+                    .changeAmount(popHistory.getChangeAmount())
+                    .requestedDatetime(popHistory.getRequestedDatetime())
+                    .approvedDatetime(popHistory.getApprovedDatetime())
+                    .popStatus(popHistory.getPopStatus())
+                    .build();
+
+            adminSettlementResponses.add(response);
+        }
+        return adminSettlementResponses;
+    }
+
+    // 정산 승인 처리
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public void approveSettlement(Integer popHistoryId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User admin = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
+
+        // 정산 요청 내역 조회
+        PopHistory popHistory = popHistoryRepository.findById(popHistoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("해당 정산 내역을 찾을 수 없습니다."));
+
+        // 상태 검증 - SETTLEMENT_REQUEST 상태인지 확인
+        if (!popHistory.getPopStatus().equals(PopStatus.SETTLEMENT_REQUEST)) {
+            throw new CustomException("정산 요청 상태가 아닙니다. 현재 상태: " + popHistory.getPopStatus(), HttpStatus.CONFLICT);
+        }
+
+        // 정산 승인 처리
+        LocalDateTime now = LocalDateTime.now();
+        popHistory.setPopStatus(PopStatus.SETTLEMENT_COMPLETED);
+        popHistory.setApprovedDatetime(now);
+
+        popHistoryRepository.save(popHistory);
+    }
+
+    // 정산 거절 처리
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public void rejectSettlement(Integer popHistoryId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User admin = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
+
+        // 정산 요청 내역 조회
+        PopHistory popHistory = popHistoryRepository.findById(popHistoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("해당 정산 내역을 찾을 수 없습니다."));
+
+        // 상태 검증 - SETTLEMENT_REQUEST 상태인지 확인
+        if (!popHistory.getPopStatus().equals(PopStatus.SETTLEMENT_REQUEST)) {
+            throw new CustomException("정산 요청 상태가 아닙니다. 현재 상태: " + popHistory.getPopStatus(), HttpStatus.CONFLICT);
+        }
+
+        // 정산 거절 처리 - 상태를 COMPLETED로 되돌려서 사용자가 다시 정산 요청 가능하도록
+        popHistory.setPopStatus(PopStatus.COMPLETED);
+        popHistory.setRequestedDatetime(null);
+
+        popHistoryRepository.save(popHistory);
+    }
 }

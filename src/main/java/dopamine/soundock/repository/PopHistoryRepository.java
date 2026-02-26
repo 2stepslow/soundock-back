@@ -131,5 +131,7 @@ public interface PopHistoryRepository extends JpaRepository<PopHistory, Integer>
     // 트랜잭션 ID로 모든 PopHistory 조회 (승인 시 DONATION과 RECEIVED 모두 업데이트용)
     List<PopHistory> findByTransactionId(String transactionId);
 
+    // 관리자 정산 내역 조회 (정산 요청 + 정산 완료)
+    List<PopHistory> findByPopStatusIn(List<PopStatus> popStatuses);
 }
 
