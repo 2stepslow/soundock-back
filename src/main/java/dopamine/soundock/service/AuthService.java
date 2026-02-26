@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.parameters.P;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -336,8 +337,13 @@ public class AuthService {
      */
     public void sendPasswordSearch(String email) {
         // 존재 여부 확인 (탈퇴 시에도 Exception 발생)
-        userRepository.findByEmailAndIsDeletedFalse(email)
-                .orElseThrow(() -> new CustomException("이메일 주소를 다시 확인해주세요.", HttpStatus.NOT_FOUND));
+        Optional<User> userOpt = userRepository.findByEmailAndIsDeletedFalse(email);
+        if (userOpt.isEmpty()) {
+            // 미가입된 계정 또는 탈퇴된 계정 시 아무것도 하지않고 반환
+            return;
+        }
+
+        User user = userOpt.get();
 
         // 재발송 제한 확인 (쿨타임 1분)
         String rateLimitKey = AppConstants.Redis.KEY_PREFIX_FIND_PW_LIMIT + email;

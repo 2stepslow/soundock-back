@@ -102,8 +102,39 @@ public class SecurityConfig {
                 // CORS 설정 (프론트엔드 React와 통신을 위해 필수)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // csrf는 Jwt 토큰으로 인해 어차피 막히기 때문에 비활성화
-                .csrf(AbstractHttpConfigurer::disable)
+                // CSRF 보호 (쿠키를 사용하는 요청은 "X-Requested-With' 커스텀 헤더 체크로 CSRF 방어
+                .csrf(csrf -> csrf
+                        // 제외 해야할 API 항목
+                        .ignoringRequestMatchers(
+                                // 1. 서비스용 공개 API (POST/PATCH 등)
+                                "/api/auth/login",
+                                "/api/auth/signup",
+                                "/api/auth/verification",
+                                "/api/auth/find-email",
+                                "/api/auth/send/find-password",
+                                "/api/auth/verify/find-password",
+                                "/api/auth/reset-password",
+                                "/api/auth/logout",
+                                "/api/passwordless/login-trigger",
+                                "/api/passwordless/cancel",
+
+                                // 2. 관리자 및 시스템 관련
+                                "/api/adm1n/login",
+
+                                // 3. 개발 도구 (Swagger 테스트 시 CSRF 차단 방지)
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        )
+                        .ignoringRequestMatchers(request -> {
+                            // Authorization 헤더가 있는 경우 통과
+                            String auth = request.getHeader("Authorization");
+                            if (auth != null && auth.startsWith("Bearer ")) {
+                                return true;
+                            }
+                            // Authorization 헤더가 없는 요청은 프론트엔드에서 강제한 커스텀 헤더 존재 여부로 CSRF 공격 여부 판단
+                            return "XMLHttpRequest".equals(request.getHeader("X-Requested-With"));
+                        })
+                )
 
                 // 서버가 사용자의 상태를 세션에 저장하지 않도록 설정
                 .sessionManagement(session ->
