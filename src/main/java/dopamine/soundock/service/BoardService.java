@@ -275,6 +275,7 @@ public class BoardService {
                     .imageUrl(imageUrl)
                     .categoryType(board.getCategory().getCategoryType())
                     .isDeleted(board.getUser().isDeleted())
+                    .profileUrl(board.getUser().getProfileUrl())
                     .build();
             boardResponses.add(newResponse);
         }
