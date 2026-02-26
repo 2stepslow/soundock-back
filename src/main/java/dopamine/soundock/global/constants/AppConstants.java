@@ -184,4 +184,10 @@ public final class AppConstants {
             "(?:https?://)?(?:www\\.)?(?:youtube\\.com/watch\\?v=|youtu\\.be/)([a-zA-Z0-9_-]{11})";
 
 
+    /**
+     * AuthController 관련 상수값
+     */
+    public static final String VERIFY_EMAIL_SUCCESS = "success";
+    public static final String VERIFY_EMAIL_MESSAGE = "message";
+
 }
