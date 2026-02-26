@@ -61,7 +61,7 @@ public class DonationController {
     @PostMapping("/{userId}/donations/cancel")
     public ResponseEntity<RestResponse<Void>> cancelDonation(
             @PathVariable Integer userId,
-            @RequestBody DonationRequest donationCancelRequest
+            @Valid @RequestBody DonationRequest donationCancelRequest
     ){
         donationService.cancelDonation(userId, donationCancelRequest);
         return ResponseEntity.ok(RestResponse.success("후원 취소 요청을 완료했습니다. 관리자 확인 후 취소 요청이 완료됩니다."));
