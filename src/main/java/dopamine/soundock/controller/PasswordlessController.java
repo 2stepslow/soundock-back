@@ -4,6 +4,7 @@ import dopamine.soundock.dto.PasswordlessApiResponse;
 import dopamine.soundock.dto.request.PWLCancelRequest;
 import dopamine.soundock.dto.request.PWLLoginTriggerRequest;
 import dopamine.soundock.dto.request.PWLRegisterRequest;
+import dopamine.soundock.dto.request.PWLResultRequest;
 import dopamine.soundock.dto.response.PWLRegisterResponse;
 import dopamine.soundock.dto.response.PWLResultResponse;
 import dopamine.soundock.dto.response.PWLStatusResponse;
@@ -70,7 +71,7 @@ public class PasswordlessController {
     })
     @GetMapping("/status")
     public ResponseEntity<PasswordlessApiResponse<PWLStatusResponse>> getUserStatus(
-            @RequestParam("userId") String email
+            @AuthenticationPrincipal(expression = "username") String email
     ) {
         PasswordlessApiResponse<PWLStatusResponse> response = passwordlessService.updateUserPWL(email);
         return ResponseEntity.ok(response);
@@ -191,12 +192,11 @@ public class PasswordlessController {
                     content = @Content(examples = @ExampleObject(value = "{\"message\": \"서빙 API 통신 실패\"}"))
             )
     })
-    @GetMapping("/result")
+    @PostMapping("/result")
     public ResponseEntity<PasswordlessApiResponse<PWLResultResponse>> getLoginResult(
-            @RequestParam("userId") String email,
-            @RequestParam("sessionId") String sessionId
-    ) {
-        PasswordlessApiResponse<PWLResultResponse> response = passwordlessService.finalLoginResult(email, sessionId);
+            @Valid @RequestBody PWLResultRequest request
+            ) {
+        PasswordlessApiResponse<PWLResultResponse> response = passwordlessService.finalLoginResult(request.getUserId(), request.getSessionId());
 
         // 인증이 완료된 상태(Y)인 경우에만 쿠키 생성
         if (response.getData() != null && "Y".equals(response.getData().getAuth())) {
