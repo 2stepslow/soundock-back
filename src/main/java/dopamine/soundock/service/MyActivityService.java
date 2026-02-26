@@ -81,7 +81,7 @@ public class MyActivityService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException(AppConstants.ErrorMessage.USER_NOT_FOUND));
 
-        Page<LikeBoard> likeBoards = boardLikeRepository.findByUser(user, pageable);
+        Page<LikeBoard> likeBoards = boardLikeRepository. findByUserAndBoard_DeletedDateTimeIsNull(user, pageable);
 
         return likeBoards.map(likeBoard ->
                 new MyPostLikesResponse(
