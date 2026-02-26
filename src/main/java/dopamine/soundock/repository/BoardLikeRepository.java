@@ -17,5 +17,5 @@ public interface BoardLikeRepository extends JpaRepository<LikeBoard,Integer> {
 
     // 내가 좋아요 한 게시글 조회
     @EntityGraph(attributePaths = {"board", "board.category", "board.user"})
-    Page<LikeBoard> findByUser(User user, Pageable pageable);
+    Page<LikeBoard> findByUserAndBoard_DeletedDateTimeIsNull(User user, Pageable pageable);
 }
