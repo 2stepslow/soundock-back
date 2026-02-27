@@ -2,6 +2,7 @@ package dopamine.soundock.scheduler;
 
 import dopamine.soundock.repository.AccessTokenBlacklistRepository;
 import dopamine.soundock.repository.RefreshTokenRepository;
+import dopamine.soundock.repository.VerificationTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,6 +21,7 @@ public class TokenCleaningScheduler {
      */
     private final RefreshTokenRepository refreshTokenRepository;
     private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
+    private final VerificationTokenRepository verificationTokenRepository;
 
     @Transactional
     @Scheduled(cron = "0 0 1 * * *") // 매일 새벽 1시 정각
@@ -32,6 +34,10 @@ public class TokenCleaningScheduler {
 
             // 2. AccessTokenBlacklist 테이블에서, 만료 시간이 지난 데이터들을 찾아서 모두 지운다.
             accessTokenBlacklistRepository.deleteAllByExpirationAtBefore(now);
+
+            // 3. VerificationToken 테이블에서 인증을 완료한 토큰을 제거한다.
+            verificationTokenRepository.deleteByIsVerifiedTrue();
+
             log.info("토큰 정리 스케줄러 작업이 성공적으로 마무리 되었습니다. 실행 시간 : {}", now);
         } catch (Exception e) {
             log.error("토큰 정리 중 오류가 발생했습니다 : {}", e.getMessage(), e);
