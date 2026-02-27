@@ -129,7 +129,7 @@ public class CommentService {
                 .orElseThrow(() -> new ResourceNotFoundException("해당 카테고리에서 게시글을 찾을 수 없거나 삭제된 게시글입니다."));
 
         // commentRepo에서 해당 boardId에 작성된 댓글이 있는지 확인
-        List<Comment> results = commentRepository.findByIsDeletedIsFalseAndBoard(board);
+        List<Comment> results = commentRepository.findByIsDeletedIsFalseAndBoardIsDeletedIsFalseAndUserIsDeletedIsFalseAndBoard(board);
         if (results.isEmpty()){
             return CommentListResponse.builder()
                     .commentResponse(new ArrayList<>())
