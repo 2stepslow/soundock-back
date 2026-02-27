@@ -172,7 +172,7 @@ public class AuthController {
                 .secure(true) // HTTPS에서만 전송 (테스트 환경에서는 false)
                 .path("/") // 모든 경로에서 쿠키 전송
                 .maxAge(AppConstants.Time.REFRESH_TOKEN_VALIDITY_MS / 1000)
-                .sameSite("none"); // CSRF 방어
+                .sameSite("none");
 
         if (cookieDomain != null && !cookieDomain.isBlank() && !cookieDomain.equals("localhost")) {
             cookieBuilder.domain(cookieDomain);

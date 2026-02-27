@@ -129,7 +129,7 @@ public class BoardController {
     @PatchMapping("/{boardId}")
     public ResponseEntity<String> updateBoard(
             @PathVariable Integer boardId,
-            @RequestPart("data") BoardCreateRequest updateRequest,
+            @Valid @RequestPart("data") BoardCreateRequest updateRequest,
             @RequestPart(value = "files", required = false) List<MultipartFile> newFiles,
             @RequestParam(value = "deleteIds", required = false) List<Integer> deleteAttachmentIds,
             @RequestParam(value = "imageOrder", required = false) List<String> imageOrder) throws IOException {
