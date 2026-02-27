@@ -3,6 +3,7 @@ package dopamine.soundock.config;
 
 import dopamine.soundock.global.CookieUtils;
 import dopamine.soundock.global.constants.AppConstants;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -58,9 +59,12 @@ public class HttpCookieOAuth2AuthorizationRequestRepository implements Authoriza
         log.info("OAuth2 인증 요청 쿠키 저장 완료 (Serialized)");
 
         // 누구의 계정에 연결할지 식별자(Email) 저장
-        // 우선순위: 1순위(URL 파라미터), 2순위(현재 로그인된 세션 정보)
-        String targetEmail = request.getParameter("email");
+        // 1순위 : preparelinke 에서 미리 설정된 쿠키
+        String targetEmail = cookieUtils.getCookie(request, AppConstants.OAuth2.LINKING_USER_EMAIL_COOKIE_NAME)
+                .map(Cookie::getValue)
+                .orElse(null);
 
+        // 2순위 : SecurityContext
         if (targetEmail == null || targetEmail.isBlank()) {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
@@ -71,7 +75,7 @@ public class HttpCookieOAuth2AuthorizationRequestRepository implements Authoriza
         if (targetEmail != null && !targetEmail.isBlank()) {
             cookieUtils.addCookie(response, AppConstants.OAuth2.LINKING_USER_EMAIL_COOKIE_NAME,
                     targetEmail, AppConstants.OAuth2.cookieExpireSeconds);
-            log.info("연동 대상 이메일 쿠키 저장: {}", targetEmail);
+            log.info("연동 대상 이메일 쿠키 저장 완료");
         }
 
         // 3. 인증 완료 후 프론트엔드(React)의 어느 페이지로 돌아갈지(redirect_uri)를 쿠키에 저장
