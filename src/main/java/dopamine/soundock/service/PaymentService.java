@@ -178,6 +178,11 @@ public class PaymentService {
         TossPayment tossPayment = tossPaymentRepository.findByPaymentKey(paymentKey)
                 .orElseThrow(() -> new ResourceNotFoundException("유효하지 않은 요청입니다. PaymentKey를 확인해주세요."));
 
+        // 본인 결제 인지 검증
+        if (!tossPayment.getPopHistory().getUser().getId().equals(user.getId())) {
+            throw new CustomException("본인의 결제 내역만 조회할 수 있습니다.", HttpStatus.FORBIDDEN);
+        }
+
         // 승인된 결제에 대해서만 조회 가능
         if (tossPayment.getApprovedDatetime() == null){
             throw new IllegalArgumentException("승인 완료되지 않은 결제입니다.");
@@ -211,6 +216,11 @@ public class PaymentService {
 
         TossPayment tossPayment = tossPaymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("주문번호와 일치하는 주문 내역이 없습니다."));
+
+        // 본인 결제 인지 검증
+        if (!tossPayment.getPopHistory().getUser().getId().equals(user.getId())) {
+            throw new CustomException("본인의 결제 내역만 조회할 수 있습니다.", HttpStatus.FORBIDDEN);
+        }
 
         if (tossPayment.getApprovedDatetime() == null){
             throw new IllegalArgumentException(("승인 완료되지 않은 결제입니다."));
@@ -250,6 +260,11 @@ public class PaymentService {
             // 유효한 paymentKey 값인지 확인
             TossPayment tossPayment = tossPaymentRepository.findByPaymentKey(paymentKey)
                     .orElseThrow(() -> new ResourceNotFoundException("유효하지 않은 PaymentKey입니다."));
+
+            // 본인 결제 인지 검증
+            if (!tossPayment.getPopHistory().getUser().getId().equals(user.getId())) {
+                throw new CustomException("본인의 결제 내역만 조회할 수 있습니다.", HttpStatus.FORBIDDEN);
+            }
 
             // 토스 페이먼츠 객체 결제 상태 확인(취소 상태면 예외처리)
             if ("CANCELED".equals(tossPayment.getTossPaymentStatus())) {
