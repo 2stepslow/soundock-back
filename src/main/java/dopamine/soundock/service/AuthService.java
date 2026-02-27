@@ -32,6 +32,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -325,10 +326,18 @@ public class AuthService {
      * 이메일 찾기 메서드
      */
     public EmailSearchResponse emailSearch(String name, String phoneNumber) {
-        User user = userRepository.findByNameAndPhoneNumberAndIsDeletedFalse(name, phoneNumber)
-                .orElseThrow(() -> new CustomException("일치하는 회원 정보가 없습니다.", HttpStatus.BAD_REQUEST));
+        List<User> users = userRepository.findByNameAndPhoneNumberAndIsDeletedFalse(name, phoneNumber);
 
-        return new EmailSearchResponse(user.getEmail());
+        if(users.isEmpty()) {
+            throw new CustomException("일치하는 회원 정보가 없습니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        List<String> emails = users.stream()
+                .map(User::getEmail)
+                .distinct()
+                .toList();
+
+        return new EmailSearchResponse(emails);
     }
 
     /**
