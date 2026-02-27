@@ -225,7 +225,7 @@ public class AuthService {
     ) {
         // 1. 존재 여부 확인 (탈퇴 시에도 Exception 발생)
         User user = userRepository.findByEmailAndIsDeletedFalse(loginRequest.getEmail())
-            .orElseThrow(() -> new LoginFailedException("가입되지 않은 계정입니다."));
+            .orElseThrow(() -> new LoginFailedException("이메일 또는 비밀번호가 올바르지 않습니다."));
 
         if (user.isPasswordless()) {
             throw new LoginFailedException("패스워드리스 서비스를 사용 중입니다. 패스워드리스를 통해 로그인 해주세요");
@@ -233,7 +233,7 @@ public class AuthService {
 
         // 2. 비밀번호 검증
         if(!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            throw new LoginFailedException("비밀번호가 일치하지 않습니다.");
+            throw new LoginFailedException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
 
         // 3. 상태 검증
