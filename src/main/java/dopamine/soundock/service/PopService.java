@@ -191,10 +191,10 @@ public class PopService {
             throw new IllegalArgumentException("이미 취소된 재화 사용 내역입니다.");
         }
 
-        // 게시글 작성 시각 10분 이내인 경우만 환불
+        // 해당 재화 사용(등록/연장) 시각 기준 10분 이내인 경우만 환불
         if (LocalDateTime.now()
-                .isAfter(board.getCreatedDateTime().plusMinutes(AppConstants.Time.AVAILABLE_REQUEST_CANCEL_MINUTES))){
-            throw new InvalidCancelFeaturedBoardException("게시글 등록 후 10분 이내인 경우만 재화 환불이 가능합니다.");
+                .isAfter(usedPop.getCreatedDatetime().plusMinutes(AppConstants.Time.AVAILABLE_REQUEST_CANCEL_MINUTES))){
+            throw new InvalidCancelFeaturedBoardException("재화 사용 후 10분 이내인 경우만 환불이 가능합니다.");
         }
         int cancelAmount = Math.abs(usedPop.getChangeAmount());
 
