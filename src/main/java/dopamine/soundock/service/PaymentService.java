@@ -155,11 +155,11 @@ public class PaymentService {
                         .retrieve()
                         .bodyToMono(ConfirmPaymentResponse.class)
                         .block();
-                 log.info("토스 결제 취소 요청 성공 | paymentKey : {} | popHistory 주문 생성 내역 확인 바람", confirmPaymentResponse.getPaymentKey());
+                 log.info("토스 결제 취소 요청 성공 | orderId 주문 생성 내역 확인 바람");
             } catch (Exception exception) {
                 // 4-1. Toss에서 결제 취소 처리 중 에러 발생할 경우
                 // 내부 로그 기록함
-                log.error("토스 결제 취소 요청 실패[관리자 확인 필요] | paymentKey : {}", confirmRequest.getPaymentKey());
+                log.error("토스 결제 취소 요청 실패[관리자 확인 필요]");
             }
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "결제 승인 요청 실패로 결제가 취소되었습니다.", e);
         }
