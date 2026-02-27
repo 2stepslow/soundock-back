@@ -17,6 +17,8 @@ import java.util.List;
 public interface CommentRepository extends JpaRepository<Comment, Integer> {
     List<Comment> findByIsDeletedIsFalseAndBoard(Board board);
 
+    List<Comment> findByIsDeletedIsFalseAndBoardIsDeletedIsFalseAndUserIsDeletedIsFalseAndBoard(Board board);
+
     Integer countByIsDeletedIsFalseAndBoard(Board board);
 
     // 내가 쓴 댓글 조회 (삭제된 댓글 제외)

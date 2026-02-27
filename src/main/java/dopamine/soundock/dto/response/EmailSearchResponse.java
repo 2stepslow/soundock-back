@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @AllArgsConstructor
 @Getter
 @Setter
@@ -14,5 +16,5 @@ import lombok.Setter;
 public class EmailSearchResponse {
 
     @Schema(description = "실명, 전화번호 매칭으로 찾은 이메일 정보")
-    private String email;
+    private List<String> email;
 }

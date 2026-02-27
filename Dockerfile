@@ -8,4 +8,4 @@ COPY build/libs/*.jar app.jar
 EXPOSE 8080
 
 # 컨테이너 시작 시 실행될 명령어
-ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=aws"]
+ENTRYPOINT ["java", "-Duser.timezone=Asia/Seoul", "-jar", "app.jar", "--spring.profiles.active=aws"]

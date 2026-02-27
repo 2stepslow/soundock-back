@@ -7,6 +7,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import dopamine.soundock.dto.response.FileUploadResponse;
 import lombok.RequiredArgsConstructor;
+import org.apache.tika.Tika;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,9 +25,67 @@ public class S3Service {
     @Value("${spring.cloud.aws.s3.bucket}")
     private String bucket;
 
+    // Tika: 실제 콘텐츠 기반 MIME 판별
+    private static final Tika TIKA = new Tika();
+
+    // 허용 MIME 타입
+    private static final Set<String> ALLOWED_MIME_TYPES = Set.of(
+            // 이미지
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "image/webp",
+
+            // 읽기용 문서
+            "application/pdf",
+            "text/plain",
+
+            // 오디오
+            "audio/mpeg",
+            "audio/wav",
+            "audio/ogg"
+    );
+
+    // 검증 메서드
+    private void validateUploadFile(MultipartFile file) {
+        if(file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("업로드 파일이 비어있습니다.");
+        }
+        String originalFilename = file.getOriginalFilename();
+
+        if(originalFilename == null || originalFilename.isBlank()) {
+            throw new IllegalArgumentException("파일명이 비어있습니다.");
+        }
+
+        long maxBytes = 10 * 1024 * 1024;
+        if (file.getSize() > maxBytes) throw new IllegalArgumentException("파일 용량이 너무 큽니다.");
+    }
+
+    private String detectMimeType(MultipartFile file) throws IOException {
+
+        // Tika는 스트림을 읽어서 판단하므로 try-with-resources로 처리
+        try (InputStream is = file.getInputStream()) {
+
+            // fileName을 같이 주면 판별 정확도가 올라가는 경우가 있음
+            String name = file.getOriginalFilename();
+            return TIKA.detect(is, name);
+        }
+    }
+
+    private void validateMimeTypeAllowed(String detectedMimeType) {
+        if (detectedMimeType == null || detectedMimeType.isBlank()) {
+            throw new IllegalArgumentException("MIME 타입을 판별할 수 없습니다.");
+        }
+        if (!ALLOWED_MIME_TYPES.contains(detectedMimeType)) {
+            throw new IllegalArgumentException("허용되지 않은 파일 타입입니다.");
+        }
+    }
+
+
+
     // 이미지 파일 확장자
     private static final List<String> IMAGE_EXTENSIONS = Arrays.asList(
-            ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"
+            ".jpg", ".jpeg", ".png", ".gif", ".webp"
     );
 
 
@@ -58,12 +117,19 @@ public class S3Service {
     // 단일 파일 업로드
     public FileUploadResponse uploadFile(MultipartFile file) throws IOException {
 
+        // MIME 판별
+        String detectedMimeType = detectMimeType(file);
+
+        // 허용 타입 체크
+        validateMimeTypeAllowed(detectedMimeType);
+
+
         // 파일 키 생성
         String fileKey = generateFileKey(file.getOriginalFilename());
 
         // 메타데이터 설정
         ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentType(file.getContentType());
+        metadata.setContentType(detectedMimeType);
         metadata.setContentLength(file.getSize());
 
         // S3에 파일 업로드

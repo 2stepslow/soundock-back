@@ -228,7 +228,7 @@ public class BoardService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리입니다."));
 
         // 삭제되지 않은 게시글에 대해 boardId순으로 정렬(createdDatetime과 같이 먼저 등록된 글일수록 숫자가 작음)
-        Page<Integer> boardIds = boardRepository.findBoardIdsByCategoryAndDeletedDateTimeIsNull(category, pageable);
+        Page<Integer> boardIds = boardRepository.findBoardIdsByCategoryAndActiveUser(category, pageable);
 
         if (boardIds.getTotalElements() == 0) {
             throw new ResourceNotFoundException("현재 카테고리에 작성된 게시글이 없습니다.");
@@ -236,7 +236,9 @@ public class BoardService {
 
         List<Integer> boardIdList = boardIds.getContent();
 
-        List<Board> boards = boardRepository.findAllByBoardIdInAndDeletedDateTimeIsNull(boardIdList);
+        List<Board> boards = boardRepository.findAllByBoardIdInAndDeletedDateTimeIsNullAndUserIsDeletedFalse(boardIdList);
+
+
 
         Map<Integer, Board> boardMap = boards.stream()
                 .collect(Collectors.toMap(Board::getBoardId, b -> b));

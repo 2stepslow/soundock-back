@@ -88,25 +88,15 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         // targetEmail의 계정에 유튜브를 쓸 수 있는 열쇠들을 저장 또는 업데이트
         youTubeAuthService.saveOrUpdateGoogleTokens(targetEmail, accessToken, refreshToken, expiresAt);
 
-        // 4. 구글 로그인이 끝난 후 우리 사이트 안에서 돌아다닐 때 쓸 우리의 JWT 토큰을 생성
-        /* 이미 로그인한 상태에서 유튜브를 연동하기 때문에 우리서버 토큰이 이미 있는데 왜 또 생성해야하는가?
-         * 1) 사용자가 구글 인증 후 우리 사이트로 돌아왔을때 우리서버의 액세스토큰이 만료되는 경우
-         * 2) 브라우저가 외부 사이트를 거쳐 돌아오는 동안 기존의 인증 상태가 불안정해지는 경우
-         * 3) 나중에 회원가입을 통한 로그인 뿐 아니라 sns나 구글 계정 등으로 로그인을 할 수 있게 되는 경우
-         */
-
-        String jwtToken = tokenProvider.generateAccessToken(targetEmail, userId, role);
-
-        // 5. 프론트엔드(React)로 성공 페이지 리다이렉트 할 변수 선언
+        // 4. 프론트엔드(React)로 성공 페이지 리다이렉트 할 변수 선언
         String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/mypage")
-                .queryParam("token", jwtToken)
                 .queryParam("success", "true")
                 .build().toUriString();
 
-        // 6. 임시 쿠키 삭제
+        // 5. 임시 쿠키 삭제
         clearAuthenticationAttributes(request, response);
 
-        // 7. 리다이렉트 실행
+        // 6. 리다이렉트 실행
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 

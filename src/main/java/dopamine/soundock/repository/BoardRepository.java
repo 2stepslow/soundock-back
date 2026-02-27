@@ -33,6 +33,16 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
     @EntityGraph(attributePaths = {"user", "category", "playlist", "attachments"})
     List<Board> findAllByBoardIdInAndDeletedDateTimeIsNull(List<Integer> boardIds);
 
+    // 삭제된 유저의 게시글 불러오지 않음
+    @EntityGraph(attributePaths = {"user", "category", "playlist", "attachments"})
+    List<Board> findAllByBoardIdInAndDeletedDateTimeIsNullAndUserIsDeletedFalse(List<Integer> boardIds);
+
+    // 삭제된 유저의 게시글 불러오지 않음
+    @Query("SELECT b.boardId FROM Board b WHERE b.category = :category AND b.deletedDateTime IS NULL AND b.user.isDeleted = false")
+    Page<Integer> findBoardIdsByCategoryAndActiveUser(
+            @Param("category") Category category,
+            Pageable pageable);
+
     @Modifying
     @Query("UPDATE Board b SET b.likes = b.likes + 1 WHERE b.boardId = :boardId")
     void increaseLikes(@Param("boardId") Integer boardId);

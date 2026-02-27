@@ -6,13 +6,14 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Integer> {
     Optional<User> findByEmail(String email);
     Optional<User> findByEmailAndIsDeletedFalse(String email);
 
-    Optional<User> findByNameAndPhoneNumberAndIsDeletedFalse(String name, String phoneNumber);
+    List<User> findByNameAndPhoneNumberAndIsDeletedFalse(String name, String phoneNumber);
 
     void deleteByEmail(String email);
     boolean existsByEmail(String email);
