@@ -23,8 +23,10 @@ public class WeatherInfoService {
     @Value("${weather.service.key}")
     private String weatherServiceKey;
 
+
     // 기상청 API 호출하고 적절한 값 받아오자
     public WeatherInfoResponse getWeatherInfo(WeatherInfoRequest weatherInfoRequest) {
+
 
         // 현재시간: 'now'
         LocalDateTime now = LocalDateTime.now();
@@ -36,6 +38,7 @@ public class WeatherInfoService {
         // 기상청이 요구하는 시간형식으로 포맷 가공 (ex. 0600)
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HHmm");
         String formattedTime = now.format(timeFormatter);
+
 
 
         String url = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst";
@@ -66,32 +69,31 @@ public class WeatherInfoService {
                 .path("resultCode").asText();
 
 
-        // 기상청 응답 JSON depth가 깊어, item까지 타고 타고 내려감
+        // 기상청 응답 JSON depth가 깊어, item[]까지 타고 타고 내려감
         JsonNode itemArray = root.path("response")
                 .path("body")
                 .path("items")
                 .path("item");
 
 
+        String weatherCategory = "";
+        String humidityValue = "";
 
-        // TODO - 여기부터 완전 엉망진창! 자바 좀더 익히고 마무리 예정!
-        String category = "category";
-        String obsrValue = "obsrValue";
 
-        // item 배열에서 카테고리 꺼냄???
+        // itemArray에서 카테고리 꺼냄
         for (JsonNode item : itemArray) {
-            item.path("category").asText(category);
+            weatherCategory = item.path("category").asText();
 
-            // 카테고리 중 습도(REH)에 해당하는 값 꺼냄???
-            if ("REH".equals(category)) {
-                item.path("obsrValue").asText(obsrValue);
+            // 카테고리 중 습도(REH)에 해당하는 값 꺼냄
+            if ("REH".equals(weatherCategory)) {
+                humidityValue = item.path("obsrValue").asText();
             }
         }
 
         return WeatherInfoResponse
                 .builder()
-                // TODO - 작성할예정
-
+                .resultCode(resultCode)
+                .obsrValue(humidityValue)
                 .build();
     }
 }
