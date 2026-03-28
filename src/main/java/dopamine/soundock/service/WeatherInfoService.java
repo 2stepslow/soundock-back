@@ -82,17 +82,20 @@ public class WeatherInfoService {
 
         // itemArray에서 카테고리 꺼냄
         for (JsonNode item : itemArray) {
-            weatherCategory = item.path("category").asText();
+            String category = item.path("category").asText();
 
             // 카테고리 중 습도(REH)에 해당하는 값 꺼냄
-            if ("REH".equals(weatherCategory)) {
+            if ("REH".equals(category)) {
+                weatherCategory = category;
                 humidityValue = item.path("obsrValue").asText();
+                break;
             }
         }
 
         return WeatherInfoResponse
                 .builder()
                 .resultCode(resultCode)
+                .category(weatherCategory)
                 .obsrValue(humidityValue)
                 .build();
     }
