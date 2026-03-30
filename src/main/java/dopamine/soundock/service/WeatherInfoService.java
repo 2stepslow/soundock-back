@@ -113,13 +113,13 @@ public class WeatherInfoService {
 
     private String makeCareMsg(int valueToString) {
         if (valueToString <= 30)
-            return "공기가 건조해요! 악기 갈라짐을 막기 위해 케이스 보관을 추천합니다.";
+            return "공기가 건조해요!\n악기 갈라짐을 막기 위해 케이스 보관을 추천합니다.";
         if (valueToString <= 50)
-            return "습도가 낮은 편이에요! 장시간 보관 시 케이스 보관을 권장합니다.";
+            return "습도가 낮은 편이에요!\n장시간 보관 시 케이스 보관을 권장합니다.";
         if (valueToString <= 65)
-            return "연주하기 좋은 습도입니다! 쾌적한 연주 환경이에요.";
+            return "연주하기 좋은 습도입니다!\n쾌적한 연주 환경이에요.";
         if (valueToString <= 75)
-            return "습도가 조금 높아요! 연주 후 악기를 잘 닦아 보관하세요.";
-        return "습도가 높아요! 악기 변형을 막기 위해 관리에 유의하세요.";
+            return "습도가 조금 높아요!\n연주 후 악기를 잘 닦아 보관하세요.";
+        return "습도가 높아요!\n악기 변형을 막기 위해 관리에 유의하세요.";
     }
 }
