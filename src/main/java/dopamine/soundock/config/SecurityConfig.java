@@ -150,6 +150,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,"/api/boards/**").permitAll() // ** : 테스트용 /api/boards/ 뒤의 모든 것들 허용
                         .requestMatchers(HttpMethod.GET,"/api/announcement/**").permitAll() // ** : 공지사항 조회는 모두 허용
                         .requestMatchers(HttpMethod.GET,"/api/spotlight/carousel").permitAll() // 비로그인 유저도 메인 캐러셀 조회 허용
+                        .requestMatchers(HttpMethod.GET,"/api/weather/info").permitAll() // 비로그인 유저도 지역에 따른 습도조회 허용
                         .requestMatchers(
                                 "/api/passwordless/login-trigger", // 패스워드리스 로그인 트리거 허용
                                 "/api/passwordless/result", // 패스워드리스 로그인 결과 확인 허용
