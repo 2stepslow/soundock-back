@@ -3,8 +3,10 @@ package dopamine.soundock.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import dopamine.soundock.dto.request.WeatherInfoRequest;
 import dopamine.soundock.dto.response.WeatherInfoResponse;
+import dopamine.soundock.exceptions.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -68,6 +70,11 @@ public class WeatherInfoService {
                 .path("header")
                 .path("resultCode").asText();
 
+        if (!resultCode.equals("00")) {
+            throw new CustomException("기상청 호출 중 문제가 발생했습니다.",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
 
         // 기상청 응답 JSON depth가 깊어, item[]까지 타고 타고 내려감
         JsonNode itemArray = root.path("response")
@@ -92,11 +99,27 @@ public class WeatherInfoService {
             }
         }
 
+        int valueToString = Integer.parseInt(humidityValue);
+        String careMsg = makeCareMsg(valueToString);
+
         return WeatherInfoResponse
                 .builder()
                 .resultCode(resultCode)
                 .category(weatherCategory)
-                .obsrValue(humidityValue)
+                .obsrValue(valueToString)
+                .humidityMsg(careMsg)
                 .build();
+    }
+
+    private String makeCareMsg(int valueToString) {
+        if (valueToString <= 30)
+            return "공기가 건조해요! 악기 갈라짐을 막기 위해 케이스 보관을 추천합니다.";
+        if (valueToString <= 50)
+            return "습도가 낮은 편이에요! 장시간 보관 시 케이스 보관을 권장합니다.";
+        if (valueToString <= 65)
+            return "연주하기 좋은 습도입니다! 쾌적한 연주 환경이에요.";
+        if (valueToString <= 75)
+            return "습도가 조금 높아요! 연주 후 악기를 잘 닦아 보관하세요.";
+        return "습도가 높아요! 악기 변형을 막기 위해 관리에 유의하세요.";
     }
 }

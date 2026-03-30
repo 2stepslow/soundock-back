@@ -21,5 +21,8 @@ public class WeatherInfoResponse {
     private String category;
 
     @Schema(description = "습도값 %")
-    private String obsrValue;
+    private int obsrValue;
+
+    @Schema(description = "습도값에 따른 메시지")
+    private String humidityMsg;
 }
