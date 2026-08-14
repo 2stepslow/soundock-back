@@ -7,7 +7,7 @@
 Soundock은 음악 커뮤니티 백엔드 REST API 서버입니다. 
 카테고리별 게시판과 댓글, YouTube 플레이리스트 공유, 가상 재화(Pop)를 활용한 후원 시스템, 토스 페이먼츠 결제 연동 등 커뮤니티 운영에 필요한 기능을 제공합니다. Google OAuth2와 패스워드리스 로그인을 지원하며, 기상청 API를 연동해 지역별 날씨 정보(습도)도 함께 보여줍니다.
 
-5명의 팀원이 2026년 1월부터 3월까지 약 3개월간 함께 개발했습니다.
+4명의 팀원이 2026년 1월부터 3월까지 약 3개월간 함께 개발했습니다.
 
 ## 기술 스택
 
@@ -60,7 +60,7 @@ Soundock은 음악 커뮤니티 백엔드 REST API 서버입니다.
 
 ### 날씨
 - 기상청 단기예보 API 연동
-- 지역별 습도 정보 제공
+- 지역별 습도 정보 제공(초단기실황)
 
 ## API 엔드포인트
 
@@ -94,7 +94,7 @@ Soundock은 음악 커뮤니티 백엔드 REST API 서버입니다.
 
 | Method | Endpoint | 설명 |
 |:------:|----------|-----|
-| `GET` | `/api/playlists` | 연동된 YouTube 계정의 플레이리스트 목록 조회 |
+| `GET`  | `/api/playlists` | 연동된 YouTube 계정의 플레이리스트 목록 조회 |
 
 ### 결제 & 후원
 
@@ -108,34 +108,34 @@ Soundock은 음악 커뮤니티 백엔드 REST API 서버입니다.
 
 | Method | Endpoint | 설명 |
 |:------:|----------|-----|
-| `GET` | `/api/spotlight/carousel` | 메인 페이지 Spotlight 게시글 목록 조회 |
+| `GET`  | `/api/spotlight/carousel` | 메인 페이지 Spotlight 게시글 목록 조회 |
 
 ### 마이페이지
 
 | Method | Endpoint | 설명 |
 |:------:|----------|-----|
-| `GET` | `/api/mypage/profile` | 내 프로필 정보 조회 |
-| `GET` | `/api/mypage/my-posts` | 내가 작성한 게시글 목록 조회 |
+| `GET`  | `/api/mypage/profile` | 내 프로필 정보 조회 |
+| `GET`  | `/api/mypage/my-posts` | 내가 작성한 게시글 목록 조회 |
 
 ### 알림 & 메시지
 
 | Method | Endpoint | 설명 |
 |:------:|----------|-----|
-| `GET` | `/api/notification` | 내 알림 목록 조회 |
+| `GET`  | `/api/notification` | 내 알림 목록 조회 |
 | `POST` | `/api/messages` | 메시지 전송 |
 
 ### 날씨
 
 | Method | Endpoint | 설명 |
 |:------:|----------|-----|
-| `GET` | `/api/weather/info` | 지역별 현재 습도 정보 조회 |
+| `GET`  | `/api/weather/info` | 지역별 현재 습도 정보 조회 |
 
 ### 관리자
 
 | Method | Endpoint | 설명 |
 |:------:|----------|-----|
 | `POST` | `/api/adm1n/login` | 관리자 로그인 |
-| `GET` | `/api/adm1n/inquiries` | 사용자 문의 목록 조회 |
+| `GET`  | `/api/adm1n/inquiries` | 사용자 문의 목록 조회 |
 
 ## 프로젝트 구조
 
