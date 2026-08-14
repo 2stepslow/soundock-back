@@ -1,5 +1,6 @@
 package dopamine.soundock.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,6 +12,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 @Schema(description = "날씨(습도) 응답 최종 DTO")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class WeatherInfoResponse {
 
     @Schema(description = "응답코드")

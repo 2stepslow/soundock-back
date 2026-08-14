@@ -22,7 +22,7 @@ public class WeatherInfoService {
 
     private final RestClient restClient;
 
-    @Value("${weather.service.key}")
+    @Value("${WEATHER_SERVICE_KEY}")
     private String weatherServiceKey;
 
 
@@ -32,6 +32,15 @@ public class WeatherInfoService {
 
         // 현재시간: 'now'
         LocalDateTime now = LocalDateTime.now();
+
+        // 기상청 초단기실황은 매 시간 정각데이터 40분에 생성해서 제공
+        // ex) 10시 30분일 경우, 9시 데이터를 가져옴
+        if (now.getMinute() <40){
+            now = now.minusHours(1);
+        }
+
+        // 기상청 API는 정각(00분) 값만 허용 -> 분을 0으로 고정
+        now = now.withMinute(0);
 
         // 기상청이 요구하는 날짜형식으로 포맷 가공 (ex. 20260318)
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
@@ -82,10 +91,8 @@ public class WeatherInfoService {
                 .path("items")
                 .path("item");
 
-
         String weatherCategory = "";
         String humidityValue = "";
-
 
         // itemArray에서 카테고리 꺼냄
         for (JsonNode item : itemArray) {
