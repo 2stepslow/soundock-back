@@ -25,6 +25,9 @@ public class S3Service {
     @Value("${spring.cloud.aws.s3.bucket}")
     private String bucket;
 
+    @Value("${spring.cloud.aws.s3.public-url}")
+    private String publicUrl;
+
     // Tika: 실제 콘텐츠 기반 MIME 판별
     private static final Tika TIKA = new Tika();
 
@@ -99,9 +102,12 @@ public class S3Service {
         return UUID.randomUUID() + extension;
     }
 
-    // 공개 URL 생성
+    // 공개 URL 생성 (스토리지 공개 도메인 + 파일 키)
     private String getPublicUrl(String fileKey) {
-        return String.format("https://%s.s3.amazonaws.com/%s", bucket, fileKey);
+        String base = publicUrl.endsWith("/")
+                ? publicUrl.substring(0, publicUrl.length() - 1)
+                : publicUrl;
+        return base + "/" + fileKey;
     }
 
     // 파일 확장자로 이미지 파일 여부 확인
@@ -180,12 +186,18 @@ public class S3Service {
         }
     }
 
-    // fileUrl에서 key 추출
+    // fileUrl에서 key 추출 (스토리지 주소 형식에 의존하지 않도록 마지막 경로 조각 사용)
     public String getFileKeyFromUrl(String fileUrl) {
-        if (fileUrl != null && fileUrl.contains("s3.amazonaws.com/")) {
-            return fileUrl.substring(fileUrl.indexOf("s3.amazonaws.com/") + 17);
+        if (fileUrl == null || fileUrl.isBlank()) {
+            return fileUrl;
         }
-        return fileUrl;
+        if (!fileUrl.startsWith("http")) {
+            return fileUrl;
+        }
+        int queryIndex = fileUrl.indexOf('?');
+        String path = queryIndex > 0 ? fileUrl.substring(0, queryIndex) : fileUrl;
+        int lastSlash = path.lastIndexOf('/');
+        return lastSlash >= 0 ? path.substring(lastSlash + 1) : path;
     }
 
     // Presigned URL 생성 (다운로드용)
