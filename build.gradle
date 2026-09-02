@@ -30,6 +30,11 @@ repositories {
 }
 
 dependencies {
+	constraints {
+		implementation 'org.apache.commons:commons-lang3:3.18.0'
+		implementation 'commons-io:commons-io:2.18.0'
+	}
+
 	implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -80,7 +85,7 @@ dependencies {
 	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
 
     // Tika
-    implementation 'org.apache.tika:tika-core:2.9.0'
+	implementation 'org.apache.tika:tika-core:3.2.3'
 }
 
 tasks.named('test') {
