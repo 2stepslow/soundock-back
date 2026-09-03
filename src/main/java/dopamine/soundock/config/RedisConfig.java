@@ -8,6 +8,8 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 
 @Configuration
 @RequiredArgsConstructor
@@ -17,7 +19,18 @@ public class RedisConfig {
 
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
-        return new LettuceConnectionFactory(redisProperties.getHost(), redisProperties.getPort());
+        RedisStandaloneConfiguration config =
+                new RedisStandaloneConfiguration(redisProperties.getHost(), redisProperties.getPort());
+        String password = redisProperties.getPassword();
+        if (password != null && !password.isBlank()) {
+            config.setPassword(password);
+        }
+        LettuceClientConfiguration.LettuceClientConfigurationBuilder builder =
+                LettuceClientConfiguration.builder();
+        if (redisProperties.getSsl().isEnabled()) {
+            builder.useSsl();
+        }
+        return new LettuceConnectionFactory(config, builder.build());
     }
 
     @Bean
