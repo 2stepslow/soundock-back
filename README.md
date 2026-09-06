@@ -2,20 +2,44 @@
 
 음악을 좋아하는 사람들이 자기만의 유튜브 영상 및 플레이리스트를 공유하고, 마음에 드는 게시글에 후원까지 할 수 있는 커뮤니티 플랫폼 **Soundock** 백엔드입니다.
 
-완료된 팀 프로젝트에 추가적인 기능 구현 및 별도의 배포를 위한 Clone 저장소로, 팀 개발 당시 커밋 이력이 보존되어 있으며 PR기반 협업 이력은 원본 저장소에서 확인이 가능합니다.
+완료된 팀 프로젝트에 추가적인 기능 구현 및 별도의 배포를 진행한 Clone 저장소로, 팀 개발 당시 커밋 이력이 보존되어 있으며 PR기반 협업 이력은 원본 저장소에서 확인이 가능합니다.
 
 **DOPAMINE** | 4명 | 2026.01.02. ~ 2026.03.06. (63일)
 
 - 프론트엔드 저장소: [2stepslow/soundock-front](https://github.com/2stepslow/soundock-front)
-- (원본 BE 저장소): [ningsoo/dpm-project-back](https://github.com/ningsoo/dpm-project-back)
-- (원본 FE 저장소): [ningsoo/dpm-project-front-v2](https://github.com/ningsoo/dpm-project-front-v2)
+- 원본 저장소: [ningsoo/dpm-project-back](https://github.com/ningsoo/dpm-project-back) | [ningsoo/dpm-project-front-v2](https://github.com/ningsoo/dpm-project-front-v2)
+
+## 데모 안내
+
+- 재배포 링크: [SOUNDOCK](https://soundock-front-indol.vercel.app/)
+- 로그인 화면의 '데모 계정 사용하기' 버튼으로 쉽게 로그인 가능합니다
+- 결제는 토스페이먼츠 테스트 모드로 동작하며 실제 결제가 발생하지 않습니다
+- 데모 환경에서는 유튜브 계정 연동이 제한되며, 플레이리스트는 사전 연동된 데이터로 표시됩니다
+- Spotlight 게시판의 컨텐츠는 데모용 가상 데이터입니다
+- Passwordless 기능은 외부 인증 서버가 화이트리스트 방식이므로 시연 영상으로 대체합니다 - [Passwordless 기능](https://youtu.be/IFLcF_gfqS8)
 
 ## 담당 역할
 
 - **FrontEnd** 전담: 사용자 & 인증
 - **BackEnd** 풀스택 구현: 마이페이지 활동내역 & 게시판 검색
 - **FE** 품질개선 & **BE** 보안 스캔 / 분석 / 보완
-- 프로젝트 종료 후 추가기능 별도 구현
+- 프로젝트 종료 후 기상청 API 연동해 습도에 따른 악기관리 안내기능 별도 풀스택 구현
+
+### 재배포 구성
+
+중단된 당시 AWS 배포 구성을 조건에 맞게 재구성 (콜드스타트 없음 / 저비용 / 구축 시간 최소화)
+
+| 구성          | 사용 서비스                          | 비고                                           |
+| ------------- | ------------------------------------ | ---------------------------------------------- |
+| 백엔드        | Render (Docker, 512MB 단일 인스턴스) | JVM 메모리 상한을 실측 기반으로 고정           |
+| DB            | TiDB Cloud (MySQL 호환)              | 백엔드와 동일 리전(싱가포르)                   |
+| 캐시          | Upstash Redis (TLS)                  | 인기글 랭킹 집계, 조회 처리, 인증 보조         |
+| 이미지 저장소 | Cloudflare R2 (S3 호환 API)          | 기존 S3 연동 코드를 엔드포인트 전환으로 재사용 |
+| 프론트        | Vercel (Next.js)                     | OAuth 콜백과 API를 동일 출처 프록시로 구성     |
+
+작업내용: 배포 환경 차이에 따른 코드 수정(도커 빌드 구성, 저장소 엔드포인트 전환, Redis TLS 연결, 쿠키와 보안 정책, OAuth 콜백 프록시), 데모 시딩 준비, 512MB 제약 검증(부하 측정으로 JVM 옵션 확정), 의존성 취약점 점검 및 조치
+
+<!-- TODO: 대표 화면 스크린샷 1~2장 삽입 위치 -->
 
 ## 기술 스택
 
@@ -23,7 +47,7 @@
 - **Spring Boot**: 3.5.9 (Gradle)
 - **Spring Security**: JWT, OAuth2 Client (Google, 유튜브 계정 연동용)
 - **Spring Data JPA**: MySQL
-- **Redis**: 토큰 관리
+- **Redis**: 인기글 랭킹 집계, 조회 처리, 인증 보조
 - **Spring Mail**: 인증 메일 발송 (Thymeleaf 템플릿)
 - **AWS S3**: 파일 업로드(spring-cloud-starter-aws), Apache Tika (업로드 파일 검증)
 - **Toss Payments**: 결제 연동
@@ -47,7 +71,7 @@
 
 - 카테고리별 게시판 (Showcase / Playlists / Spotlight / Community / Reviews / Notice)
 - 게시글 CRUD, 좋아요, 조회수, 인기글
-- 댓글 & 대댓글, 댓글 좋아요
+- 댓글, 댓글 좋아요
 - 키워드 검색
 - 파일 첨부 (S3 업로드, MIME 타입 검증)
 
@@ -119,10 +143,10 @@ src/main/java/dopamine/soundock/
 
 ### 댓글
 
-|   Method   | Endpoint                      | 설명                  |
-| :--------: | ----------------------------- | --------------------- |
-|  `POST`  | `/api/comments`             | 댓글 또는 대댓글 작성 |
-| `DELETE` | `/api/comments/{commentId}` | 댓글 삭제             |
+|   Method   | Endpoint                      | 설명      |
+| :--------: | ----------------------------- | --------- |
+|  `POST`  | `/api/comments`             | 댓글 작성 |
+| `DELETE` | `/api/comments/{commentId}` | 댓글 삭제 |
 
 ### 플레이리스트
 
